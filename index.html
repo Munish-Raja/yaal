@@ -231,6 +231,22 @@ a{color:var(--maroon2)}
       <label for="st-chans">Sales channels</label><input id="st-chans">
       <div style="margin-top:16px"><button class="btn p block" id="savesettings">Save settings</button></div>
     </div>
+    <h3>Cloud storage (Google Sheet)</h3>
+    <div class="card" id="cloudbox">
+      <p id="cloudstatus" style="margin-top:0;font-weight:600"></p>
+      <div id="cloudform">
+        <p class="small mute" style="margin-top:0">Store your data in a Google Sheet in your Google Drive. Set it up once on a computer (steps in SETUP-GOOGLE-SHEET.md in your GitHub repository), then paste the two values here. Nobody needs to sign in after that.</p>
+        <label for="cloudurl">Web app URL</label><input id="cloudurl" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" inputmode="url">
+        <label for="cloudkey">Shop key</label><input id="cloudkey" placeholder="From the Setup tab of your sheet" autocomplete="off">
+        <div style="margin-top:12px"><button class="btn p block" id="cloudgo">Connect</button></div>
+      </div>
+      <div id="cloudon" style="display:none">
+        <p class="small mute" style="margin-top:0">Every change is saved on this phone first and uploaded within seconds. Without internet, billing keeps working and uploads later. Other phones get updates every 20 seconds.</p>
+        <div class="btns"><button class="btn" id="cloudsync">Sync now</button><button class="btn" id="cloudcopy">Copy staff link</button></div>
+        <div class="btns" style="margin-top:8px"><a class="btn gold" id="cloudwa" href="#" target="_blank" rel="noopener">Send staff link on WhatsApp</a><button class="btn danger" id="cloudoff">Disconnect</button></div>
+        <p class="small mute" style="margin-bottom:0">The staff link connects a phone to your sheet in one tap. Share it only with people you trust.</p>
+      </div>
+    </div>
     <h3>Excel</h3>
     <div class="card">
       <p class="small mute" style="margin-top:0">Download everything as an Excel file for your accountant or as a backup. You can also bring in products from the inventory workbook (its Inventory sheet).</p>
@@ -239,7 +255,7 @@ a{color:var(--maroon2)}
     </div>
     <h3>Backup</h3>
     <div class="card">
-      <p class="small mute" style="margin-top:0">All data is saved <b>only on this phone</b>. Make a backup every week and keep it on Google Drive or WhatsApp it to yourself. Restoring a backup on a new phone brings everything back.</p>
+      <p class="small mute" style="margin-top:0">A backup file holds everything. Handy before big changes, or if you are not using the Google Sheet. Restoring replaces all current data.</p>
       <div class="btns"><button class="btn gold" id="backupx">Make backup</button><button class="btn" id="restorex">Restore backup</button></div>
       <input type="file" id="restorefile" accept=".json,application/json" hidden>
       <p class="small mute" id="lastbackup" style="margin-bottom:0"></p>
@@ -247,7 +263,7 @@ a{color:var(--maroon2)}
     <h3>Install on your phone</h3>
     <div class="card small">
       <p style="margin-top:0"><b>Android:</b> open the app link in Chrome and tap <b>Install app</b> (or ⋮ → <b>Add to Home screen</b>). It opens from its own icon and works without internet. No sign-in needed.</p>
-      <p style="margin-bottom:0">Each phone keeps its own data. To move to a new phone, make a backup here and restore it there.</p>
+      <p style="margin-bottom:0">With the Google Sheet connected, every phone shares the same data. Without it, each phone keeps its own.</p>
     </div>
     <h3>Sample data</h3>
     <div class="card">
@@ -479,7 +495,7 @@ $('#bsave').onclick = async () => {
   try {
     for (let n = 1; n < 20; n++) {
       const inv = gen(n), ref = db.doc('sales/' + safeId(inv)); const snap = await ref.get();
-      if (!snap.exists) { bill.invoice = inv; await ref.set(bill); break; }
+      if (!snap.exists) { bill.invoice = inv; await ref.set(bill, {ifAbsent: true}); break; }
     }
     if (!bill.invoice) throw {code: 'unavailable'};
     cart = []; $('#bcust').value = ''; $('#bphone').value = ''; renderCart();
@@ -758,41 +774,152 @@ $('#tabs').addEventListener('click', e => { const b = e.target.closest('button')
 $('#sg-p').onclick = () => { stockTab = 'p'; $('#sg-p').classList.add('on'); $('#sg-i').classList.remove('on'); $('#stock-p').style.display = ''; $('#stock-i').style.display = 'none'; setFab(); };
 $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('#sg-p').classList.remove('on'); $('#stock-i').style.display = ''; $('#stock-p').style.display = 'none'; setFab(); };
 
-/* ---------- data on this phone ---------- */
-const LocalDB = (() => {
-  const mem = new Map(), subs = new Set(); let idb = null;
+/* ---------- data: phone copy + Google Sheet cloud ---------- */
+const CLOUD_LS = 'boutique-cloud';
+const Store = (() => {
+  const mem = new Map(), subs = new Set(), statusSubs = new Set(); let idb = null;
   const meta = {fromCache: false, hasPendingWrites: false};
-  const openIdb = () => new Promise((res, rej) => { const r = indexedDB.open('boutique-stock', 1); r.onupgradeneeded = () => r.result.createObjectStore('docs'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  let outbox = [], rev = 0, cloud = null, flushing = false, pulling = false, retryT = 0;
+  let online = null, badKey = false, lastSync = 0, lastErr = '';
+  const syncable = p => !p.startsWith('local/');
+  const openIdb = () => new Promise((res, rej) => { const r = indexedDB.open('boutique-stock', 2); r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('docs')) d.createObjectStore('docs'); if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv'); }; r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const idbAll = name => new Promise((res, rej) => { const out = []; const rq = idb.transaction(name).objectStore(name).openCursor(); rq.onsuccess = () => { const c = rq.result; if (c) { out.push([c.key, c.value]); c.continue(); } else res(out); }; rq.onerror = () => rej(rq.error); });
   async function init() {
     try {
       idb = await openIdb();
-      await new Promise((res, rej) => { const rq = idb.transaction('docs').objectStore('docs').openCursor(); rq.onsuccess = () => { const c = rq.result; if (c) { mem.set(c.key, c.value); c.continue(); } else res(); }; rq.onerror = () => rej(rq.error); });
+      for (const [k, v] of await idbAll('docs')) mem.set(k, v);
+      for (const [k, v] of await idbAll('kv')) { if (k === 'outbox') outbox = v || []; if (k === 'rev') rev = v || 0; }
     } catch (e) {
       idb = null; try { const o = JSON.parse(localStorage.getItem('boutique-docs') || '{}'); for (const k in o) mem.set(k, o[k]); } catch {}
     }
+    if (mem.has('config/meta')) { mem.set('local/meta', mem.get('config/meta')); mem.delete('config/meta'); await persist([['local/meta', mem.get('local/meta')], ['config/meta', undefined]]); }
+    try { cloud = JSON.parse(localStorage.getItem(CLOUD_LS) || 'null'); } catch { cloud = null; }
   }
   function persist(ops) {
     if (idb) return new Promise((res, rej) => { const tx = idb.transaction('docs', 'readwrite'), st = tx.objectStore('docs'); for (const [p, v] of ops) v === undefined ? st.delete(p) : st.put(v, p); tx.oncomplete = res; tx.onerror = () => rej({code: tx.error && tx.error.name === 'QuotaExceededError' ? 'quota_exceeded' : 'unavailable'}); tx.onabort = tx.onerror; });
     try { localStorage.setItem('boutique-docs', JSON.stringify(Object.fromEntries(mem))); return Promise.resolve(); } catch { return Promise.reject({code: 'quota_exceeded'}); }
   }
+  function kv(k, v) {
+    if (!idb) { try { localStorage.setItem('boutique-kv-' + k, JSON.stringify(v)); } catch {} return Promise.resolve(); }
+    return new Promise(res => { const tx = idb.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = res; tx.onerror = res; });
+  }
   const snap = p => { const v = mem.get(p); return {id: p.split('/').pop(), exists: v !== undefined, data: () => v, metadata: meta}; };
   const notify = () => { for (const f of subs) f(); };
+  const status = () => { for (const f of statusSubs) f(); };
   const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  async function write(p, v, opts = {}) {
+    v === undefined ? mem.delete(p) : mem.set(p, v);
+    notify();
+    await persist([[p, v]]);
+    if (cloud && syncable(p)) {
+      if (v === undefined) {
+        const pend = outbox.findIndex(o => o.path === p && o.op === 'put' && o.ifAbsent);
+        if (pend >= 0 && !flushing) { outbox.splice(pend, 1); await kv('outbox', outbox); status(); return; }
+      }
+      outbox = outbox.filter(o => !(o.path === p && !o.ifAbsent && !flushing));
+      outbox.push({op: v === undefined ? 'delete' : 'put', path: p, data: v, ifAbsent: !!opts.ifAbsent});
+      await kv('outbox', outbox); status(); flushSoon();
+    }
+  }
   const docRef = p => ({id: p.split('/').pop(), path: p,
     get: async () => snap(p),
-    set: async d => { const v = JSON.parse(JSON.stringify(d)); mem.set(p, v); notify(); await persist([[p, v]]); },
-    delete: async () => { mem.delete(p); notify(); await persist([[p, undefined]]); },
+    set: async (d, opts) => write(p, JSON.parse(JSON.stringify(d)), opts),
+    delete: async () => write(p, undefined),
     onSnapshot: next => { const f = () => next(snap(p)); subs.add(f); f(); return () => subs.delete(f); }});
   const coll = c => ({path: c,
     doc: id => docRef(c + '/' + (id || newId())),
     add: async d => { const r = docRef(c + '/' + newId()); await r.set(d); return r; },
     onSnapshot: next => { const f = () => { const docs = [...mem.keys()].filter(k => k.startsWith(c + '/') && k.indexOf('/', c.length + 1) < 0).sort().map(snap); next({docs, size: docs.length, empty: !docs.length, metadata: meta}); }; subs.add(f); f(); return () => subs.delete(f); }});
-  async function replaceAll(obj) {
-    const ops = [...mem.keys()].map(k => [k, undefined]); mem.clear();
-    for (const k in obj) { mem.set(k, obj[k]); ops.push([k, obj[k]]); }
-    notify(); await persist(ops);
+
+  async function call(req, cfg = cloud) {
+    const r = await fetch(cfg.url, {method: 'POST', body: JSON.stringify(Object.assign({key: cfg.key}, req)), redirect: 'follow'});
+    if (!r.ok) throw Object.assign(new Error('http ' + r.status), {net: true});
+    let j; try { j = await r.json(); } catch { throw Object.assign(new Error('not_json'), {server: 'not_json'}); }
+    if (!j.ok) throw Object.assign(new Error(j.error || 'error'), {server: j.error || 'error'});
+    return j;
   }
-  return {init, doc: docRef, collection: coll, all: () => Object.fromEntries(mem), replaceAll, size: () => mem.size};
+  function noteErr(e) {
+    if (e && e.server === 'bad_key') { badKey = true; lastErr = 'Shop key is wrong'; }
+    else if (e && e.server) { lastErr = 'Cloud error: ' + e.server; online = true; }
+    else { online = false; lastErr = 'No internet'; }
+    clearTimeout(retryT); if (!badKey) retryT = setTimeout(sync, 15000);
+  }
+  let flushT = 0;
+  function flushSoon() { clearTimeout(flushT); flushT = setTimeout(flush, 300); }
+  async function flush() {
+    if (flushing || !cloud || badKey || !outbox.length) return;
+    flushing = true; status();
+    try {
+      while (outbox.length) {
+        const batch = outbox.slice(0, 25);
+        const res = await call({action: 'batch', ops: batch.map(o => ({op: o.op, path: o.path, data: o.data, ifAbsent: o.ifAbsent}))});
+        const ops = [];
+        res.results.forEach((x, i) => {
+          const o = batch[i];
+          if (x && x.ok && x.path && x.path !== o.path && o.op === 'put') {
+            mem.delete(o.path); mem.set(x.path, x.data); ops.push([o.path, undefined], [x.path, x.data]);
+            renamed.push([o.path, x.path]);
+          }
+        });
+        if (ops.length) { await persist(ops); notify(); }
+        outbox.splice(0, batch.length); await kv('outbox', outbox);
+        online = true; lastErr = ''; lastSync = Date.now(); status();
+      }
+    } catch (e) { noteErr(e); }
+    finally { flushing = false; status(); }
+  }
+  async function pull() {
+    if (pulling || !cloud || badKey) return;
+    pulling = true;
+    try {
+      const res = await call({action: 'load', since: rev});
+      const pending = new Set(outbox.map(o => o.path)), ops = [];
+      for (const [p, v] of Object.entries(res.docs)) { if (pending.has(p)) continue; mem.set(p, v); ops.push([p, v]); }
+      for (const p of res.deleted || []) { if (pending.has(p) || !mem.has(p)) continue; mem.delete(p); ops.push([p, undefined]); }
+      if (ops.length) { await persist(ops); notify(); }
+      rev = res.rev; await kv('rev', rev);
+      online = true; lastErr = ''; lastSync = Date.now();
+    } catch (e) { noteErr(e); }
+    finally { pulling = false; status(); }
+  }
+  async function sync() { await flush(); await pull(); }
+
+  const syncDocs = () => Object.fromEntries([...mem].filter(([k]) => syncable(k)));
+  async function replaceLocal(docs) {
+    const ops = [];
+    for (const k of [...mem.keys()]) if (syncable(k)) { mem.delete(k); ops.push([k, undefined]); }
+    for (const k in docs) { if (!syncable(k)) continue; mem.set(k, docs[k]); ops.push([k, docs[k]]); }
+    await persist(ops); notify();
+  }
+  /* connect: returns {empty, cloudCount}; then call finishConnect(mode) */
+  let pendingCfg = null, pendingLoad = null;
+  async function probe(url, key) {
+    const cfg = {url: url.trim(), key: key.trim()};
+    const res = await call({action: 'load', since: 0}, cfg);
+    pendingCfg = cfg; pendingLoad = res;
+    const keys = Object.keys(res.docs);
+    return {empty: keys.length === 0, bills: keys.filter(k => k.startsWith('sales/')).length, products: keys.filter(k => k.startsWith('products/')).length};
+  }
+  async function finishConnect(mode) {
+    const cfg = pendingCfg, res = pendingLoad; if (!cfg) return;
+    if (mode === 'upload') { const r = await call({action: 'replaceAll', docs: syncDocs()}, cfg); rev = r.rev; }
+    else { await replaceLocal(res.docs); rev = res.rev; }
+    cloud = cfg; badKey = false; outbox = []; online = true; lastErr = ''; lastSync = Date.now();
+    localStorage.setItem(CLOUD_LS, JSON.stringify(cloud)); await kv('outbox', outbox); await kv('rev', rev);
+    pendingCfg = pendingLoad = null; status();
+  }
+  async function disconnect() { cloud = null; outbox = []; rev = 0; badKey = false; localStorage.removeItem(CLOUD_LS); await kv('outbox', outbox); await kv('rev', 0); status(); }
+  async function replaceAll(docs) {
+    const ops = [...mem.keys()].map(k => [k, undefined]); mem.clear();
+    for (const k in docs) { mem.set(k, docs[k]); ops.push([k, docs[k]]); }
+    notify(); await persist(ops);
+    if (cloud) { outbox = []; await kv('outbox', outbox); const r = await call({action: 'replaceAll', docs: syncDocs()}); rev = r.rev; await kv('rev', rev); status(); }
+  }
+  const renamed = [];
+  return {init, doc: docRef, collection: coll, all: () => Object.fromEntries(mem), replaceAll, size: () => mem.size,
+    sync, probe, finishConnect, disconnect, renamed, onStatus: f => statusSubs.add(f),
+    info: () => ({cloud, pending: outbox.length, flushing, online, badKey, lastSync, lastErr})};
 })();
 const localDownloads = {save: async ({filename, data}) => {
   const blob = data instanceof Blob ? data : new Blob([data]);
@@ -805,7 +932,7 @@ $('#backupx').onclick = async () => {
   if (!needDb()) return;
   const data = JSON.stringify({app: 'boutique-stock', version: 1, savedAt: new Date().toISOString(), docs: db.all()});
   await downloads.save({filename: 'Backup_' + (S.name || 'Boutique').replace(/[^A-Za-z0-9 ]/g, '').trim().replace(/ +/g, '_') + '_' + todayStr() + '.json', data: new Blob([data], {type: 'application/json'})});
-  try { await db.doc('config/meta').set(Object.assign({}, (await db.doc('config/meta').get()).data() || {}, {lastBackup: todayStr()})); } catch {}
+  try { await db.doc('local/meta').set(Object.assign({}, (await db.doc('local/meta').get()).data() || {}, {lastBackup: todayStr()})); } catch {}
   toast('Backup saved to Downloads');
 };
 $('#restorex').onclick = () => $('#restorefile').click();
@@ -815,30 +942,89 @@ $('#restorefile').onchange = async e => {
     const o = JSON.parse(await f.text());
     if (!o || o.app !== 'boutique-stock' || typeof o.docs !== 'object') { toast('That is not a backup from this app.'); return; }
     const n = Object.keys(o.docs).filter(k => k.startsWith('sales/')).length;
-    if (!(await ask('Replace everything on this phone with the backup from ' + String(o.savedAt || '').slice(0, 10) + ' (' + n + ' bills)?', 'Restore', true))) return;
+    const where = db.info().cloud ? ' on this phone AND in the Google Sheet' : ' on this phone';
+    if (!(await ask('Replace everything' + where + ' with the backup from ' + String(o.savedAt || '').slice(0, 10) + ' (' + n + ' bills)?', 'Restore', true))) return;
+    if (o.docs['config/meta']) { o.docs['local/meta'] = o.docs['config/meta']; delete o.docs['config/meta']; }
     await db.replaceAll(o.docs); settingsDirty = false; toast('Backup restored');
-  } catch (err) { console.error(err); toast('Could not read that backup file.'); }
+  } catch (err) { console.error(err); toast(err && (err.net || err.server) ? 'Restored on phone, but the cloud could not be updated. Check internet.' : 'Could not read that backup file.'); }
 };
-function showLastBackup() {
-  db.doc('config/meta').onSnapshot(s => { const d = s.data() || {}; $('#lastbackup').textContent = d.lastBackup ? 'Last backup: ' + nice(d.lastBackup) : 'No backup made yet.'; });
+
+/* ---------- cloud settings card ---------- */
+function joinLink() { const c = db.info().cloud; return c ? location.origin + location.pathname + '#connect=' + encodeURIComponent(btoa(JSON.stringify({u: c.url, k: c.key}))) : ''; }
+function renderCloud() {
+  const i = db.info(), el = $('#cloudbox');
+  let st;
+  if (!i.cloud) st = 'Not connected. Data is only on this phone.';
+  else if (i.badKey) st = 'The shop key is not accepted. Connect again with the right key.';
+  else if (i.pending && i.online === false) st = 'No internet. ' + i.pending + ' change(s) saved on the phone, will upload automatically.';
+  else if (i.pending || i.flushing) st = 'Saving ' + i.pending + ' change(s) to the Google Sheet…';
+  else if (i.lastErr) st = i.lastErr;
+  else st = 'Connected to your Google Sheet.' + (i.lastSync ? ' Last synced ' + new Date(i.lastSync).toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit'}) + '.' : '');
+  $('#cloudstatus').textContent = st;
+  $('#cloudform').style.display = i.cloud && !i.badKey ? 'none' : '';
+  $('#cloudon').style.display = i.cloud && !i.badKey ? '' : 'none';
+  el.classList.toggle('on', !!i.cloud);
+  const sync = $('#sync');
+  sync.textContent = !i.cloud ? 'On this phone' : i.badKey ? 'Key wrong' : i.pending ? (i.online === false ? 'Offline · ' + i.pending + ' waiting' : 'Saving…') : i.online === false ? 'Offline' : 'Cloud ✓';
+  const b = $('#banner');
+  if (!i.cloud) { b.innerHTML = 'Your data is only on this phone. <a href="#" id="gocloud">Connect your Google Sheet</a> to store it in the cloud.'; b.classList.add('on'); const g = $('#gocloud'); if (g) g.onclick = ev => { ev.preventDefault(); go('more'); $('#cloudbox').scrollIntoView({behavior: 'smooth'}); }; }
+  else if (i.badKey) { b.textContent = 'Cloud key not accepted - open Settings and connect again.'; b.classList.add('on'); }
+  else b.classList.remove('on');
+  for (const [from, to] of db.renamed.splice(0)) toast('Another phone used ' + from.split('/')[1] + ' - this bill is now ' + to.split('/')[1]);
 }
+async function connectFlow(url, key, auto) {
+  if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(url.trim())) { toast('Paste the Web app URL from Apps Script (starts with https://script.google.com/)'); return; }
+  if (!key.trim()) { toast('Paste the shop key from the Setup tab of your sheet'); return; }
+  $('#cloudgo').disabled = true; toast('Connecting…');
+  try {
+    const p = await db.probe(url, key);
+    let mode = 'use';
+    if (p.empty) mode = 'upload';
+    else if (!auto) {
+      const localBills = sales.filter(b => !b.sample).length;
+      const ok = await ask('The Google Sheet already has ' + p.products + ' products and ' + p.bills + ' bills. This phone will use the sheet\'s data' + (localBills ? ' and its own ' + localBills + ' bill(s) will be replaced - make a backup first if you need them.' : '.'), 'Use sheet data');
+      if (!ok) return;
+    }
+    await db.finishConnect(mode);
+    toast(mode === 'upload' ? 'Connected. This phone\'s data was copied to your Google Sheet.' : 'Connected to your Google Sheet.');
+    renderCloud();
+  } catch (e) {
+    console.error(e);
+    toast(e && e.server === 'bad_key' ? 'Shop key is wrong. Copy it again from the Setup tab.' : e && e.server ? 'The sheet answered with an error: ' + e.server : 'Could not reach the Google Sheet. Check the URL, that access is "Anyone", and your internet.');
+  } finally { $('#cloudgo').disabled = false; }
+}
+$('#cloudgo').onclick = () => connectFlow($('#cloudurl').value, $('#cloudkey').value, false);
+$('#cloudsync').onclick = async () => { toast('Syncing…'); await db.sync(); renderCloud(); const i = db.info(); toast(i.lastErr ? i.lastErr : 'Up to date'); };
+$('#cloudcopy').onclick = async () => { try { await navigator.clipboard.writeText(joinLink()); toast('Staff link copied'); } catch { toast('Copy not allowed - use the WhatsApp button'); } };
+$('#cloudwa').onclick = () => { $('#cloudwa').href = 'https://wa.me/?text=' + encodeURIComponent('Open this link on your phone to use the shop app (keep it private):\n' + joinLink()); };
+$('#cloudoff').onclick = async () => { if (await ask('Disconnect this phone from the Google Sheet? Data already in the sheet stays there. New changes will be saved only on this phone.', 'Disconnect', true)) { await db.disconnect(); renderCloud(); } };
 
 renderAll();
 (async () => {
-  await LocalDB.init();
-  db = LocalDB; downloads = localDownloads;
+  await Store.init();
+  db = Store; downloads = localDownloads;
   try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch {}
-  if (!(await db.doc('config/meta').get()).exists) {
-    for (const op of SEED) await db.doc(op.path).set(op.data);
-    await db.doc('config/meta').set({seeded: true});
+  let join = null;
+  if (location.hash.startsWith('#connect=')) {
+    try { const o = JSON.parse(atob(decodeURIComponent(location.hash.slice(9)))); join = {url: o.u, key: o.k}; } catch {}
+    history.replaceState(null, '', location.pathname + location.search);
   }
-  $('#sync').textContent = 'Saved on phone';
+  if (!join && !db.info().cloud && !(await db.doc('local/meta').get()).exists && db.size() === 0) {
+    for (const op of SEED) await db.doc(op.path).set(op.data);
+  }
+  if (!(await db.doc('local/meta').get()).exists) await db.doc('local/meta').set({seeded: true});
   let raf = 0; const later = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(renderAll); };
   db.doc('config/settings').onSnapshot(s => { const d = s.exists ? s.data() : null; S = Object.assign(structuredClone(DEFAULTS), d ? structuredClone(d) : {}); later(); });
   db.collection('products').onSnapshot(s => { products = new Map(s.docs.map(d => { const x = d.data(); return [x.sku || d.id, Object.assign({}, x, {sku: x.sku || d.id})]; })); later(); });
   db.collection('sales').onSnapshot(s => { sales = s.docs.map(d => Object.assign({id: d.id}, d.data())); later(); });
   db.collection('purchases').onSnapshot(s => { purchases = s.docs.map(d => Object.assign({id: d.id}, d.data())); later(); });
-  showLastBackup();
+  db.doc('local/meta').onSnapshot(s => { const d = s.data() || {}; $('#lastbackup').textContent = d.lastBackup ? 'Last backup: ' + nice(d.lastBackup) : 'No backup made yet.'; });
+  db.onStatus(renderCloud); renderCloud();
+  if (join) { go('more'); await connectFlow(join.url, join.key, true); }
+  db.sync();
+  setInterval(() => { if (document.visibilityState === 'visible') db.sync(); }, 20000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') db.sync(); });
+  addEventListener('online', () => db.sync());
 })();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 }
