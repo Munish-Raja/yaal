@@ -273,6 +273,16 @@ nav.tabs .billtab.on span.dot{box-shadow:0 0 0 2px var(--gold),0 8px 18px -4px r
 .toast{display:block;opacity:0;pointer-events:none;transform:translate(-50%,12px);transition:opacity .25s var(--ease),transform .25s var(--ease);border-radius:999px;padding:11px 18px;background:#123F26;color:var(--cream);box-shadow:0 0 0 1px rgba(192,138,30,.5),0 12px 28px -10px rgba(0,0,0,.6)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .memo{border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 30px -14px rgba(8,30,17,.45)}
+
+/* no re-playing entrance effects when a page is shown again */
+.view.seen>*,.view.seen .kpis .kpi,.fab.seen{animation:none}
+.view.seen .kpi.hero::after{animation:none;display:none}
+.view.seen:not(.anim) .bar i{animation:none}
+main[data-dir=next] .view.on{animation:slideNext .3s cubic-bezier(.22,1,.36,1) both}
+main[data-dir=prev] .view.on{animation:slidePrev .3s cubic-bezier(.22,1,.36,1) both}
+@keyframes slideNext{from{opacity:.35;transform:translate3d(48px,0,0)}to{opacity:1;transform:none}}
+@keyframes slidePrev{from{opacity:.35;transform:translate3d(-48px,0,0)}to{opacity:1;transform:none}}
+.view{will-change:auto}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* ---------- leaf background (from the logo sprig) ---------- */
@@ -1435,7 +1445,7 @@ function labelsForm(onlySku) {
 /* ---------- navigation ---------- */
 function setFab() {
   const f = $('#fab');
-  if (view === 'stock') { f.style.display = 'flex'; f.textContent = stockTab === 'p' ? '+ Product' : '+ Stock in'; }
+  if (view === 'stock') { if (f.style.display === 'none' && f.dataset.shown) f.classList.add('seen'); f.dataset.shown = 1; f.style.display = 'flex'; f.textContent = stockTab === 'p' ? '+ Product' : '+ Stock in'; }
   else f.style.display = 'none';
 }
 $('#fab').onclick = () => { stockTab === 'p' ? productForm(null) : purchaseForm(null); };
@@ -1444,7 +1454,9 @@ function go(v, fromPop) {
   view = v; document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
   if (v === 'bill') setTimeout(() => $('#pq').focus(), 50);
-  if (v === 'home' && v !== prev) { const h = $('#v-home'); h.classList.add('anim'); clearTimeout(go.t); go.t = setTimeout(() => h.classList.remove('anim'), 1200); }
+  const vEl = $('#v-' + v);
+  if (v === 'home' && v !== prev && !vEl.classList.contains('seen')) { vEl.classList.add('anim'); clearTimeout(go.t); go.t = setTimeout(() => vEl.classList.remove('anim'), 1200); }
+  if (!vEl.classList.contains('seen')) setTimeout(() => vEl.classList.add('seen'), 900);
   setFab(); window.scrollTo(0, 0);
   if (fromPop === true || v === prev) return;
   try {
@@ -1460,6 +1472,7 @@ addEventListener('popstate', e => {
   go(st.v || 'home', true);
 });
 try { if (!history.state) history.replaceState({v: 'home'}, ''); } catch {}
+setTimeout(() => { const h = $('#v-home'); h.classList.add('anim', 'seen'); setTimeout(() => h.classList.remove('anim'), 1200); }, 50);
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.dataset.v === view) return; const O = ['home', 'stock', 'bill', 'sales', 'more'], m = document.querySelector('main'); m.dataset.dir = O.indexOf(b.dataset.v) > O.indexOf(view) ? 'next' : 'prev'; go(b.dataset.v); clearTimeout(m._t); m._t = setTimeout(() => { delete m.dataset.dir; }, 450); });
 $('#sg-p').onclick = () => { stockTab = 'p'; $('#sg-p').classList.add('on'); $('#sg-i').classList.remove('on'); $('#stock-p').style.display = ''; $('#stock-i').style.display = 'none'; setFab(); };
 $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('#sg-p').classList.remove('on'); $('#stock-i').style.display = ''; $('#stock-p').style.display = 'none'; setFab(); };
@@ -1498,10 +1511,16 @@ $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('
     const cur = el; mode = ''; el = null;
     cur.style.transition = 'transform .25s var(--ease), opacity .25s var(--ease)';
     if (!target) { cur.style.transform = ''; cur.style.opacity = ''; setTimeout(() => { cur.style.transition = ''; }, 260); return; }
-    cur.style.transform = ''; cur.style.opacity = ''; cur.style.transition = '';
-    main.dataset.dir = dx < 0 ? 'next' : 'prev';
-    go(target);
-    clearTimeout(end.t); end.t = setTimeout(() => { delete main.dataset.dir; }, 450);
+    const dir = dx < 0 ? -1 : 1;
+    cur.style.transition = 'transform .14s cubic-bezier(.4,0,1,1), opacity .14s linear';
+    cur.style.transform = 'translate3d(' + (dir * 60) + 'px,0,0)'; cur.style.opacity = '0';
+    setTimeout(() => {
+      cur.style.transition = 'none'; cur.style.transform = ''; cur.style.opacity = '';
+      main.dataset.dir = dir < 0 ? 'next' : 'prev';
+      go(target);
+      requestAnimationFrame(() => { cur.style.transition = ''; });
+      clearTimeout(end.t); end.t = setTimeout(() => { delete main.dataset.dir; }, 420);
+    }, 130);
     try { navigator.vibrate && navigator.vibrate(8); } catch {}
   };
   main.addEventListener('touchend', end); main.addEventListener('touchcancel', end);
