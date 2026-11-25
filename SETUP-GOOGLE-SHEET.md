@@ -23,7 +23,8 @@ You need a Google (Gmail) account. Only you use it, and only for this setup.
 2. Google asks for permission:
    - Click **Review permissions** and choose your account.
    - You may see **"Google hasn't verified this app"**. That's normal for your own scripts. Click **Advanced → Go to (your project name) (unsafe) → Allow**.
-3. Go back to the sheet. You'll see a new **Setup** tab with your **Shop key** (a long code). You'll also see the tabs **Products**, **Sales**, **Purchases** and **App Settings**.
+3. Google also asks for **Google Drive** permission. This is for product photos, which are saved in a private Drive folder called *YAAL Product Photos*.
+4. Go back to the sheet. You'll see a new **Setup** tab with your **Shop key** (a long code). You'll also see the tabs **Products**, **Sales**, **Purchases** and **App Settings**.
 
 ## 4. Publish it as a web app
 
@@ -50,6 +51,17 @@ On your connected phone, go to **Settings → Send staff link on WhatsApp** (or 
 > Treat the staff link and shop key like a password. Anyone who has them can see and change your shop data.
 
 ---
+
+## Product photos
+
+Photos you take in the app are saved in a Google Drive folder called **YAAL Product Photos**, in the same Google account as the sheet. The folder stays private. The app loads photos through your script, so they're never shared publicly. The sheet only stores a short reference to each photo.
+
+**Already set up the sheet before photos were added?** Update the script once:
+1. Paste the new `google-sheet/Code.gs` over the old code in Apps Script and click **Save**.
+2. Choose **`setup`** and click **Run**. Google asks for one new permission, **Google Drive**. Allow it; this creates the photo folder.
+3. Go to **Deploy → Manage deployments → ✏️ Edit**, set **Version: New version**, then click **Deploy**. The URL stays the same, so phones don't need to reconnect.
+
+Until you do this, photos stay on the phone they were taken on, and upload automatically after the update.
 
 ## How syncing works
 

@@ -17,6 +17,7 @@ Data is stored in **your own Google Sheet** (cloud), so every phone shares the s
   - Product codes (SKUs) are created automatically from the category (e.g. `SAR-004`, `KUR-012`).
   - **Stock in (purchases)**: record new stock from suppliers, with supplier name, bill number and payment status (Paid / Partly Paid / Pending).
   - Current stock = opening stock + stock in − units sold.
+- **Product photos**: take a photo (or pick one from the gallery) when adding or editing a product. Photos show on the product screen and as thumbnails in the stock list and bill search. With the Google Sheet connected, they're saved privately in your Google Drive (folder *YAAL Product Photos*) and appear on every phone. Each phone keeps a copy so photos open quickly, even offline.
 - **Barcodes**
   - Every product gets a Code 128 barcode of its SKU, shown on the product screen.
   - **Barcode labels** (Stock screen) makes a PDF to print: A4 sticker sheets (24 or 40 labels) or label-printer rolls (50×25 or 38×25 mm). Each label has the shop name, product, size, colour, price and barcode.

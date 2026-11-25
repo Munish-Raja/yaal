@@ -25,17 +25,19 @@ function setup() {
   }
   var st = ss.getSheetByName('Setup') || ss.insertSheet('Setup', 0);
   st.clear();
-  st.getRange(1, 1, 6, 2).setValues([
+  st.getRange(1, 1, 7, 2).setValues([
     ['Boutique Stock & Billing - cloud storage', ''],
     ['Shop key (paste into the app)', key],
     ['', ''],
     ['Next step', 'Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone. Copy the Web app URL into the app.'],
     ['Keep the key private', 'Anyone with the Web app URL AND this key can read and change your shop data.'],
-    ['To change the key', 'Run resetKey() in Apps Script, then reconnect every phone.']
+    ['To change the key', 'Run resetKey() in Apps Script, then reconnect every phone.'],
+    ['Product photos', 'Saved privately in the Google Drive folder "YAAL Product Photos" (only you can open it in Drive; the app loads them through this script).']
   ]);
   st.getRange('A1').setFontWeight('bold').setFontSize(14);
   st.getRange('A2:B2').setFontWeight('bold').setBackground('#FFF1D1');
   st.setColumnWidth(1, 240); st.setColumnWidth(2, 520);
+  photoFolder(); // asks for Google Drive permission (product photos are saved there)
   var s1 = ss.getSheetByName('Sheet1');
   if (s1 && s1.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(s1);
   Logger.log('Shop key: ' + key);
@@ -72,6 +74,9 @@ function doPost(e) {
   var key = props.getProperty('SHOP_KEY');
   if (!key || req.key !== key) return out({ok: false, error: 'bad_key'});
   if (req.action === 'load') return out(load(Number(req.since) || 0));
+  if (req.action === 'photo') return out(savePhoto(req));
+  if (req.action === 'getPhoto') return out(getPhoto(req));
+  if (req.action === 'deletePhoto') return out(deletePhoto(req));
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
@@ -240,4 +245,35 @@ function replaceAll(docs) {
   }
   props.setProperty('REV', String(rev));
   return {ok: true, rev: rev};
+}
+
+/* ------------------------------------------------------------------ photos */
+function photoFolder() {
+  var props = PropertiesService.getScriptProperties(), id = props.getProperty('PHOTO_FOLDER');
+  if (id) { try { var f = DriveApp.getFolderById(id); if (!f.isTrashed()) return f; } catch (e) {} }
+  var folder = DriveApp.createFolder('YAAL Product Photos');
+  props.setProperty('PHOTO_FOLDER', folder.getId());
+  return folder;
+}
+
+function savePhoto(req) {
+  if (!req.data) return {ok: false, error: 'no_photo'};
+  var bytes = Utilities.base64Decode(req.data);
+  if (bytes.length > 4 * 1024 * 1024) return {ok: false, error: 'photo_too_large'};
+  var name = String(req.name || 'photo').replace(/[^A-Za-z0-9_-]/g, '_') + '_' + new Date().getTime() + '.jpg';
+  var file = photoFolder().createFile(Utilities.newBlob(bytes, req.mime || 'image/jpeg', name));
+  return {ok: true, id: file.getId()};
+}
+
+function getPhoto(req) {
+  try {
+    var file = DriveApp.getFileById(String(req.id || ''));
+    var blob = file.getBlob();
+    return {ok: true, mime: blob.getContentType(), data: Utilities.base64Encode(blob.getBytes())};
+  } catch (e) { return {ok: false, error: 'photo_not_found'}; }
+}
+
+function deletePhoto(req) {
+  try { DriveApp.getFileById(String(req.id || '')).setTrashed(true); } catch (e) {}
+  return {ok: true};
 }
