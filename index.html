@@ -185,7 +185,8 @@ a{color:var(--maroon2)}
 .photoline.bad{background:#FDE9E6;border-color:#F2B8B1;color:#8A1F17}
 .photoline ol{margin:6px 0 0;padding-left:20px}
 
-main{touch-action:pan-y}
+main{touch-action:pan-y;min-height:calc(100dvh - 70px)}
+body{touch-action:pan-y}
 main[data-dir=next] .view.on{animation:slideNext .36s var(--ease) both}
 main[data-dir=prev] .view.on{animation:slidePrev .36s var(--ease) both}
 @keyframes slideNext{from{opacity:0;transform:translate3d(36px,0,0)}to{opacity:1;transform:none}}
@@ -1484,13 +1485,13 @@ $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('
   const ORDER = ['home', 'stock', 'bill', 'sales', 'more'];
   const main = document.querySelector('main');
   let x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = '', el = null;
-  const blocked = t => t.closest('.chips, .scroll, .scanbox, [data-noswipe], textarea');
-  main.addEventListener('touchstart', e => {
+  const blocked = t => t.closest('.chips, .scroll, .scanbox, [data-noswipe], textarea, header, nav, .sheetwrap, .fab, .toast');
+  document.addEventListener('touchstart', e => {
     mode = ''; dx = 0;
     if (e.touches.length !== 1 || $('#sheetwrap').classList.contains('on') || blocked(e.target)) { mode = 'off'; return; }
     x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); el = document.querySelector('.view.on');
   }, {passive: true});
-  main.addEventListener('touchmove', e => {
+  document.addEventListener('touchmove', e => {
     if (mode === 'off' || !el) return;
     const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
     if (!mode) {
@@ -1517,7 +1518,7 @@ $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('
     requestAnimationFrame(() => { cur.style.transition = ''; });
     try { navigator.vibrate && navigator.vibrate(8); } catch {}
   };
-  main.addEventListener('touchend', end); main.addEventListener('touchcancel', end);
+  document.addEventListener('touchend', end); document.addEventListener('touchcancel', end);
 })();
 
 /* ---------- data: phone copy + Google Sheet cloud ---------- */
