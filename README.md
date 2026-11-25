@@ -1,4 +1,4 @@
-# Boutique Stock & Billing
+# YAAL Stock & Billing
 
 A simple billing and stock app for small clothing shops (sarees, chudithar sets, kurtis, dupattas and more). It runs in the phone's browser, installs to the home screen like an app, works **offline**, and needs **no sign-in**.
 
@@ -47,7 +47,8 @@ Data is stored in **your own Google Sheet** (cloud), so every phone shares the s
 | `manifest.webmanifest` | App name, colours and icons, so Chrome can install it |
 | `sw.js` | Service worker: caches the app so it opens offline |
 | `xlsx.full.min.js` | [SheetJS](https://sheetjs.com/) 0.18.5, used for Excel export and import, bundled so it works offline |
-| `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` | App icons |
+| `logo.png` | YAAL logo (header and bills) |
+| `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` | App icons (made from the logo) |
 
 There is no build step and there are no dependencies to install.
 
