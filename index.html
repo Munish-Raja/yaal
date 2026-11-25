@@ -185,7 +185,10 @@ a{color:var(--maroon2)}
 .photoline.bad{background:#FDE9E6;border-color:#F2B8B1;color:#8A1F17}
 .photoline ol{margin:6px 0 0;padding-left:20px}
 
-main{touch-action:pan-y;min-height:calc(100dvh - 70px)}
+main{touch-action:pan-y;min-height:calc(100dvh - var(--hh,70px));display:flex;flex-direction:column}
+main>.banner{flex:none}
+#v-sales.on{flex:1;display:flex;flex-direction:column}
+#v-sales.on>#slist{flex:1;margin-bottom:0}
 body{touch-action:pan-y}
 main[data-dir=next] .view.on{animation:slideNext .36s var(--ease) both}
 main[data-dir=prev] .view.on{animation:slidePrev .36s var(--ease) both}
@@ -1480,6 +1483,8 @@ $('#sg-p').onclick = () => { stockTab = 'p'; $('#sg-p').classList.add('on'); $('
 $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('#sg-p').classList.remove('on'); $('#stock-i').style.display = ''; $('#stock-p').style.display = 'none'; setFab(); };
 
 
+/* ---------- header height for full-height pages ---------- */
+(() => { const h = document.querySelector('header.top'), set = () => document.documentElement.style.setProperty('--hh', h.offsetHeight + 'px'); set(); addEventListener('resize', set); if ('ResizeObserver' in window) new ResizeObserver(set).observe(h); })();
 /* ---------- swipe left / right between pages ---------- */
 (() => {
   const ORDER = ['home', 'stock', 'bill', 'sales', 'more'];
