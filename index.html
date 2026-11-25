@@ -148,7 +148,7 @@ a{color:var(--maroon2)}
 .scanbox.hit .scanframe{animation:hit .5s ease-out}
 @keyframes hit{0%{border-color:#7CE0A0;box-shadow:0 0 0 999px rgba(15,74,42,.45)}100%{}}
 .ssumrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 2px 10px}
-.btn.slim{min-height:38px;padding:0 12px;font-size:14px;border-radius:12px}
+.btn.slim{min-height:38px;padding:0 12px;font-size:14px;border-radius:12px;white-space:nowrap;flex:none}
 .bcbox{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px dashed var(--line);border-radius:12px;padding:6px 10px;margin-top:6px}
 .bcbox svg{max-width:70%;height:auto}
 
@@ -241,6 +241,33 @@ nav.tabs .billtab.on span.dot{box-shadow:0 0 0 2px var(--gold),0 8px 18px -4px r
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .memo{border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 30px -14px rgba(8,30,17,.45)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ---------- leaf background (from the logo sprig) ---------- */
+body::before,body::after{content:"";position:fixed;pointer-events:none;z-index:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Cdefs%3E%3ClinearGradient id='lg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236FA35A'/%3E%3Cstop offset='.55' stop-color='%232F6B39'/%3E%3Cstop offset='1' stop-color='%23174A2A'/%3E%3C/linearGradient%3E%3ClinearGradient id='lg2' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%238DB36A'/%3E%3Cstop offset='1' stop-color='%232A5F33'/%3E%3C/linearGradient%3E%3ClinearGradient id='stem' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23C08A1E'/%3E%3Cstop offset='1' stop-color='%232F6B39'/%3E%3C/linearGradient%3E%3CradialGradient id='gold'%3E%3Cstop offset='0' stop-color='%23F2CF6B'/%3E%3Cstop offset='1' stop-color='%23B9801A'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cpath d='M40 560 Q250 330 560 40' stroke='url%28%23stem%29' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3Cpath transform='translate%2883.0 513.4%29 rotate%281.0%29' fill='url%28%23lg%29' d='M0 0C28.6 -32.5 85.9 -32.5 114.6 0C85.9 32.5 28.6 32.5 0 0Z'/%3E%3Cpath transform='translate%2883.0 513.4%29 rotate%281.0%29' stroke='%230B3A20' stroke-opacity='.35' stroke-width='1.2' fill='none' d='M2 0L105.4 0'/%3E%3Cpath transform='translate%28128.0 465.6%29 rotate%28-94.5%29' fill='url%28%23lg%29' d='M0 0C27.3 -30.9 81.9 -30.9 109.2 0C81.9 30.9 27.3 30.9 0 0Z'/%3E%3Cpath transform='translate%28128.0 465.6%29 rotate%28-94.5%29' stroke='%230B3A20' stroke-opacity='.35' stroke-width='1.2' fill='none' d='M2 0L100.5 0'/%3E%3Cpath transform='translate%28175.0 416.6%29 rotate%282.1%29' fill='url%28%23lg2%29' d='M0 0C25.9 -29.4 77.8 -29.4 103.8 0C77.8 29.4 25.9 29.4 0 0Z'/%3E%3Cpath transform='translate%28175.0 416.6%29 rotate%282.1%29' stroke='%230B3A20' stroke-opacity='.35' stroke-width='1.2' fill='none' d='M2 0L95.5 0'/%3E%3Cpath transform='translate%28224.0 366.4%29 rotate%28-93.5%29' fill='url%28%23lg%29' d='M0 0C24.6 -27.9 73.8 -27.9 98.4 0C73.8 27.9 24.6 27.9 0 0Z'/%3E%3Cpath transform='translate%28224.0 366.4%29 rotate%28-93.5%29' stroke='%230B3A20' stroke-opacity='.35' stroke-width='1.2' fill='none' d='M2 0L90.5 0'/%3E%3Cpath transform='translate%28275.0 315.0%29 rotate%283.0%29' fill='url%28%23lg%29' d='M0 0C23.2 -26.4 69.8 -26.4 93.0 0C69.8 26.4 23.2 26.4 0 0Z'/%3E%3Cpath transform='translate%28275.0 315.0%29 rotate%283.0%29' stroke='%230B3A20' stroke-opacity='.35' stroke-width='1.2' fill='none' d='M2 0L85.6 0'/%3E%3Cpath transform='translate%28328.0 262.4%29 rotate%28-92.6%29' fill='url%28%23lg2%29' d='M0 0C21.9 -24.8 65.7 -24.8 87.6 0C65.7 24.8 21.9 24.8 0 0Z'/%3E%3Cpath transform='translate%28328.0 262.4%29 rotate%28-92.6%29' stroke='%230B3A20' stroke-opacity='.35' stroke-width='1.2' fill='none' d='M2 0L80.6 0'/%3E%3Cpath transform='translate%28383.0 208.6%29 rotate%283.8%29' fill='url%28%23lg%29' d='M0 0C20.6 -23.3 61.7 -23.3 82.2 0C61.7 23.3 20.6 23.3 0 0Z'/%3E%3Cpath transform='translate%28383.0 208.6%29 rotate%283.8%29' stroke='%230B3A20' stroke-opacity='.35' stroke-width='1.2' fill='none' d='M2 0L75.6 0'/%3E%3Cpath transform='translate%28440.0 153.6%29 rotate%28-91.8%29' fill='url%28%23lg%29' d='M0 0C19.2 -21.8 57.6 -21.8 76.8 0C57.6 21.8 19.2 21.8 0 0Z'/%3E%3Cpath transform='translate%28440.0 153.6%29 rotate%28-91.8%29' stroke='%230B3A20' stroke-opacity='.35' stroke-width='1.2' fill='none' d='M2 0L70.7 0'/%3E%3Cpath transform='translate%28499.0 97.4%29 rotate%284.6%29' fill='url%28%23lg2%29' d='M0 0C17.8 -20.2 53.5 -20.2 71.4 0C53.5 20.2 17.8 20.2 0 0Z'/%3E%3Cpath transform='translate%28499.0 97.4%29 rotate%284.6%29' stroke='%230B3A20' stroke-opacity='.35' stroke-width='1.2' fill='none' d='M2 0L65.7 0'/%3E%3Ccircle cx='300' cy='250' r='9' fill='url%28%23gold%29'/%3E%3Ccircle cx='322' cy='228' r='7' fill='url%28%23gold%29'/%3E%3Ccircle cx='286' cy='222' r='8' fill='url%28%23gold%29'/%3E%3Ccircle cx='345' cy='262' r='6' fill='url%28%23gold%29'/%3E%3Cpath d='M262 292 Q290 250 300 250 M300 250 Q312 236 322 228 M300 250 Q292 232 286 222 M300 250 Q330 255 345 262' stroke='%23B9801A' stroke-opacity='.7' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat center/contain}
+body::before{width:min(78vw,520px);aspect-ratio:1;top:56px;right:-14vw;opacity:.5;transform:rotate(8deg)}
+body::after{width:min(62vw,400px);aspect-ratio:1;bottom:40px;left:-16vw;opacity:.34;transform:scaleX(-1) rotate(160deg)}
+html{background:#0F4127}
+body{background:radial-gradient(120% 60% at 100% 0%,rgba(111,163,90,.30),transparent 60%),radial-gradient(90% 50% at 0% 100%,rgba(192,138,30,.16),transparent 65%),linear-gradient(180deg,#0D3A22 0%,#124A2C 55%,#175634 100%) fixed}
+main{position:relative;z-index:1}
+/* ---------- smoother, lighter motion ---------- */
+:root{--ease:cubic-bezier(.22,1,.36,1)}
+header.top,nav.tabs,.sheetwrap{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.sheetwrap{background:rgba(10,24,15,.55);transition:background .25s}
+.sheetwrap.on{animation:fade .28s var(--ease)}
+.sheet{max-height:92dvh;will-change:transform;transform:translate3d(0,0,0);animation:sheetUp .42s var(--ease);contain:layout paint}
+@keyframes sheetUp{from{transform:translate3d(0,100%,0)}to{transform:translate3d(0,0,0)}}
+.sheetwrap.closing{opacity:0;transition:opacity .22s ease-in}
+.sheetwrap.closing .sheet{transform:translate3d(0,40px,0);transition:transform .22s ease-in}
+.view.on{animation:viewIn .32s var(--ease) both}
+.view.on>*{animation:rise .42s var(--ease) both}
+@keyframes rise{from{opacity:0;transform:translate3d(0,8px,0)}to{opacity:1;transform:none}}
+.kpi.hero::after{animation:sheen 1.6s var(--ease) .6s 1 both}
+.bar i{animation:none}
+.anim .bar i{animation:grow .8s var(--ease) both}
+.bcbox{min-height:78px}
+.bcbox svg{height:64px;width:auto}
+.kpi.tap{cursor:pointer}
+.kpi.tap:active{transform:scale(.98)}
 </style>
 </head>
 <body>
@@ -295,7 +322,7 @@ nav.tabs .billtab.on span.dot{box-shadow:0 0 0 2px var(--gold),0 8px 18px -4px r
       <div class="search"><input id="sq" type="search" placeholder="Search products…" autocomplete="off"></div>
       <div class="chips" id="schips"></div>
       <div class="chips" id="sstat"></div>
-      <div class="ssumrow"><div class="small mute" id="ssum"></div><button class="btn gold slim" id="labelsbtn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6v12M7 6v12M10 6v12M14 6v12M17 6v12M20 6v12"/></svg>Barcode labels</button></div>
+      <div class="ssumrow"><div class="small mute" id="ssum"></div><button class="btn gold slim" id="labelsbtn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6v12M7 6v12M10 6v12M14 6v12M17 6v12M20 6v12"/></svg>Labels</button></div>
       <div class="list" id="plist"></div>
     </div>
     <div id="stock-i" style="display:none">
@@ -323,7 +350,7 @@ nav.tabs .billtab.on span.dot{box-shadow:0 0 0 2px var(--gold),0 8px 18px -4px r
         <div><label for="st-phone">Phone</label><input id="st-phone" inputmode="tel"></div>
         <div><label for="st-gstin">GSTIN (blank if none)</label><input id="st-gstin"></div>
         <div><label for="st-prefix">Invoice prefix</label><input id="st-prefix"></div>
-        <div><label for="st-reorder">Default reorder level</label><input id="st-reorder" type="number" min="0"></div>
+        <div><label for="st-reorder">Low-stock alert at (pieces)</label><input id="st-reorder" type="number" min="0"></div>
       </div>
       <label for="st-footer">Bill footer note</label><input id="st-footer">
       <h3>GST</h3>
@@ -417,7 +444,7 @@ const safeId = s => String(s).trim().replace(/[^A-Za-z0-9_\-.~:@+]/g, '-').repla
 
 const DEFAULTS = {
   name: 'YAAL Clothing Brand', address: '', phone: '', gstin: '', prefix: 'YAAL-', footer: 'Rooted in Tradition. Styled for Today. Thank you for shopping with us!',
-  reorder: 3, gstReg: 'No', inclGst: 'Yes', threshold: 2500, low: 5, high: 18, flat: 5,
+  reorder: 1, gstReg: 'No', inclGst: 'Yes', threshold: 2500, low: 5, high: 18, flat: 5,
   categories: [
     {name:'Saree', code:'SAR', rule:'Flat'}, {name:'Chudithar Set (stitched)', code:'CHU', rule:'Slab'},
     {name:'Chudithar Material (unstitched)', code:'CHM', rule:'Flat'}, {name:'Salwar Suit', code:'SAL', rule:'Slab'},
@@ -519,13 +546,16 @@ function recompute() {
   for (const p of purchases) inQty.set(p.sku, (inQty.get(p.sku) || 0) + num(p.qty));
   for (const [sku, p] of products) stock.set(sku, num(p.opening) + (inQty.get(sku) || 0) - (soldQty.get(sku) || 0));
 }
+function reorderOf(p) { const r = num(p.reorder); return r > 0 ? r : Math.max(0, num(S.reorder)); }
 function status(p) {
-  const s = stock.get(p.sku) || 0, lvl = p.reorder === '' || p.reorder == null ? num(S.reorder) : num(p.reorder);
+  const s = stock.get(p.sku) || 0, lvl = reorderOf(p);
   if (s <= 0) return ['Out of stock', 'b-bad'];
   if (s <= lvl) return ['Low: ' + s + ' left', 'b-warn'];
   return [s + ' in stock', 'b-ok'];
 }
-function isLow(p) { const s = stock.get(p.sku) || 0, lvl = p.reorder === '' || p.reorder == null ? num(S.reorder) : num(p.reorder); return s <= lvl; }
+function isLow(p) { const s = stock.get(p.sku) || 0; return s <= reorderOf(p); }
+function isLowOnly(p) { const s = stock.get(p.sku) || 0; return s > 0 && s <= reorderOf(p); }
+function isOut(p) { return (stock.get(p.sku) || 0) <= 0; }
 function billProfit(b) { return (b.items || []).reduce((a, it) => a + num(it.taxable) - num(it.qty) * num(it.cost), 0); }
 function nextInvoice() {
   const pre = S.prefix || ''; let mx = 0;
@@ -555,7 +585,7 @@ function renderHome() {
   const todays = sales.filter(b => b.date === t), months = sales.filter(b => monthStr(b.date || '') === m);
   const sum = arr => arr.reduce((a, b) => a + num(b.total), 0);
   let value = 0, pcs = 0, low = 0, out = 0;
-  for (const p of products.values()) { const s = stock.get(p.sku) || 0; value += Math.max(s, 0) * num(p.cost); pcs += Math.max(s, 0); if (s <= 0) out++; else if (isLow(p)) low++; }
+  for (const p of products.values()) { const s = stock.get(p.sku) || 0; value += Math.max(s, 0) * num(p.cost); pcs += Math.max(s, 0); if (isOut(p)) out++; else if (isLowOnly(p)) low++; }
   const k = [
     ['hero', "Today's sales · " + todays.length + ' bill' + (todays.length === 1 ? '' : 's'), R0(sum(todays))],
     ['', 'This month', R0(sum(months))],
@@ -567,7 +597,7 @@ function renderHome() {
   ];
   const heroVal = sum(todays);
   if (!$('#kpis').children.length) $('#kpis').innerHTML = k.map(([c, l, v]) => '<div class="kpi ' + c + '"><span></span><b></b></div>').join('');
-  [...$('#kpis').children].forEach((el, n) => { if (!k[n]) return; el.className = 'kpi ' + k[n][0]; el.firstChild.textContent = k[n][1]; if (n) el.lastChild.textContent = k[n][2]; });
+  [...$('#kpis').children].forEach((el, n) => { if (!k[n]) return; el.className = 'kpi ' + k[n][0] + (n === 5 ? ' tap' : ''); if (n === 5) el.onclick = () => { statFilter = out ? 'Out of stock' : 'Low stock'; catFilter = 'All'; go('stock'); $('#sg-p').click(); renderProducts(); }; el.firstChild.textContent = k[n][1]; if (n) el.lastChild.textContent = k[n][2]; });
   countUp($('#kpis .kpi.hero b'), heroVal);
 
   const now = new Date(), ms = [];
@@ -575,10 +605,12 @@ function renderHome() {
   const mv = ms.map(mm => sum(sales.filter(b => monthStr(b.date || '') === mm))), mx = Math.max(1, ...mv);
   $('#monthbars').innerHTML = ms.map((mm, i) => '<div class="bar"><span>' + nice(mm + '-01').slice(3, 6) + '</span><i class="' + (i === 5 ? 'g' : '') + '" style="width:' + (mv[i] / mx * 100).toFixed(1) + '%"></i><em>' + R0(mv[i]) + '</em></div>').join('');
 
-  const lows = [...products.values()].filter(isLow).sort((a, b) => (stock.get(a.sku) || 0) - (stock.get(b.sku) || 0)).slice(0, 8);
-  $('#lowlist').innerHTML = lows.length ? lows.map(p => { const [t2, c] = status(p); return '<button class="row" data-instock="' + esc(p.sku) + '"><div class="grow"><div class="t">' + esc(p.name) + '</div><div class="s">' + esc(p.sku) + ' · ' + esc(p.size || '') + '</div></div><span class="badge ' + c + '">' + esc(t2) + '</span></button>'; }).join('')
+  const allLow = [...products.values()].filter(isLow).sort((a, b) => (stock.get(a.sku) || 0) - (stock.get(b.sku) || 0) || a.sku.localeCompare(b.sku));
+  const lows = allLow.slice(0, 8);
+  $('#lowlist').innerHTML = lows.length ? lows.map(p => { const [t2, c] = status(p); return '<button class="row" data-instock="' + esc(p.sku) + '"><div class="grow"><div class="t">' + esc(p.name) + '</div><div class="s">' + esc(p.sku) + ' · ' + esc(p.size || '') + '</div></div><span class="badge ' + c + '">' + esc(t2) + '</span></button>'; }).join('') +
+    (allLow.length > 8 ? '<button class="row" id="morelow" style="justify-content:center;font-weight:600;color:var(--maroon2)">See all ' + allLow.length + ' items to restock →</button>' : '')
     : '<div class="empty">Everything is well stocked.</div>';
-
+  const ml = $('#morelow'); if (ml) ml.onclick = e => { e.stopPropagation(); statFilter = allLow.some(isOut) ? 'Out of stock' : 'Low stock'; catFilter = 'All'; go('stock'); $('#sg-p').click(); renderProducts(); };
   const agg = new Map(), cagg = new Map();
   for (const b of months) for (const it of b.items || []) {
     const a = agg.get(it.sku) || {name: it.name, size: it.size, qty: 0, amt: 0}; a.qty += num(it.qty); a.amt += num(it.total); agg.set(it.sku, a);
@@ -721,10 +753,11 @@ function showBill(b) {
 function renderProducts() {
   const cats = ['All', ...S.categories.map(c => c.name)];
   $('#schips').innerHTML = cats.map(c => '<button class="chip' + (c === catFilter ? ' on' : '') + '" data-cat="' + esc(c) + '">' + esc(c) + '</button>').join('');
-  $('#sstat').innerHTML = ['All', 'Low stock', 'Out of stock'].map(c => '<button class="chip' + (c === statFilter ? ' on' : '') + '" data-stat="' + esc(c) + '">' + esc(c) + '</button>').join('');
+  const nLow = [...products.values()].filter(isLowOnly).length, nOut = [...products.values()].filter(isOut).length;
+  $('#sstat').innerHTML = [['All', ''], ['Low stock', nLow], ['Out of stock', nOut]].map(([c, n]) => '<button class="chip' + (c === statFilter ? ' on' : '') + '" data-stat="' + esc(c) + '">' + esc(c) + (n !== '' ? ' · ' + n : '') + '</button>').join('');
   const q = $('#sq').value.trim().toLowerCase();
   const list = [...products.values()].filter(p => (catFilter === 'All' || p.category === catFilter) &&
-    (statFilter === 'All' || (statFilter === 'Low stock' ? isLow(p) && (stock.get(p.sku) || 0) > 0 : (stock.get(p.sku) || 0) <= 0)) &&
+    (statFilter === 'All' || (statFilter === 'Low stock' ? isLowOnly(p) : isOut(p))) &&
     (!q || (p.name + ' ' + p.sku + ' ' + (p.colour || '') + ' ' + (p.fabric || '')).toLowerCase().includes(q))).sort((a, b) => a.sku.localeCompare(b.sku));
   let pcs = 0, val = 0; for (const p of list) { const s = Math.max(0, stock.get(p.sku) || 0); pcs += s; val += s * num(p.cost); }
   $('#ssum').textContent = list.length + ' products · ' + pcs.toLocaleString('en-IN') + ' pieces · ' + R0(val) + ' at cost';
@@ -749,7 +782,7 @@ function productForm(sku) {
     '<div><label for="f-cost">Cost price ₹</label><input id="f-cost" type="number" inputmode="decimal" min="0" value="' + esc(p ? p.cost : '') + '"></div>' +
     '<div><label for="f-price">Selling price ₹</label><input id="f-price" type="number" inputmode="decimal" min="0" value="' + esc(p ? p.price : '') + '"></div>' +
     '<div><label for="f-open">Opening stock</label><input id="f-open" type="number" inputmode="numeric" value="' + esc(p ? p.opening : 0) + '"></div>' +
-    '<div><label for="f-re">Reorder level</label><input id="f-re" type="number" inputmode="numeric" min="0" value="' + esc(p ? p.reorder : '') + '" placeholder="' + esc(S.reorder) + '"></div></div>' +
+    '<div><label for="f-re">Low-stock alert at</label><input id="f-re" type="number" inputmode="numeric" min="0" value="' + esc(p && num(p.reorder) > 0 ? p.reorder : '') + '" placeholder="Shop default: ' + esc(S.reorder) + '"></div></div>' +
     '<p class="small mute" id="f-margin"></p>' +
     (p ? '<div class="bcbox"><svg id="f-bc"></svg><button class="btn slim" id="f-label">Print label</button></div>' : '') +
     '<div class="btns" style="margin-top:8px">' + (p ? '<button class="btn danger" id="f-del">Delete</button><button class="btn" id="f-stock">+ Stock in</button>' : '<button class="btn" id="f-cancel">Cancel</button>') + '<button class="btn p" id="f-save">Save</button></div>');
@@ -1201,6 +1234,7 @@ function go(v, fromPop) {
   view = v; document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
   if (v === 'bill') setTimeout(() => $('#pq').focus(), 50);
+  if (v === 'home' && v !== prev) { const h = $('#v-home'); h.classList.add('anim'); clearTimeout(go.t); go.t = setTimeout(() => h.classList.remove('anim'), 1200); }
   setFab(); window.scrollTo(0, 0);
   if (fromPop === true || v === prev) return;
   try {
