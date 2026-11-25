@@ -17,6 +17,12 @@ Data is stored in **your own Google Sheet** (cloud), so every phone shares the s
   - Product codes (SKUs) are created automatically from the category (e.g. `SAR-004`, `KUR-012`).
   - **Stock in (purchases)**: record new stock from suppliers, with supplier name, bill number and payment status (Paid / Partly Paid / Pending).
   - Current stock = opening stock + stock in − units sold.
+- **Barcodes**
+  - Every product gets a Code 128 barcode of its SKU, shown on the product screen.
+  - **Barcode labels** (Stock screen) makes a PDF to print: A4 sticker sheets (24 or 40 labels) or label-printer rolls (50×25 or 38×25 mm). Each label has the shop name, product, size, colour, price and barcode.
+  - **Scan** on the New bill screen uses the phone camera; every scanned item is added to the bill. USB or Bluetooth barcode scanners also work: they type into the search box and press Enter.
+  - Scanning an invoice barcode (printed on every PDF bill) opens that bill.
+- **PDF bills**: each bill can be sent as a PDF through the share menu (choose WhatsApp), or downloaded to the phone.
 - **Bills**: bill history by month, search by customer, phone or invoice number, and monthly sales and profit totals. Deleting a bill puts its items back into stock.
 - **Home**: today's sales, this month's sales and profit, stock value, low-stock count, last 6 months, items to restock, top sellers and sales by category.
 - **GST (India)**
@@ -46,6 +52,9 @@ Data is stored in **your own Google Sheet** (cloud), so every phone shares the s
 | `SETUP-GOOGLE-SHEET.md` | Step-by-step cloud setup |
 | `manifest.webmanifest` | App name, colours and icons, so Chrome can install it |
 | `sw.js` | Service worker: caches the app so it opens offline |
+| `jspdf.min.js` | [jsPDF](https://github.com/parallax/jsPDF) 2.5.2, makes PDF bills and label sheets |
+| `jsbarcode.min.js` | [JsBarcode](https://github.com/lindell/JsBarcode) 3.11.6, draws barcodes |
+| `zxing.min.js` | [ZXing](https://github.com/zxing-js/library) 0.21.3, reads barcodes from the camera on phones without built-in barcode detection |
 | `xlsx.full.min.js` | [SheetJS](https://sheetjs.com/) 0.18.5, used for Excel export and import, bundled so it works offline |
 | `logo.png` | YAAL logo (header and bills) |
 | `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` | App icons (made from the logo) |
@@ -83,6 +92,14 @@ Then turn on Pages as in steps 3 and 4.
 3. Open it from the new ₹ icon. After the first visit, it works without internet.
 
 To get an actual `.apk` / Play Store package, paste your GitHub Pages link into [PWABuilder](https://www.pwabuilder.com/) and choose **Android**.
+
+## Barcodes and labels: tips
+
+- Print label PDFs at **100% / Actual size** (not "Fit to page") so they line up with the sticker sheet.
+- For a label printer, set the paper size in the printer settings to match the label (50×25 or 38×25 mm).
+- The camera needs the app to be opened from its `https://` link (GitHub Pages is fine). Allow camera access when Chrome asks.
+- Each scan adds one piece. To add a second piece of the same item, move the camera away and scan again, or tap **+** on the bill.
+- PDF sharing uses the phone's share menu. Pick WhatsApp, then the customer's chat. On computers, the PDF downloads and WhatsApp opens with the bill text, so you attach the PDF yourself.
 
 ## Your data
 
