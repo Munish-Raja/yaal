@@ -184,6 +184,13 @@ a{color:var(--maroon2)}
 .photoline{margin-top:12px;padding:10px 12px;border-radius:12px;background:#F7EFD9;border:1px solid var(--line);font-size:14px}
 .photoline.bad{background:#FDE9E6;border-color:#F2B8B1;color:#8A1F17}
 .photoline ol{margin:6px 0 0;padding-left:20px}
+
+main{touch-action:pan-y}
+main[data-dir=next] .view.on{animation:slideNext .36s var(--ease) both}
+main[data-dir=prev] .view.on{animation:slidePrev .36s var(--ease) both}
+@keyframes slideNext{from{opacity:0;transform:translate3d(36px,0,0)}to{opacity:1;transform:none}}
+@keyframes slidePrev{from{opacity:0;transform:translate3d(-36px,0,0)}to{opacity:1;transform:none}}
+main[data-dir] .view.on>*{animation:none}
 /* ---------- premium layer ---------- */
 :root{--sh1:0 1px 1px rgba(8,30,17,.10),0 2px 6px -1px rgba(8,30,17,.16);--sh2:0 1px 2px rgba(8,30,17,.12),0 10px 28px -10px rgba(8,30,17,.45);--ease:cubic-bezier(.2,.8,.2,1);--hair:rgba(192,138,30,.30)}
 h2,h3{font-family:Marcellus,Georgia,serif;font-weight:400;letter-spacing:.03em}
@@ -1453,9 +1460,52 @@ addEventListener('popstate', e => {
   go(st.v || 'home', true);
 });
 try { if (!history.state) history.replaceState({v: 'home'}, ''); } catch {}
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(b.dataset.v); });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.dataset.v === view) return; const O = ['home', 'stock', 'bill', 'sales', 'more'], m = document.querySelector('main'); m.dataset.dir = O.indexOf(b.dataset.v) > O.indexOf(view) ? 'next' : 'prev'; go(b.dataset.v); clearTimeout(m._t); m._t = setTimeout(() => { delete m.dataset.dir; }, 450); });
 $('#sg-p').onclick = () => { stockTab = 'p'; $('#sg-p').classList.add('on'); $('#sg-i').classList.remove('on'); $('#stock-p').style.display = ''; $('#stock-i').style.display = 'none'; setFab(); };
 $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('#sg-p').classList.remove('on'); $('#stock-i').style.display = ''; $('#stock-p').style.display = 'none'; setFab(); };
+
+
+/* ---------- swipe left / right between pages ---------- */
+(() => {
+  const ORDER = ['home', 'stock', 'bill', 'sales', 'more'];
+  const main = document.querySelector('main');
+  let x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = '', el = null;
+  const blocked = t => t.closest('.chips, .scroll, .scanbox, [data-noswipe]') || (t.matches('input, textarea') && t === document.activeElement);
+  main.addEventListener('touchstart', e => {
+    mode = ''; dx = 0;
+    if (e.touches.length !== 1 || $('#sheetwrap').classList.contains('on') || blocked(e.target)) { mode = 'off'; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); el = document.querySelector('.view.on');
+  }, {passive: true});
+  main.addEventListener('touchmove', e => {
+    if (mode === 'off' || !el) return;
+    const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
+    if (!mode) {
+      if (Math.abs(mx) > 14 && Math.abs(mx) > Math.abs(my) * 1.6) mode = 'x';
+      else if (Math.abs(my) > 10) { mode = 'off'; return; }
+      else return;
+    }
+    const i = ORDER.indexOf(view), edge = (mx > 0 && i === 0) || (mx < 0 && i === ORDER.length - 1);
+    dx = mx;
+    el.style.transition = 'none';
+    el.style.transform = 'translate3d(' + (edge ? mx * .12 : mx * .35) + 'px,0,0)';
+    el.style.opacity = String(1 - Math.min(.35, Math.abs(mx) / 900));
+    if (e.cancelable) e.preventDefault();
+  }, {passive: false});
+  const end = () => {
+    if (mode !== 'x' || !el) { mode = ''; return; }
+    const v = Math.abs(dx) / Math.max(1, Date.now() - t0), i = ORDER.indexOf(view);
+    const target = (Math.abs(dx) > 70 || v > .45) ? (dx < 0 ? ORDER[i + 1] : ORDER[i - 1]) : null;
+    const cur = el; mode = ''; el = null;
+    cur.style.transition = 'transform .25s var(--ease), opacity .25s var(--ease)';
+    if (!target) { cur.style.transform = ''; cur.style.opacity = ''; setTimeout(() => { cur.style.transition = ''; }, 260); return; }
+    cur.style.transform = ''; cur.style.opacity = ''; cur.style.transition = '';
+    main.dataset.dir = dx < 0 ? 'next' : 'prev';
+    go(target);
+    clearTimeout(end.t); end.t = setTimeout(() => { delete main.dataset.dir; }, 450);
+    try { navigator.vibrate && navigator.vibrate(8); } catch {}
+  };
+  main.addEventListener('touchend', end); main.addEventListener('touchcancel', end);
+})();
 
 /* ---------- data: phone copy + Google Sheet cloud ---------- */
 const CLOUD_LS = 'boutique-cloud';
