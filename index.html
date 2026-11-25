@@ -1451,6 +1451,7 @@ function setFab() {
 $('#fab').onclick = () => { stockTab === 'p' ? productForm(null) : purchaseForm(null); };
 function go(v, fromPop) {
   const prev = view;
+  if (v !== prev) { const O = ['home', 'stock', 'bill', 'sales', 'more']; document.querySelector('main').dataset.dir = O.indexOf(v) > O.indexOf(prev) ? 'next' : 'prev'; }
   view = v; document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
   if (v === 'bill') setTimeout(() => $('#pq').focus(), 50);
@@ -1473,7 +1474,7 @@ addEventListener('popstate', e => {
 });
 try { if (!history.state) history.replaceState({v: 'home'}, ''); } catch {}
 setTimeout(() => { const h = $('#v-home'); h.classList.add('anim', 'seen'); setTimeout(() => h.classList.remove('anim'), 1200); }, 50);
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.dataset.v === view) return; const O = ['home', 'stock', 'bill', 'sales', 'more'], m = document.querySelector('main'); m.dataset.dir = O.indexOf(b.dataset.v) > O.indexOf(view) ? 'next' : 'prev'; go(b.dataset.v); clearTimeout(m._t); m._t = setTimeout(() => { delete m.dataset.dir; }, 450); });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.dataset.v !== view) go(b.dataset.v); });
 $('#sg-p').onclick = () => { stockTab = 'p'; $('#sg-p').classList.add('on'); $('#sg-i').classList.remove('on'); $('#stock-p').style.display = ''; $('#stock-i').style.display = 'none'; setFab(); };
 $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('#sg-p').classList.remove('on'); $('#stock-i').style.display = ''; $('#stock-p').style.display = 'none'; setFab(); };
 
@@ -1511,16 +1512,9 @@ $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('
     const cur = el; mode = ''; el = null;
     cur.style.transition = 'transform .25s var(--ease), opacity .25s var(--ease)';
     if (!target) { cur.style.transform = ''; cur.style.opacity = ''; setTimeout(() => { cur.style.transition = ''; }, 260); return; }
-    const dir = dx < 0 ? -1 : 1;
-    cur.style.transition = 'transform .14s cubic-bezier(.4,0,1,1), opacity .14s linear';
-    cur.style.transform = 'translate3d(' + (dir * 60) + 'px,0,0)'; cur.style.opacity = '0';
-    setTimeout(() => {
-      cur.style.transition = 'none'; cur.style.transform = ''; cur.style.opacity = '';
-      main.dataset.dir = dir < 0 ? 'next' : 'prev';
-      go(target);
-      requestAnimationFrame(() => { cur.style.transition = ''; });
-      clearTimeout(end.t); end.t = setTimeout(() => { delete main.dataset.dir; }, 420);
-    }, 130);
+    cur.style.transition = 'none'; cur.style.transform = ''; cur.style.opacity = '';
+    go(target);
+    requestAnimationFrame(() => { cur.style.transition = ''; });
     try { navigator.vibrate && navigator.vibrate(8); } catch {}
   };
   main.addEventListener('touchend', end); main.addEventListener('touchcancel', end);
