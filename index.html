@@ -1454,7 +1454,7 @@ function go(v, fromPop) {
   if (v !== prev) { const O = ['home', 'stock', 'bill', 'sales', 'more']; document.querySelector('main').dataset.dir = O.indexOf(v) > O.indexOf(prev) ? 'next' : 'prev'; }
   view = v; document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
-  if (v === 'bill') setTimeout(() => $('#pq').focus(), 50);
+  if (v !== 'bill' && document.activeElement && document.activeElement.blur) document.activeElement.blur();
   const vEl = $('#v-' + v);
   if (v === 'home' && v !== prev && !vEl.classList.contains('seen')) { vEl.classList.add('anim'); clearTimeout(go.t); go.t = setTimeout(() => vEl.classList.remove('anim'), 1200); }
   if (!vEl.classList.contains('seen')) setTimeout(() => vEl.classList.add('seen'), 900);
@@ -1484,7 +1484,7 @@ $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('
   const ORDER = ['home', 'stock', 'bill', 'sales', 'more'];
   const main = document.querySelector('main');
   let x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = '', el = null;
-  const blocked = t => t.closest('.chips, .scroll, .scanbox, [data-noswipe]') || (t.matches('input, textarea') && t === document.activeElement);
+  const blocked = t => t.closest('.chips, .scroll, .scanbox, [data-noswipe], textarea');
   main.addEventListener('touchstart', e => {
     mode = ''; dx = 0;
     if (e.touches.length !== 1 || $('#sheetwrap').classList.contains('on') || blocked(e.target)) { mode = 'off'; return; }
@@ -1494,7 +1494,7 @@ $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('
     if (mode === 'off' || !el) return;
     const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
     if (!mode) {
-      if (Math.abs(mx) > 14 && Math.abs(mx) > Math.abs(my) * 1.6) mode = 'x';
+      if (Math.abs(mx) > 18 && Math.abs(mx) > Math.abs(my) * 1.6) { mode = 'x'; const a = document.activeElement; if (a && a.matches && a.matches('input, select') && a.blur) a.blur(); }
       else if (Math.abs(my) > 10) { mode = 'off'; return; }
       else return;
     }
