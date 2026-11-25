@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#6E1530">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Boutique Stock &amp; Billing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600;700&family=Yatra+One&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a shopkeeper's counter tool - quick, warm, trustworthy, thumb-first.
+   IDEA: the bill book and stock register of an Indian saree shop, in your pocket.
+   PICTURE: the working app itself - big totals, product rows, a bill that reads like a printed memo.
+   COLOUR and TYPE: kumkum maroon ground for the header, zari gold accent, white work surface; Yatra One for the shop name, Hind for everything else.
+   LAYOUT: top bar, one screen per task, bottom tab bar, sheets that slide up for forms. */
+:root{color-scheme:light dark;
+--bg:light-dark(#F7F4F1,#141012);--card:light-dark(#FFFFFF,#1F191C);--ink:light-dark(#241A1E,#F2ECEE);--mute:light-dark(#76686D,#A89BA0);
+--line:light-dark(#E8E0DC,#3A2F33);--maroon:#6E1530;--maroon2:light-dark(#8A1C3D,#C2456B);--gold:#C99A2E;--goldsoft:light-dark(#FBF1D9,#3A2F17);
+--ok:light-dark(#1F7A45,#5FCB8B);--oksoft:light-dark(#E2F4E9,#16301F);--warn:light-dark(#9A6200,#F0B54A);--warnsoft:light-dark(#FFF1D1,#3A2C0E);
+--bad:light-dark(#B3261E,#FF8A80);--badsoft:light-dark(#FDE3E1,#3D1A18)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Hind,system-ui,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+header.top{position:sticky;top:0;z-index:20;background:var(--maroon);color:#fff;padding:10px 16px 12px;display:flex;align-items:center;gap:12px;
+  background-image:repeating-linear-gradient(90deg,transparent 0 14px,rgba(201,154,46,.18) 14px 16px);box-shadow:0 2px 0 var(--gold)}
+.brand{font-family:"Yatra One",Hind,serif;font-size:22px;line-height:1.1;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync{font-size:12px;opacity:.85;white-space:nowrap}
+main{max-width:760px;margin:0 auto;padding:14px 14px 104px}
+.view{display:none}.view.on{display:block}
+h2{font-size:24px;line-height:1.1;margin:6px 0 12px}
+h3{font-size:17px;margin:20px 0 8px}
+.mute{color:var(--mute)}.small{font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.kpi b{display:block;font-size:clamp(20px,5.5vw,26px);line-height:1.15;white-space:nowrap}
+.kpi span{font-size:13px;color:var(--mute)}
+.kpi.hero{grid-column:1/-1;background:var(--maroon);color:#fff;border:0;box-shadow:inset 0 -4px 0 var(--gold)}
+.kpi.hero span{color:#f3d9e0}.kpi.hero b{font-size:clamp(30px,9vw,40px)}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:52px minmax(0,1fr) 88px;align-items:center;gap:8px;font-size:14px}
+.bar i{display:block;height:14px;border-radius:7px;background:var(--maroon2);min-width:2px}
+.bar i.g{background:var(--gold)}
+.bar em{font-style:normal;text-align:right;white-space:nowrap}
+.list{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:flex;gap:10px;align-items:center;padding:12px 14px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;cursor:pointer}
+.row:first-child{border-top:0}
+.row .grow{flex:1}
+.row .t{font-weight:600;line-height:1.25}
+.row .s{font-size:13px;color:var(--mute)}
+.row .r{text-align:right;white-space:nowrap}
+.badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.b-ok{background:var(--oksoft);color:var(--ok)}.b-warn{background:var(--warnsoft);color:var(--warn)}.b-bad{background:var(--badsoft);color:var(--bad)}
+.b-gold{background:var(--goldsoft);color:var(--warn)}
+.empty{padding:26px 16px;text-align:center;color:var(--mute)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:600;cursor:pointer}
+a.btn{text-decoration:none;color:inherit;text-align:center}
+.btn.p{background:var(--maroon);color:#fff;border-color:var(--maroon)}
+.btn.gold{background:var(--gold);color:#241A1E;border-color:var(--gold)}
+.btn.danger{color:var(--bad)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.5}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns .btn{flex:1 1 140px}
+.icon{width:20px;height:20px;flex:none}
+input,select,textarea{width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:16px}
+textarea{min-height:76px}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,.row:focus-visible,nav button:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+label{display:block;font-size:13px;font-weight:600;color:var(--mute);margin:10px 0 4px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
+.chip{flex:none;min-height:36px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-size:14px;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--line);border-radius:12px;padding:3px;margin-bottom:12px}
+.seg button{min-height:40px;border:0;border-radius:10px;background:none;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.search{position:relative;margin-bottom:8px}
+.qty{display:flex;align-items:center;gap:4px}
+.qty button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:20px;font-weight:600;cursor:pointer}
+.qty input{width:52px;min-height:38px;text-align:center;padding:4px}
+.cartline{padding:12px 14px;border-top:1px solid var(--line)}
+.cartline:first-child{border-top:0}
+.cartline .top2{display:flex;gap:8px;align-items:flex-start}
+.cartline .ctrl{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.cartline .disc{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--mute)}
+.cartline .disc input{width:68px;min-height:38px;padding:4px 8px}
+.totals{display:grid;gap:4px;font-size:15px}
+.totals div{display:flex;justify-content:space-between;gap:10px}
+.totals .grand{font-size:24px;font-weight:700;border-top:2px dashed var(--line);padding-top:8px;margin-top:4px}
+.warnline{color:var(--bad);font-size:13px;font-weight:600}
+.fab{position:fixed;right:max(16px,calc(50% - 364px));bottom:84px;z-index:15;min-height:54px;padding:0 20px;border-radius:16px;border:0;background:var(--gold);color:#241A1E;font-weight:700;font-size:16px;box-shadow:0 6px 18px rgba(0,0,0,.22);cursor:pointer;display:flex;align-items:center;gap:6px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{border:0;background:none;min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:600;color:var(--mute);cursor:pointer}
+nav.tabs button.on{color:var(--maroon2)}
+nav.tabs button.on svg{stroke:var(--maroon2)}
+nav.tabs .billtab span.dot{width:46px;height:30px;border-radius:15px;background:var(--maroon);display:flex;align-items:center;justify-content:center}
+nav.tabs .billtab svg{stroke:#fff}
+.sheetwrap{position:fixed;inset:0;z-index:40;background:rgba(20,10,14,.5);display:none;align-items:flex-end;justify-content:center}
+.sheetwrap.on{display:flex}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:8px 16px 24px;animation:up .22s ease-out}
+.sheet .grab{width:44px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 8px}
+.sheet h2{margin-top:4px}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.toast{position:fixed;left:50%;bottom:156px;transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:15px;display:none;max-width:90vw;text-align:center}
+.toast.on{display:block}
+.memo{background:#fff;color:#241A1E;border-radius:6px;padding:18px 16px;border-top:6px solid var(--maroon);font-size:14px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.memo .shop{font-family:"Yatra One",serif;font-size:22px;color:var(--maroon);text-align:center;line-height:1.15}
+.memo .addr{text-align:center;font-size:12px;color:#6b5a60}
+.memo .ttl{text-align:center;font-weight:700;letter-spacing:.02em;margin:8px 0;border-top:1px dashed #cdbfc4;border-bottom:1px dashed #cdbfc4;padding:4px 0}
+.memo table{width:100%;border-collapse:collapse;font-size:13px}
+.memo td,.memo th{padding:4px 2px;text-align:left;vertical-align:top}
+.memo th{border-bottom:1px solid #cdbfc4;font-size:12px;color:#6b5a60}
+.memo .n{text-align:right;white-space:nowrap}
+.memo .sum td{border-top:1px solid #cdbfc4}
+.memo .gt td{font-size:17px;font-weight:700}
+.banner{background:var(--warnsoft);color:var(--warn);border-radius:12px;padding:10px 14px;font-size:14px;margin-bottom:12px;display:none}
+.banner.on{display:block}
+.catrow{display:grid;grid-template-columns:minmax(0,1fr) 74px 86px 40px;gap:6px;margin-bottom:6px;align-items:center}
+.catrow input,.catrow select{min-height:40px;padding:6px 8px;font-size:15px}
+.x{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:18px}
+.hr{height:1px;background:var(--line);margin:18px 0}
+a{color:var(--maroon2)}
+@media(min-width:620px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.kpi.hero{grid-column:span 3}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand" id="brand">Your Boutique</div>
+  <div class="sync" id="sync">Opening…</div>
+</header>
+
+<main>
+  <div class="banner" id="banner"></div>
+
+  <!-- HOME -->
+  <section class="view on" id="v-home">
+    <div class="kpis" id="kpis"></div>
+    <h3>Last 6 months</h3>
+    <div class="card"><div class="bars" id="monthbars"></div></div>
+    <h3>Needs restocking</h3>
+    <div class="list" id="lowlist"></div>
+    <h3>Top sellers this month</h3>
+    <div class="list" id="toplist"></div>
+    <h3>This month by category</h3>
+    <div class="card"><div class="bars" id="catbars"></div></div>
+  </section>
+
+  <!-- NEW BILL -->
+  <section class="view" id="v-bill">
+    <h2>New bill</h2>
+    <div class="search"><input id="pq" type="search" placeholder="Search product name or SKU to add…" autocomplete="off"></div>
+    <div class="list" id="presults" style="margin-bottom:12px"></div>
+    <div class="list" id="cart"></div>
+    <div class="card" style="margin-top:12px">
+      <div class="grid2">
+        <div><label for="bcust">Customer name</label><input id="bcust" autocomplete="off"></div>
+        <div><label for="bphone">Phone (for WhatsApp)</label><input id="bphone" inputmode="tel" autocomplete="off"></div>
+        <div><label for="bpay">Payment</label><select id="bpay"></select></div>
+        <div><label for="bchan">Channel</label><select id="bchan"></select></div>
+      </div>
+      <label for="bdate">Bill date</label><input id="bdate" type="date">
+      <div class="hr"></div>
+      <div class="totals" id="btotals"></div>
+      <div style="margin-top:14px" class="btns">
+        <button class="btn" id="bclear">Clear</button>
+        <button class="btn p" id="bsave">Save bill</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STOCK -->
+  <section class="view" id="v-stock">
+    <div class="seg"><button id="sg-p" class="on">Products</button><button id="sg-i">Stock in (purchases)</button></div>
+    <div id="stock-p">
+      <div class="search"><input id="sq" type="search" placeholder="Search products…" autocomplete="off"></div>
+      <div class="chips" id="schips"></div>
+      <div class="chips" id="sstat"></div>
+      <div class="small mute" id="ssum" style="margin:2px 2px 8px"></div>
+      <div class="list" id="plist"></div>
+    </div>
+    <div id="stock-i" style="display:none">
+      <div class="small mute" id="isum" style="margin:2px 2px 8px"></div>
+      <div class="list" id="ilist"></div>
+    </div>
+  </section>
+
+  <!-- BILLS -->
+  <section class="view" id="v-sales">
+    <h2>Bills</h2>
+    <div class="grid2"><div><label for="smonth">Month</label><input id="smonth" type="month"></div>
+    <div><label for="sfind">Find</label><input id="sfind" type="search" placeholder="Name, phone, invoice"></div></div>
+    <div class="kpis" id="skpis" style="margin:12px 0"></div>
+    <div class="list" id="slist"></div>
+  </section>
+
+  <!-- MORE -->
+  <section class="view" id="v-more">
+    <h2>Shop settings</h2>
+    <div class="card">
+      <label for="st-name">Business name</label><input id="st-name">
+      <label for="st-addr">Address</label><input id="st-addr">
+      <div class="grid2">
+        <div><label for="st-phone">Phone</label><input id="st-phone" inputmode="tel"></div>
+        <div><label for="st-gstin">GSTIN (blank if none)</label><input id="st-gstin"></div>
+        <div><label for="st-prefix">Invoice prefix</label><input id="st-prefix"></div>
+        <div><label for="st-reorder">Default reorder level</label><input id="st-reorder" type="number" min="0"></div>
+      </div>
+      <label for="st-footer">Bill footer note</label><input id="st-footer">
+      <h3>GST</h3>
+      <div class="grid2">
+        <div><label for="st-reg">GST registered?</label><select id="st-reg"><option>No</option><option>Yes</option></select></div>
+        <div><label for="st-incl">Prices include GST?</label><select id="st-incl"><option>Yes</option><option>No</option></select></div>
+        <div><label for="st-thr">Apparel slab (₹/piece)</label><input id="st-thr" type="number" min="0"></div>
+        <div><label for="st-low">Rate up to slab %</label><input id="st-low" type="number" min="0" step="0.5"></div>
+        <div><label for="st-high">Rate above slab %</label><input id="st-high" type="number" min="0" step="0.5"></div>
+        <div><label for="st-flat">Fabric rate % (sarees, material)</label><input id="st-flat" type="number" min="0" step="0.5"></div>
+      </div>
+      <p class="small mute">Apparel: 5% up to ₹2,500 per piece, 18% above (GST changes of 22 Sep 2025). Categories marked "Flat" (sarees, unstitched material) always use the fabric rate. Check HSN rates with your CA.</p>
+      <h3>Categories</h3>
+      <div class="small mute" style="margin-bottom:6px">Name · SKU code · GST rule</div>
+      <div id="catedit"></div>
+      <button class="btn" id="addcat">+ Add category</button>
+      <label for="st-sizes">Sizes (comma separated)</label><input id="st-sizes">
+      <label for="st-pays">Payment modes</label><input id="st-pays">
+      <label for="st-chans">Sales channels</label><input id="st-chans">
+      <div style="margin-top:16px"><button class="btn p block" id="savesettings">Save settings</button></div>
+    </div>
+    <h3>Excel</h3>
+    <div class="card">
+      <p class="small mute" style="margin-top:0">Download everything as an Excel file for your accountant or as a backup. You can also bring in products from the inventory workbook (its Inventory sheet).</p>
+      <div class="btns"><button class="btn gold" id="exportx">Download Excel</button><button class="btn" id="importx">Import products</button></div>
+      <input type="file" id="importfile" accept=".xlsx,.xlsm,.xls,.csv" hidden>
+    </div>
+    <h3>Backup</h3>
+    <div class="card">
+      <p class="small mute" style="margin-top:0">All data is saved <b>only on this phone</b>. Make a backup every week and keep it on Google Drive or WhatsApp it to yourself. Restoring a backup on a new phone brings everything back.</p>
+      <div class="btns"><button class="btn gold" id="backupx">Make backup</button><button class="btn" id="restorex">Restore backup</button></div>
+      <input type="file" id="restorefile" accept=".json,application/json" hidden>
+      <p class="small mute" id="lastbackup" style="margin-bottom:0"></p>
+    </div>
+    <h3>Install on your phone</h3>
+    <div class="card small">
+      <p style="margin-top:0"><b>Android:</b> open the app link in Chrome and tap <b>Install app</b> (or ⋮ → <b>Add to Home screen</b>). It opens from its own icon and works without internet. No sign-in needed.</p>
+      <p style="margin-bottom:0">Each phone keeps its own data. To move to a new phone, make a backup here and restore it there.</p>
+    </div>
+    <h3>Sample data</h3>
+    <div class="card">
+      <p class="small mute" style="margin-top:0">The app started with a few sample products and bills so you can try it. Remove them before you begin real billing.</p>
+      <button class="btn danger block" id="clearsample">Remove sample data</button>
+    </div>
+  </section>
+</main>
+
+<button class="fab" id="fab" style="display:none"></button>
+
+<nav class="tabs" id="tabs">
+  <button data-v="home" class="on"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>Home</button>
+  <button data-v="stock"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>Stock</button>
+  <button data-v="bill" class="billtab"><span class="dot"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></span>New bill</button>
+  <button data-v="sales"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Bills</button>
+  <button data-v="more"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-2.7 1.1V21a2 2 0 11-4 0v-.1a1.6 1.6 0 00-2.7-1.1l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.6 1.6 0 003 15.3H3a2 2 0 110-4h.1a1.6 1.6 0 001.1-2.7l-.1-.1a2 2 0 112.8-2.8l.1.1A1.6 1.6 0 009 4.6V4.5a2 2 0 114 0v.1a1.6 1.6 0 002.7 1.1l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 001.1 2.7h.1a2 2 0 110 4h-.1a1.6 1.6 0 00-1.2.8z"/></svg>Settings</button>
+</nav>
+
+<div class="sheetwrap" id="sheetwrap"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+{
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const r2 = n => Math.round(n * 100) / 100;
+const fmt0 = new Intl.NumberFormat('en-IN', {style:'currency', currency:'INR', maximumFractionDigits:0});
+const fmt2 = new Intl.NumberFormat('en-IN', {style:'currency', currency:'INR', minimumFractionDigits:2, maximumFractionDigits:2});
+const R0 = n => fmt0.format(n || 0), R2 = n => fmt2.format(n || 0);
+const pad = n => String(n).padStart(2, '0');
+const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+const monthStr = d => d.slice(0, 7);
+const nice = d => { if (!d) return ''; const [y, m, dd] = d.split('-'); return dd + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m - 1] + ' ' + y; };
+const safeId = s => String(s).trim().replace(/[^A-Za-z0-9_\-.~:@+]/g, '-').replace(/^\.+$/, 'x').slice(0, 120) || 'x';
+
+const DEFAULTS = {
+  name: 'Your Boutique', address: '', phone: '', gstin: '', prefix: 'INV-', footer: 'Thank you for shopping with us!',
+  reorder: 3, gstReg: 'No', inclGst: 'Yes', threshold: 2500, low: 5, high: 18, flat: 5,
+  categories: [
+    {name:'Saree', code:'SAR', rule:'Flat'}, {name:'Chudithar Set (stitched)', code:'CHU', rule:'Slab'},
+    {name:'Chudithar Material (unstitched)', code:'CHM', rule:'Flat'}, {name:'Salwar Suit', code:'SAL', rule:'Slab'},
+    {name:'Kurti', code:'KUR', rule:'Slab'}, {name:'Anarkali', code:'ANA', rule:'Slab'}, {name:'Lehenga', code:'LEH', rule:'Slab'},
+    {name:'Blouse', code:'BLO', rule:'Slab'}, {name:'Dupatta', code:'DUP', rule:'Slab'}, {name:'Leggings / Bottoms', code:'LEG', rule:'Slab'},
+    {name:'Nightwear', code:'NIT', rule:'Slab'}, {name:'Kids Wear', code:'KID', rule:'Slab'}, {name:'Accessories', code:'ACC', rule:'Slab'},
+    {name:'Other', code:'OTH', rule:'Slab'}],
+  sizes: ['XS','S','M','L','XL','XXL','3XL','4XL','Free Size','Unstitched','Custom'],
+  pays: ['Cash','UPI','Card','Bank Transfer','Credit (Pay Later)'],
+  chans: ['Shop / Walk-in','WhatsApp','Instagram','Website','Exhibition','Marketplace']
+};
+
+let db = null, downloads = null, canWrite = true;
+let S = structuredClone(DEFAULTS);
+let products = new Map(), sales = [], purchases = [];
+let stock = new Map(), soldQty = new Map(), inQty = new Map();
+let cart = [];
+let view = 'home', stockTab = 'p', catFilter = 'All', statFilter = 'All', settingsDirty = false;
+const loaded = {settings:false, products:false, sales:false, purchases:false};
+
+/* ---------- small UI helpers ---------- */
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); }
+function openSheet(html) { $('#sheet').innerHTML = '<div class="grab"></div>' + html; $('#sheetwrap').classList.add('on'); $('#sheet').scrollTop = 0; }
+function closeSheet() { $('#sheetwrap').classList.remove('on'); $('#sheet').innerHTML = ''; }
+$('#sheetwrap').addEventListener('click', e => { if (e.target.id === 'sheetwrap') closeSheet(); });
+function ask(msg, okText = 'Yes', danger = false) {
+  return new Promise(res => {
+    openSheet('<h2>Please confirm</h2><p>' + esc(msg) + '</p><div class="btns"><button class="btn" id="ask-no">Cancel</button><button class="btn ' + (danger ? 'danger' : 'p') + '" id="ask-yes">' + esc(okText) + '</button></div>');
+    $('#ask-no').onclick = () => { closeSheet(); res(false); };
+    $('#ask-yes').onclick = () => { closeSheet(); res(true); };
+  });
+}
+function opts(list, sel) { return list.map(v => '<option' + (v === sel ? ' selected' : '') + '>' + esc(v) + '</option>').join(''); }
+function needDb() { if (!db) { toast('Still opening your data - try again in a moment.'); return false; } return true; }
+function dbFail(e) { console.error(e); toast(e && e.code === 'quota_exceeded' ? 'Phone storage is full - make a backup and free some space.' : 'Could not save on this phone. Try again.'); }
+
+/* ---------- business logic ---------- */
+function catOf(name) { return S.categories.find(c => c.name === name); }
+function itemCalc(p, qty, disc) {
+  qty = Math.max(0, num(qty)); disc = Math.min(100, Math.max(0, num(disc)));
+  const price = num(p.price), gross = qty * price, discAmt = gross * disc / 100, net = gross - discAmt;
+  let rate = 0;
+  if (S.gstReg === 'Yes') {
+    const c = catOf(p.category);
+    if (c && c.rule === 'Flat') rate = num(S.flat);
+    else { const per = net / Math.max(qty, 1); const base = S.inclGst === 'Yes' ? per / (1 + num(S.low) / 100) : per; rate = base <= num(S.threshold) ? num(S.low) : num(S.high); }
+  }
+  const taxable = S.inclGst === 'Yes' ? net / (1 + rate / 100) : net;
+  const gst = S.inclGst === 'Yes' ? net - taxable : net * rate / 100;
+  return {sku: p.sku, name: p.name, category: p.category || '', size: p.size || '', qty, price, disc, gross: r2(gross), discAmt: r2(discAmt), net: r2(net),
+    rate, taxable: r2(taxable), gst: r2(gst), total: r2(taxable + gst), cost: num(p.cost)};
+}
+function recompute() {
+  soldQty = new Map(); inQty = new Map(); stock = new Map();
+  for (const b of sales) for (const it of (b.items || [])) soldQty.set(it.sku, (soldQty.get(it.sku) || 0) + num(it.qty));
+  for (const p of purchases) inQty.set(p.sku, (inQty.get(p.sku) || 0) + num(p.qty));
+  for (const [sku, p] of products) stock.set(sku, num(p.opening) + (inQty.get(sku) || 0) - (soldQty.get(sku) || 0));
+}
+function status(p) {
+  const s = stock.get(p.sku) || 0, lvl = p.reorder === '' || p.reorder == null ? num(S.reorder) : num(p.reorder);
+  if (s <= 0) return ['Out of stock', 'b-bad'];
+  if (s <= lvl) return ['Low: ' + s + ' left', 'b-warn'];
+  return [s + ' in stock', 'b-ok'];
+}
+function isLow(p) { const s = stock.get(p.sku) || 0, lvl = p.reorder === '' || p.reorder == null ? num(S.reorder) : num(p.reorder); return s <= lvl; }
+function billProfit(b) { return (b.items || []).reduce((a, it) => a + num(it.taxable) - num(it.qty) * num(it.cost), 0); }
+function nextInvoice() {
+  const pre = S.prefix || ''; let mx = 0;
+  for (const b of sales) { const v = String(b.invoice || ''); if (v.toUpperCase().startsWith(pre.toUpperCase())) { const n = parseInt(v.slice(pre.length), 10); if (n > mx) mx = n; } }
+  return n => pre + String(mx + n).padStart(4, '0');
+}
+function makeSku(category) {
+  const c = catOf(category); let code = (c && c.code || category.replace(/[^A-Za-z]/g, '').slice(0, 3) || 'OTH').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  let mx = 0; for (const sku of products.keys()) if (sku.startsWith(code + '-')) { const n = parseInt(sku.slice(code.length + 1), 10); if (n > mx) mx = n; }
+  return code + '-' + String(mx + 1).padStart(3, '0');
+}
+
+/* ---------- render: header + home ---------- */
+function renderAll() { recompute(); $('#brand').textContent = S.name || 'Your Boutique'; renderHome(); renderBillPickers(); renderCart(); renderProducts(); renderPurchases(); renderSales(); if (!settingsDirty) fillSettings(); setFab(); }
+
+function renderHome() {
+  const t = todayStr(), m = monthStr(t);
+  const todays = sales.filter(b => b.date === t), months = sales.filter(b => monthStr(b.date || '') === m);
+  const sum = arr => arr.reduce((a, b) => a + num(b.total), 0);
+  let value = 0, pcs = 0, low = 0, out = 0;
+  for (const p of products.values()) { const s = stock.get(p.sku) || 0; value += Math.max(s, 0) * num(p.cost); pcs += Math.max(s, 0); if (s <= 0) out++; else if (isLow(p)) low++; }
+  const k = [
+    ['hero', "Today's sales · " + todays.length + ' bill' + (todays.length === 1 ? '' : 's'), R0(sum(todays))],
+    ['', 'This month', R0(sum(months))],
+    ['', 'Profit this month', R0(months.reduce((a, b) => a + billProfit(b), 0))],
+    ['', 'Stock value (cost)', R0(value)],
+    ['', 'Pieces in stock', pcs.toLocaleString('en-IN')],
+    ['', 'Low / out of stock', low + ' / ' + out],
+    ['', 'Products', products.size.toLocaleString('en-IN')]
+  ];
+  $('#kpis').innerHTML = k.map(([c, l, v]) => '<div class="kpi ' + c + '"><span>' + esc(l) + '</span><b>' + esc(v) + '</b></div>').join('');
+
+  const now = new Date(), ms = [];
+  for (let i = 5; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); ms.push(d.getFullYear() + '-' + pad(d.getMonth() + 1)); }
+  const mv = ms.map(mm => sum(sales.filter(b => monthStr(b.date || '') === mm))), mx = Math.max(1, ...mv);
+  $('#monthbars').innerHTML = ms.map((mm, i) => '<div class="bar"><span>' + nice(mm + '-01').slice(3, 6) + '</span><i class="' + (i === 5 ? 'g' : '') + '" style="width:' + (mv[i] / mx * 100).toFixed(1) + '%"></i><em>' + R0(mv[i]) + '</em></div>').join('');
+
+  const lows = [...products.values()].filter(isLow).sort((a, b) => (stock.get(a.sku) || 0) - (stock.get(b.sku) || 0)).slice(0, 8);
+  $('#lowlist').innerHTML = lows.length ? lows.map(p => { const [t2, c] = status(p); return '<button class="row" data-instock="' + esc(p.sku) + '"><div class="grow"><div class="t">' + esc(p.name) + '</div><div class="s">' + esc(p.sku) + ' · ' + esc(p.size || '') + '</div></div><span class="badge ' + c + '">' + esc(t2) + '</span></button>'; }).join('')
+    : '<div class="empty">Everything is well stocked.</div>';
+
+  const agg = new Map(), cagg = new Map();
+  for (const b of months) for (const it of b.items || []) {
+    const a = agg.get(it.sku) || {name: it.name, size: it.size, qty: 0, amt: 0}; a.qty += num(it.qty); a.amt += num(it.total); agg.set(it.sku, a);
+    cagg.set(it.category || 'Other', (cagg.get(it.category || 'Other') || 0) + num(it.total));
+  }
+  const top = [...agg.values()].sort((a, b) => b.amt - a.amt).slice(0, 5);
+  $('#toplist').innerHTML = top.length ? top.map((a, i) => '<div class="row"><b style="width:22px;color:var(--gold)">' + (i + 1) + '</b><div class="grow"><div class="t">' + esc(a.name) + '</div><div class="s">' + esc(a.size) + ' · ' + a.qty + ' sold</div></div><div class="r"><b>' + R0(a.amt) + '</b></div></div>').join('')
+    : '<div class="empty">No sales yet this month.</div>';
+  const cats = [...cagg.entries()].sort((a, b) => b[1] - a[1]), cm = Math.max(1, ...cats.map(c => c[1]));
+  $('#catbars').innerHTML = cats.length ? cats.map(([c, v]) => '<div class="bar" style="grid-template-columns:minmax(0,9em) minmax(0,1fr) 80px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(c) + '</span><i style="width:' + (v / cm * 100).toFixed(1) + '%"></i><em>' + R0(v) + '</em></div>').join('')
+    : '<div class="mute small">No sales yet this month.</div>';
+}
+
+/* ---------- new bill ---------- */
+function renderBillPickers() {
+  const pay = $('#bpay').value, ch = $('#bchan').value;
+  $('#bpay').innerHTML = opts(S.pays, pay || S.pays[0]); $('#bchan').innerHTML = opts(S.chans, ch || S.chans[0]);
+  if (!$('#bdate').value) $('#bdate').value = todayStr();
+  renderPicker();
+}
+function renderPicker() {
+  const q = $('#pq').value.trim().toLowerCase();
+  if (!q) { $('#presults').innerHTML = ''; $('#presults').style.display = 'none'; return; }
+  const hits = [...products.values()].filter(p => (p.name + ' ' + p.sku + ' ' + (p.colour || '') + ' ' + (p.category || '')).toLowerCase().includes(q)).slice(0, 8);
+  $('#presults').style.display = 'block';
+  $('#presults').innerHTML = hits.length ? hits.map(p => { const [t, c] = status(p); return '<button class="row" data-add="' + esc(p.sku) + '"><div class="grow"><div class="t">' + esc(p.name) + '</div><div class="s">' + esc(p.sku) + ' · ' + esc(p.size || '') + (p.colour ? ' · ' + esc(p.colour) : '') + '</div></div><div class="r"><b>' + R0(num(p.price)) + '</b><br><span class="badge ' + c + '">' + esc(t) + '</span></div></button>'; }).join('')
+    : '<div class="empty">No product matches. Add it in Stock first.</div>';
+}
+function addToCart(sku) {
+  const ex = cart.find(c => c.sku === sku); if (ex) ex.qty++; else cart.push({sku, qty: 1, disc: 0});
+  $('#pq').value = ''; renderPicker(); renderCart(); toast('Added to bill');
+}
+function cartItems() { return cart.map(c => { const p = products.get(c.sku); return p ? itemCalc(p, c.qty, c.disc) : null; }).filter(Boolean); }
+function renderCart() {
+  if (!cart.length) { $('#cart').innerHTML = '<div class="empty">Search above and tap a product to add it to the bill.</div>'; }
+  else $('#cart').innerHTML = cart.map((c, i) => {
+    const p = products.get(c.sku); if (!p) return '';
+    const it = itemCalc(p, c.qty, c.disc), avail = stock.get(c.sku) || 0;
+    return '<div class="cartline"><div class="top2"><div class="grow"><div class="t" style="font-weight:600">' + esc(p.name) + '</div><div class="s small mute">' + esc(p.sku) + ' · ' + esc(p.size || '') + ' · ' + R0(it.price) + ' each</div>' +
+      (c.qty > avail ? '<div class="warnline">Only ' + avail + ' in stock</div>' : '') + '</div><b style="white-space:nowrap">' + R2(it.net) + '</b></div>' +
+      '<div class="ctrl"><div class="qty"><button data-dec="' + i + '" aria-label="Less">−</button><input data-q="' + i + '" inputmode="numeric" value="' + c.qty + '" aria-label="Quantity"><button data-inc="' + i + '" aria-label="More">+</button></div>' +
+      '<div class="disc">Disc %<input data-d="' + i + '" inputmode="decimal" value="' + (c.disc || '') + '" placeholder="0" aria-label="Discount percent"></div><button class="x" data-rm="' + i + '" aria-label="Remove" style="margin-left:auto">×</button></div></div>';
+  }).join('');
+  renderTotals();
+}
+function totalsOf(items) {
+  const t = {qty: 0, gross: 0, disc: 0, net: 0, taxable: 0, gst: 0, total: 0};
+  for (const it of items) { t.qty += it.qty; t.gross += it.gross; t.disc += it.discAmt; t.net += it.net; t.taxable += it.taxable; t.gst += it.gst; t.total += it.total; }
+  t.grand = Math.round(t.total); t.round = r2(t.grand - t.total); return t;
+}
+function renderTotals() {
+  const t = totalsOf(cartItems());
+  $('#btotals').innerHTML = '<div><span>Items</span><span>' + t.qty + '</span></div><div><span>Amount</span><span>' + R2(t.gross) + '</span></div>' +
+    (t.disc ? '<div><span>Discount</span><span>− ' + R2(t.disc) + '</span></div>' : '') +
+    (S.gstReg === 'Yes' ? '<div><span>Taxable value</span><span>' + R2(t.taxable) + '</span></div><div><span>GST' + (S.inclGst === 'Yes' ? ' (included)' : '') + '</span><span>' + R2(t.gst) + '</span></div>' : '') +
+    (t.round ? '<div><span>Round off</span><span>' + R2(t.round) + '</span></div>' : '') +
+    '<div class="grand"><span>Total</span><span>' + R0(t.grand) + '</span></div>';
+  $('#bsave').disabled = !cart.length;
+}
+$('#pq').addEventListener('input', renderPicker);
+$('#presults').addEventListener('click', e => { const b = e.target.closest('[data-add]'); if (b) addToCart(b.dataset.add); });
+$('#cart').addEventListener('click', e => {
+  const t = e.target;
+  if (t.dataset.inc) { cart[+t.dataset.inc].qty++; renderCart(); }
+  else if (t.dataset.dec) { const c = cart[+t.dataset.dec]; c.qty = Math.max(1, c.qty - 1); renderCart(); }
+  else if (t.dataset.rm) { cart.splice(+t.dataset.rm, 1); renderCart(); }
+});
+$('#cart').addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.q) { cart[+t.dataset.q].qty = Math.max(1, Math.round(num(t.value)) || 1); renderCart(); }
+  if (t.dataset.d) { cart[+t.dataset.d].disc = Math.min(100, Math.max(0, num(t.value))); renderCart(); }
+});
+$('#bclear').onclick = async () => { if (!cart.length || await ask('Clear this bill?', 'Clear')) { cart = []; $('#bcust').value = ''; $('#bphone').value = ''; renderCart(); } };
+$('#bsave').onclick = async () => {
+  if (!cart.length || !needDb()) return;
+  const items = cartItems(), short = cart.filter(c => c.qty > (stock.get(c.sku) || 0));
+  if (short.length && !(await ask(short.length + ' item(s) have more quantity than stock shows. Save the bill anyway?', 'Save anyway'))) return;
+  const t = totalsOf(items), gen = nextInvoice();
+  const bill = {invoice: '', date: $('#bdate').value || todayStr(), customer: $('#bcust').value.trim(), phone: $('#bphone').value.trim(),
+    pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, createdAt: Date.now()};
+  $('#bsave').disabled = true;
+  try {
+    for (let n = 1; n < 20; n++) {
+      const inv = gen(n), ref = db.doc('sales/' + safeId(inv)); const snap = await ref.get();
+      if (!snap.exists) { bill.invoice = inv; await ref.set(bill); break; }
+    }
+    if (!bill.invoice) throw {code: 'unavailable'};
+    cart = []; $('#bcust').value = ''; $('#bphone').value = ''; renderCart();
+    showBill(bill); toast('Bill ' + bill.invoice + ' saved');
+  } catch (e) { dbFail(e); } finally { $('#bsave').disabled = !cart.length; }
+};
+
+function billText(b) {
+  const L = [S.name, (S.gstReg === 'Yes' ? 'Tax Invoice ' : 'Bill ') + b.invoice + ' · ' + nice(b.date), ''];
+  for (const it of b.items) L.push(it.name + (it.size ? ' (' + it.size + ')' : '') + ' x' + it.qty + ' = ' + R2(it.net));
+  L.push('', 'Total: ' + R0(b.total) + ' (' + b.pay + ')'); if (S.footer) L.push(S.footer); return L.join('\n');
+}
+function showBill(b) {
+  const gstOn = S.gstReg === 'Yes' || num(b.gst) > 0;
+  const rows = b.items.map((it, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(it.name) + (it.size ? ' <span style="color:#6b5a60">(' + esc(it.size) + ')</span>' : '') + (it.disc ? '<br><span style="color:#6b5a60">' + it.disc + '% off</span>' : '') + '</td><td class="n">' + it.qty + '</td><td class="n">' + R2(it.price) + '</td><td class="n">' + R2(it.net) + '</td></tr>').join('');
+  const ph = String(b.phone || '').replace(/\D/g, ''), wa = 'https://wa.me/' + (ph.length === 10 ? '91' + ph : ph) + '?text=' + encodeURIComponent(billText(b));
+  openSheet('<div class="memo"><div class="shop">' + esc(S.name) + '</div><div class="addr">' + esc(S.address) + (S.phone ? ' · ' + esc(S.phone) : '') + (S.gstin ? '<br>GSTIN ' + esc(S.gstin) : '') + '</div>' +
+    '<div class="ttl">' + (S.gstReg === 'Yes' ? 'TAX INVOICE' : 'BILL / CASH MEMO') + '</div>' +
+    '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px"><span><b>' + esc(b.invoice) + '</b><br>' + esc(b.customer || 'Walk-in customer') + (b.phone ? '<br>' + esc(b.phone) : '') + '</span><span style="text-align:right">' + nice(b.date) + '<br>' + esc(b.pay) + '</span></div>' +
+    '<table style="margin-top:8px"><tr><th>#</th><th>Item</th><th class="n">Qty</th><th class="n">Rate</th><th class="n">Amount</th></tr>' + rows +
+    (gstOn ? '<tr class="sum"><td></td><td colspan="3">Taxable value</td><td class="n">' + R2(b.taxable) + '</td></tr><tr><td></td><td colspan="3">CGST</td><td class="n">' + R2(b.gst / 2) + '</td></tr><tr><td></td><td colspan="3">SGST</td><td class="n">' + R2(b.gst / 2) + '</td></tr>' : '') +
+    (num(b.round) ? '<tr><td></td><td colspan="3">Round off</td><td class="n">' + R2(b.round) + '</td></tr>' : '') +
+    '<tr class="sum gt"><td></td><td colspan="3">Total</td><td class="n">' + R0(b.total) + '</td></tr></table>' +
+    (S.footer ? '<p style="text-align:center;font-style:italic;color:#6b5a60;margin:10px 0 0">' + esc(S.footer) + '</p>' : '') + '</div>' +
+    '<div class="btns" style="margin-top:14px"><a class="btn gold" href="' + esc(wa) + '" target="_blank" rel="noopener">Send on WhatsApp</a><button class="btn" id="copybill">Copy bill text</button></div>' +
+    '<div class="btns" style="margin-top:8px"><button class="btn danger" id="delbill">Delete bill</button><button class="btn p" id="closebill">Done</button></div>');
+  $('#closebill').onclick = closeSheet;
+  $('#copybill').onclick = async () => { try { await navigator.clipboard.writeText(billText(b)); toast('Copied'); } catch { toast('Copy not allowed here'); } };
+  $('#delbill').onclick = async () => {
+    if (!needDb()) return;
+    if (await ask('Delete bill ' + b.invoice + '? Its items go back into stock.', 'Delete', true)) {
+      try { await db.doc('sales/' + safeId(b.invoice)).delete(); toast('Bill deleted'); } catch (e) { dbFail(e); }
+    }
+  };
+}
+
+/* ---------- stock: products ---------- */
+function renderProducts() {
+  const cats = ['All', ...S.categories.map(c => c.name)];
+  $('#schips').innerHTML = cats.map(c => '<button class="chip' + (c === catFilter ? ' on' : '') + '" data-cat="' + esc(c) + '">' + esc(c) + '</button>').join('');
+  $('#sstat').innerHTML = ['All', 'Low stock', 'Out of stock'].map(c => '<button class="chip' + (c === statFilter ? ' on' : '') + '" data-stat="' + esc(c) + '">' + esc(c) + '</button>').join('');
+  const q = $('#sq').value.trim().toLowerCase();
+  const list = [...products.values()].filter(p => (catFilter === 'All' || p.category === catFilter) &&
+    (statFilter === 'All' || (statFilter === 'Low stock' ? isLow(p) && (stock.get(p.sku) || 0) > 0 : (stock.get(p.sku) || 0) <= 0)) &&
+    (!q || (p.name + ' ' + p.sku + ' ' + (p.colour || '') + ' ' + (p.fabric || '')).toLowerCase().includes(q))).sort((a, b) => a.sku.localeCompare(b.sku));
+  let pcs = 0, val = 0; for (const p of list) { const s = Math.max(0, stock.get(p.sku) || 0); pcs += s; val += s * num(p.cost); }
+  $('#ssum').textContent = list.length + ' products · ' + pcs.toLocaleString('en-IN') + ' pieces · ' + R0(val) + ' at cost';
+  $('#plist').innerHTML = list.length ? list.map(p => { const [t, c] = status(p); return '<button class="row" data-edit="' + esc(p.sku) + '"><div class="grow"><div class="t">' + esc(p.name) + '</div><div class="s">' + esc(p.sku) + ' · ' + esc(p.size || '-') + (p.colour ? ' · ' + esc(p.colour) : '') + (p.fabric ? ' · ' + esc(p.fabric) : '') + '</div></div><div class="r"><b>' + R0(num(p.price)) + '</b><br><span class="badge ' + c + '">' + esc(t) + '</span></div></button>'; }).join('')
+    : '<div class="empty">' + (products.size ? 'No products match.' : 'No products yet. Tap “+ Product” to add your first one.') + '</div>';
+}
+$('#sq').addEventListener('input', renderProducts);
+$('#schips').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { catFilter = b.dataset.cat; renderProducts(); } });
+$('#sstat').addEventListener('click', e => { const b = e.target.closest('[data-stat]'); if (b) { statFilter = b.dataset.stat; renderProducts(); } });
+$('#plist').addEventListener('click', e => { const b = e.target.closest('[data-edit]'); if (b) productForm(b.dataset.edit); });
+
+function productForm(sku) {
+  const p = sku ? products.get(sku) : null, cur = p ? (stock.get(sku) || 0) : 0;
+  openSheet('<h2>' + (p ? 'Edit product' : 'New product') + '</h2>' +
+    (p ? '<p class="small mute" style="margin-top:-6px">' + esc(p.sku) + ' · Opening ' + num(p.opening) + ' + bought ' + (inQty.get(sku) || 0) + ' − sold ' + (soldQty.get(sku) || 0) + ' = <b>' + cur + ' in stock</b></p>' : '') +
+    '<label for="f-cat">Category</label><select id="f-cat">' + opts(S.categories.map(c => c.name), p ? p.category : S.categories[0] && S.categories[0].name) + '</select>' +
+    '<label for="f-name">Product name</label><input id="f-name" value="' + esc(p ? p.name : '') + '" placeholder="e.g. Cotton Chudithar Set">' +
+    '<div class="grid2"><div><label for="f-fab">Fabric</label><input id="f-fab" value="' + esc(p ? p.fabric : '') + '"></div>' +
+    '<div><label for="f-col">Colour / design</label><input id="f-col" value="' + esc(p ? p.colour : '') + '"></div>' +
+    '<div><label for="f-size">Size</label><select id="f-size">' + opts(S.sizes, p ? p.size : 'Free Size') + '</select></div>' +
+    '<div><label for="f-sku">SKU</label><input id="f-sku" value="' + esc(p ? p.sku : '') + '" ' + (p ? 'disabled' : 'placeholder="Auto"') + '></div>' +
+    '<div><label for="f-cost">Cost price ₹</label><input id="f-cost" type="number" inputmode="decimal" min="0" value="' + esc(p ? p.cost : '') + '"></div>' +
+    '<div><label for="f-price">Selling price ₹</label><input id="f-price" type="number" inputmode="decimal" min="0" value="' + esc(p ? p.price : '') + '"></div>' +
+    '<div><label for="f-open">Opening stock</label><input id="f-open" type="number" inputmode="numeric" value="' + esc(p ? p.opening : 0) + '"></div>' +
+    '<div><label for="f-re">Reorder level</label><input id="f-re" type="number" inputmode="numeric" min="0" value="' + esc(p ? p.reorder : '') + '" placeholder="' + esc(S.reorder) + '"></div></div>' +
+    '<p class="small mute" id="f-margin"></p>' +
+    '<div class="btns" style="margin-top:8px">' + (p ? '<button class="btn danger" id="f-del">Delete</button><button class="btn" id="f-stock">+ Stock in</button>' : '<button class="btn" id="f-cancel">Cancel</button>') + '<button class="btn p" id="f-save">Save</button></div>');
+  const mg = () => { const c = num($('#f-cost').value), pr = num($('#f-price').value); $('#f-margin').textContent = pr ? 'Margin ' + Math.round((pr - c) / pr * 100) + '% (' + R0(pr - c) + ' per piece)' : ''; };
+  $('#f-cost').oninput = mg; $('#f-price').oninput = mg; mg();
+  if (!p) { const upd = () => { $('#f-sku').placeholder = makeSku($('#f-cat').value) + ' (auto)'; }; $('#f-cat').onchange = upd; upd(); $('#f-cancel').onclick = closeSheet; }
+  else {
+    $('#f-stock').onclick = () => purchaseForm(sku);
+    $('#f-del').onclick = async () => {
+      if (!needDb()) return;
+      const used = (soldQty.get(sku) || 0) + (inQty.get(sku) || 0);
+      if (await ask('Delete ' + p.name + ' (' + sku + ')?' + (used ? ' Its past bills and purchases stay in your records.' : ''), 'Delete', true)) {
+        try { await db.doc('products/' + safeId(sku)).delete(); toast('Product deleted'); } catch (e) { dbFail(e); }
+      }
+    };
+  }
+  $('#f-save').onclick = async () => {
+    if (!needDb()) return;
+    const name = $('#f-name').value.trim(); if (!name) { toast('Enter a product name'); $('#f-name').focus(); return; }
+    let newSku = p ? p.sku : ($('#f-sku').value.trim().toUpperCase() || makeSku($('#f-cat').value));
+    newSku = safeId(newSku);
+    if (!p && products.has(newSku)) { toast('SKU ' + newSku + ' already exists'); return; }
+    const doc = {sku: newSku, name, category: $('#f-cat').value, fabric: $('#f-fab').value.trim(), colour: $('#f-col').value.trim(), size: $('#f-size').value,
+      cost: num($('#f-cost').value), price: num($('#f-price').value), opening: Math.round(num($('#f-open').value)),
+      reorder: $('#f-re').value === '' ? '' : Math.round(num($('#f-re').value)), createdAt: p && p.createdAt || Date.now()};
+    if (p && p.sample) doc.sample = true;
+    $('#f-save').disabled = true;
+    try { await db.doc('products/' + newSku).set(doc); closeSheet(); toast(p ? 'Saved' : 'Added ' + newSku); } catch (e) { dbFail(e); $('#f-save').disabled = false; }
+  };
+}
+
+/* ---------- stock: purchases ---------- */
+function renderPurchases() {
+  const list = [...purchases].sort((a, b) => (b.date || '').localeCompare(a.date || '') || num(b.createdAt) - num(a.createdAt));
+  const m = monthStr(todayStr()), mt = list.filter(p => monthStr(p.date || '') === m);
+  $('#isum').textContent = 'This month: ' + mt.reduce((a, p) => a + num(p.qty), 0) + ' pieces bought for ' + R0(mt.reduce((a, p) => a + num(p.qty) * num(p.cost), 0));
+  $('#ilist').innerHTML = list.length ? list.slice(0, 300).map(p => '<button class="row" data-pur="' + esc(p.id) + '"><div class="grow"><div class="t">' + esc(p.name || p.sku) + '</div><div class="s">' + nice(p.date) + ' · ' + esc(p.supplier || 'No supplier') + (p.ref ? ' · ' + esc(p.ref) : '') + '</div></div><div class="r"><b>+' + num(p.qty) + '</b><br><span class="badge ' + (p.status === 'Paid' ? 'b-ok' : p.status === 'Pending' ? 'b-bad' : 'b-warn') + '">' + esc(p.status || 'Paid') + '</span></div></button>').join('')
+    : '<div class="empty">No stock received yet. Tap “+ Stock in” when new stock arrives.</div>';
+}
+$('#ilist').addEventListener('click', e => { const b = e.target.closest('[data-pur]'); if (b) purchaseForm(null, b.dataset.pur); });
+function purchaseForm(sku, id) {
+  const ex = id ? purchases.find(p => p.id === id) : null;
+  const plist = [...products.values()].sort((a, b) => a.name.localeCompare(b.name));
+  if (!plist.length) { toast('Add a product first'); return; }
+  const sel = ex ? ex.sku : sku || plist[0].sku;
+  const sups = [...new Set(purchases.map(p => p.supplier).filter(Boolean))];
+  openSheet('<h2>' + (ex ? 'Stock entry' : 'Stock in') + '</h2>' +
+    '<label for="u-sku">Product</label><select id="u-sku">' + plist.map(p => '<option value="' + esc(p.sku) + '"' + (p.sku === sel ? ' selected' : '') + '>' + esc(p.name + ' · ' + (p.size || '') + ' · ' + p.sku) + '</option>').join('') + '</select>' +
+    '<div class="grid2"><div><label for="u-qty">Quantity received</label><input id="u-qty" type="number" inputmode="numeric" min="1" value="' + esc(ex ? ex.qty : '') + '"></div>' +
+    '<div><label for="u-cost">Unit cost ₹</label><input id="u-cost" type="number" inputmode="decimal" min="0" value="' + esc(ex ? ex.cost : '') + '"></div>' +
+    '<div><label for="u-date">Date</label><input id="u-date" type="date" value="' + esc(ex ? ex.date : todayStr()) + '"></div>' +
+    '<div><label for="u-st">Payment</label><select id="u-st">' + opts(['Paid', 'Partly Paid', 'Pending'], ex ? ex.status : 'Paid') + '</select></div></div>' +
+    '<label for="u-sup">Supplier</label><input id="u-sup" list="u-sups" value="' + esc(ex ? ex.supplier : '') + '"><datalist id="u-sups">' + sups.map(s => '<option value="' + esc(s) + '">').join('') + '</datalist>' +
+    '<label for="u-ref">Supplier bill / ref no.</label><input id="u-ref" value="' + esc(ex ? ex.ref : '') + '">' +
+    '<label for="u-note">Notes</label><input id="u-note" value="' + esc(ex ? ex.notes : '') + '">' +
+    '<div class="btns" style="margin-top:14px">' + (ex ? '<button class="btn danger" id="u-del">Delete</button>' : '<button class="btn" id="u-cancel">Cancel</button>') + '<button class="btn p" id="u-save">Save</button></div>');
+  const fillCost = () => { if (!ex) { const p = products.get($('#u-sku').value); $('#u-cost').value = p ? num(p.cost) : ''; } };
+  $('#u-sku').onchange = fillCost; if (!ex) fillCost();
+  if (ex) $('#u-del').onclick = async () => { if (needDb() && await ask('Delete this stock entry? Stock will go down by ' + ex.qty + '.', 'Delete', true)) { try { await db.doc('purchases/' + ex.id).delete(); toast('Deleted'); } catch (e) { dbFail(e); } } };
+  else $('#u-cancel').onclick = closeSheet;
+  $('#u-save').onclick = async () => {
+    if (!needDb()) return;
+    const q = Math.round(num($('#u-qty').value)); if (q <= 0) { toast('Enter the quantity received'); return; }
+    const p = products.get($('#u-sku').value);
+    const doc = {sku: p.sku, name: p.name, qty: q, cost: num($('#u-cost').value), date: $('#u-date').value || todayStr(), status: $('#u-st').value,
+      supplier: $('#u-sup').value.trim(), ref: $('#u-ref').value.trim(), notes: $('#u-note').value.trim(), createdAt: ex ? ex.createdAt : Date.now()};
+    if (ex && ex.sample) doc.sample = true;
+    $('#u-save').disabled = true;
+    try { if (ex) await db.doc('purchases/' + ex.id).set(doc); else await db.collection('purchases').add(doc); closeSheet(); toast('Stock updated: +' + q + ' ' + p.name); }
+    catch (e) { dbFail(e); $('#u-save').disabled = false; }
+  };
+}
+
+/* ---------- bills history ---------- */
+function renderSales() {
+  if (!$('#smonth').value) $('#smonth').value = monthStr(todayStr());
+  const m = $('#smonth').value, q = $('#sfind').value.trim().toLowerCase();
+  const list = sales.filter(b => monthStr(b.date || '') === m && (!q || (b.invoice + ' ' + (b.customer || '') + ' ' + (b.phone || '')).toLowerCase().includes(q)))
+    .sort((a, b) => (b.date || '').localeCompare(a.date || '') || num(b.createdAt) - num(a.createdAt));
+  const tot = list.reduce((a, b) => a + num(b.total), 0), prof = list.reduce((a, b) => a + billProfit(b), 0);
+  $('#skpis').innerHTML = '<div class="kpi"><span>Sales</span><b>' + R0(tot) + '</b></div><div class="kpi"><span>Bills</span><b>' + list.length + '</b></div><div class="kpi"><span>Profit</span><b>' + R0(prof) + '</b></div>';
+  let last = '', html = '';
+  for (const b of list) {
+    if (b.date !== last) { html += '<div class="row" style="background:var(--bg);cursor:default;padding:6px 14px"><b class="small">' + nice(b.date) + '</b></div>'; last = b.date; }
+    html += '<button class="row" data-bill="' + esc(b.id) + '"><div class="grow"><div class="t">' + esc(b.customer || 'Walk-in customer') + '</div><div class="s">' + esc(b.invoice) + ' · ' + num(b.qty) + ' pcs · ' + esc(b.pay || '') + '</div></div><div class="r"><b>' + R0(num(b.total)) + '</b></div></button>';
+  }
+  $('#slist').innerHTML = html || '<div class="empty">No bills for this month.</div>';
+}
+$('#smonth').addEventListener('change', renderSales);
+$('#sfind').addEventListener('input', renderSales);
+$('#slist').addEventListener('click', e => { const b = e.target.closest('[data-bill]'); if (b) { const bill = sales.find(x => x.id === b.dataset.bill); if (bill) showBill(bill); } });
+$('#lowlist').addEventListener('click', e => { const b = e.target.closest('[data-instock]'); if (b) purchaseForm(b.dataset.instock); });
+
+/* ---------- settings ---------- */
+let catDraft = [];
+function fillSettings() {
+  const v = (id, x) => { $(id).value = x ?? ''; };
+  v('#st-name', S.name); v('#st-addr', S.address); v('#st-phone', S.phone); v('#st-gstin', S.gstin); v('#st-prefix', S.prefix);
+  v('#st-reorder', S.reorder); v('#st-footer', S.footer); v('#st-reg', S.gstReg); v('#st-incl', S.inclGst); v('#st-thr', S.threshold);
+  v('#st-low', S.low); v('#st-high', S.high); v('#st-flat', S.flat);
+  v('#st-sizes', S.sizes.join(', ')); v('#st-pays', S.pays.join(', ')); v('#st-chans', S.chans.join(', '));
+  catDraft = structuredClone(S.categories); renderCatEdit();
+}
+function renderCatEdit() {
+  $('#catedit').innerHTML = catDraft.map((c, i) => '<div class="catrow"><input data-cn="' + i + '" value="' + esc(c.name) + '" aria-label="Category name"><input data-cc="' + i + '" value="' + esc(c.code) + '" maxlength="5" aria-label="SKU code"><select data-cr="' + i + '" aria-label="GST rule">' + opts(['Slab', 'Flat'], c.rule) + '</select><button class="x" data-cx="' + i + '" aria-label="Remove">×</button></div>').join('');
+}
+$('#v-more').addEventListener('input', () => { settingsDirty = true; });
+$('#catedit').addEventListener('input', e => { const t = e.target, d = t.dataset;
+  if (d.cn) catDraft[+d.cn].name = t.value; if (d.cc) catDraft[+d.cc].code = t.value.toUpperCase(); });
+$('#catedit').addEventListener('change', e => { const d = e.target.dataset; if (d.cr) { catDraft[+d.cr].rule = e.target.value; settingsDirty = true; } });
+$('#catedit').addEventListener('click', e => { const d = e.target.dataset; if (d.cx) { catDraft.splice(+d.cx, 1); settingsDirty = true; renderCatEdit(); } });
+$('#addcat').onclick = () => { catDraft.push({name: '', code: '', rule: 'Slab'}); settingsDirty = true; renderCatEdit(); };
+const splitList = s => s.split(',').map(x => x.trim()).filter(Boolean);
+$('#savesettings').onclick = async () => {
+  if (!needDb()) return;
+  const n = {name: $('#st-name').value.trim() || 'Your Boutique', address: $('#st-addr').value.trim(), phone: $('#st-phone').value.trim(), gstin: $('#st-gstin').value.trim().toUpperCase(),
+    prefix: $('#st-prefix').value.trim(), footer: $('#st-footer').value.trim(), reorder: Math.round(num($('#st-reorder').value)),
+    gstReg: $('#st-reg').value, inclGst: $('#st-incl').value, threshold: num($('#st-thr').value), low: num($('#st-low').value), high: num($('#st-high').value), flat: num($('#st-flat').value),
+    categories: catDraft.filter(c => c.name.trim()).map(c => ({name: c.name.trim(), code: (c.code || c.name.slice(0, 3)).toUpperCase().replace(/[^A-Z0-9]/g, ''), rule: c.rule})),
+    sizes: splitList($('#st-sizes').value), pays: splitList($('#st-pays').value), chans: splitList($('#st-chans').value)};
+  if (n.gstReg === 'Yes' && !n.gstin && !(await ask('GST is on but GSTIN is blank. Save anyway?', 'Save'))) return;
+  try { await db.doc('config/settings').set(n); settingsDirty = false; toast('Settings saved'); } catch (e) { dbFail(e); }
+};
+
+/* ---------- Excel export / import ---------- */
+let xlsxP;
+function loadXLSX() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return xlsxP ||= new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'xlsx.full.min.js'; s.onload = () => res(window.XLSX); s.onerror = () => { xlsxP = null; rej(new Error('load')); }; document.head.appendChild(s); });
+}
+$('#exportx').onclick = async () => {
+  
+  try {
+    const X = await loadXLSX(), wb = X.utils.book_new();
+    const inv = [...products.values()].sort((a, b) => a.sku.localeCompare(b.sku)).map(p => ({SKU: p.sku, 'Product Name': p.name, Category: p.category, Fabric: p.fabric, 'Colour / Design': p.colour, Size: p.size,
+      'Cost Price': num(p.cost), 'Selling Price': num(p.price), 'Opening Stock': num(p.opening), 'Stock In': inQty.get(p.sku) || 0, 'Units Sold': soldQty.get(p.sku) || 0,
+      'Current Stock': stock.get(p.sku) || 0, 'Reorder Level': p.reorder === '' ? num(S.reorder) : num(p.reorder), 'Stock Value': Math.max(0, stock.get(p.sku) || 0) * num(p.cost)}));
+    const sl = []; for (const b of [...sales].sort((a, b) => (a.date || '').localeCompare(b.date || ''))) for (const it of b.items || [])
+      sl.push({'Invoice No': b.invoice, Date: b.date, SKU: it.sku, Product: it.name, Category: it.category, Size: it.size, Qty: it.qty, 'Unit Price': it.price, 'Discount %': it.disc / 100,
+        'Net Amount': it.net, 'GST %': it.rate / 100, 'Taxable Value': it.taxable, 'GST Amount': it.gst, 'Line Total': it.total, 'Payment Mode': b.pay, Channel: b.channel, Customer: b.customer, Phone: b.phone,
+        Profit: r2(it.taxable - it.qty * it.cost)});
+    const pu = [...purchases].sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(p => ({Date: p.date, 'Bill / Ref No': p.ref, Supplier: p.supplier, SKU: p.sku, Product: p.name, Qty: num(p.qty), 'Unit Cost': num(p.cost), 'Total Cost': num(p.qty) * num(p.cost), 'Payment Status': p.status, Notes: p.notes}));
+    X.utils.book_append_sheet(wb, X.utils.json_to_sheet(inv.length ? inv : [{SKU: ''}]), 'Inventory');
+    X.utils.book_append_sheet(wb, X.utils.json_to_sheet(sl.length ? sl : [{'Invoice No': ''}]), 'Sales');
+    X.utils.book_append_sheet(wb, X.utils.json_to_sheet(pu.length ? pu : [{Date: ''}]), 'Purchases');
+    const out = X.write(wb, {type: 'array', bookType: 'xlsx'});
+    await downloads.save({filename: (S.name || 'Boutique').replace(/[^A-Za-z0-9 ]/g, '').trim().replace(/ +/g, '_') + '_' + todayStr() + '.xlsx', data: out});
+    toast('Excel file saved');
+  } catch (e) { if (e && e.code === 'declined') return; toast('Could not create the Excel file.'); console.error(e); }
+};
+$('#importx').onclick = () => { if (needDb()) $('#importfile').click(); };
+$('#importfile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const X = await loadXLSX(), wb = X.read(await f.arrayBuffer(), {type: 'array'});
+    const ws = wb.Sheets['Inventory'] || wb.Sheets[wb.SheetNames[0]], rows = X.utils.sheet_to_json(ws, {header: 1, defval: ''});
+    const hi = rows.findIndex(r => r.some(c => /product name/i.test(String(c))));
+    if (hi < 0) { toast('Could not find a "Product Name" column.'); return; }
+    const H = rows[hi].map(c => String(c).replace(/\s+/g, ' ').toLowerCase());
+    const col = re => H.findIndex(h => re.test(h));
+    const c = {sku: col(/^sku/), name: col(/product name/), cat: col(/^category/), fab: col(/^fabric/), colr: col(/^colou?r/), size: col(/^size/), cost: col(/^cost/), price: col(/^selling/),
+      cur: col(/^current stock/), open: col(/^opening/), re: col(/^reorder/)};
+    const g = (r, i) => i >= 0 ? r[i] : '';
+    const items = rows.slice(hi + 1).filter(r => String(g(r, c.name)).trim());
+    if (!items.length) { toast('No products found in that file.'); return; }
+    if (!(await ask('Import ' + items.length + ' products? Products with the same SKU are updated. Current stock from the file becomes the opening stock.', 'Import'))) return;
+    let n = 0; toast('Importing…');
+    for (const r of items) {
+      const cat = String(g(r, c.cat)).trim() || 'Other';
+      let sku = safeId(String(g(r, c.sku)).trim().toUpperCase() || makeSku(cat));
+      const curv = c.cur >= 0 && String(g(r, c.cur)) !== '' ? g(r, c.cur) : g(r, c.open);
+      const doc = {sku, name: String(g(r, c.name)).trim(), category: cat, fabric: String(g(r, c.fab)).trim(), colour: String(g(r, c.colr)).trim(), size: String(g(r, c.size)).trim(),
+        cost: num(g(r, c.cost)), price: num(g(r, c.price)), opening: Math.round(num(curv)), reorder: String(g(r, c.re)) === '' ? '' : Math.round(num(g(r, c.re))), createdAt: Date.now()};
+      await db.doc('products/' + sku).set(doc); products.set(sku, doc); n++;
+      if (n % 20 === 0) { toast('Imported ' + n + ' of ' + items.length); await new Promise(z => setTimeout(z, 600)); }
+    }
+    toast('Imported ' + n + ' products');
+  } catch (err) { console.error(err); err && err.code ? dbFail(err) : toast('Could not read that file.'); }
+};
+$('#clearsample').onclick = async () => {
+  if (!needDb()) return;
+  const sp = [...products.values()].filter(p => p.sample), ss = sales.filter(b => b.sample), su = purchases.filter(p => p.sample);
+  const total = sp.length + ss.length + su.length;
+  if (!total) { toast('No sample data left'); return; }
+  if (!(await ask('Remove ' + sp.length + ' sample products, ' + ss.length + ' sample bills and ' + su.length + ' sample stock entries?', 'Remove', true))) return;
+  try {
+    for (const b of ss) await db.doc('sales/' + b.id).delete();
+    for (const p of su) await db.doc('purchases/' + p.id).delete();
+    for (const p of sp) await db.doc('products/' + safeId(p.sku)).delete();
+    toast('Sample data removed');
+  } catch (e) { dbFail(e); }
+};
+
+/* ---------- navigation ---------- */
+function setFab() {
+  const f = $('#fab');
+  if (view === 'stock') { f.style.display = 'flex'; f.textContent = stockTab === 'p' ? '+ Product' : '+ Stock in'; }
+  else f.style.display = 'none';
+}
+$('#fab').onclick = () => { stockTab === 'p' ? productForm(null) : purchaseForm(null); };
+function go(v) {
+  view = v; document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  if (v === 'bill') setTimeout(() => $('#pq').focus(), 50);
+  setFab(); window.scrollTo(0, 0);
+}
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(b.dataset.v); });
+$('#sg-p').onclick = () => { stockTab = 'p'; $('#sg-p').classList.add('on'); $('#sg-i').classList.remove('on'); $('#stock-p').style.display = ''; $('#stock-i').style.display = 'none'; setFab(); };
+$('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('#sg-p').classList.remove('on'); $('#stock-i').style.display = ''; $('#stock-p').style.display = 'none'; setFab(); };
+
+/* ---------- data on this phone ---------- */
+const LocalDB = (() => {
+  const mem = new Map(), subs = new Set(); let idb = null;
+  const meta = {fromCache: false, hasPendingWrites: false};
+  const openIdb = () => new Promise((res, rej) => { const r = indexedDB.open('boutique-stock', 1); r.onupgradeneeded = () => r.result.createObjectStore('docs'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  async function init() {
+    try {
+      idb = await openIdb();
+      await new Promise((res, rej) => { const rq = idb.transaction('docs').objectStore('docs').openCursor(); rq.onsuccess = () => { const c = rq.result; if (c) { mem.set(c.key, c.value); c.continue(); } else res(); }; rq.onerror = () => rej(rq.error); });
+    } catch (e) {
+      idb = null; try { const o = JSON.parse(localStorage.getItem('boutique-docs') || '{}'); for (const k in o) mem.set(k, o[k]); } catch {}
+    }
+  }
+  function persist(ops) {
+    if (idb) return new Promise((res, rej) => { const tx = idb.transaction('docs', 'readwrite'), st = tx.objectStore('docs'); for (const [p, v] of ops) v === undefined ? st.delete(p) : st.put(v, p); tx.oncomplete = res; tx.onerror = () => rej({code: tx.error && tx.error.name === 'QuotaExceededError' ? 'quota_exceeded' : 'unavailable'}); tx.onabort = tx.onerror; });
+    try { localStorage.setItem('boutique-docs', JSON.stringify(Object.fromEntries(mem))); return Promise.resolve(); } catch { return Promise.reject({code: 'quota_exceeded'}); }
+  }
+  const snap = p => { const v = mem.get(p); return {id: p.split('/').pop(), exists: v !== undefined, data: () => v, metadata: meta}; };
+  const notify = () => { for (const f of subs) f(); };
+  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const docRef = p => ({id: p.split('/').pop(), path: p,
+    get: async () => snap(p),
+    set: async d => { const v = JSON.parse(JSON.stringify(d)); mem.set(p, v); notify(); await persist([[p, v]]); },
+    delete: async () => { mem.delete(p); notify(); await persist([[p, undefined]]); },
+    onSnapshot: next => { const f = () => next(snap(p)); subs.add(f); f(); return () => subs.delete(f); }});
+  const coll = c => ({path: c,
+    doc: id => docRef(c + '/' + (id || newId())),
+    add: async d => { const r = docRef(c + '/' + newId()); await r.set(d); return r; },
+    onSnapshot: next => { const f = () => { const docs = [...mem.keys()].filter(k => k.startsWith(c + '/') && k.indexOf('/', c.length + 1) < 0).sort().map(snap); next({docs, size: docs.length, empty: !docs.length, metadata: meta}); }; subs.add(f); f(); return () => subs.delete(f); }});
+  async function replaceAll(obj) {
+    const ops = [...mem.keys()].map(k => [k, undefined]); mem.clear();
+    for (const k in obj) { mem.set(k, obj[k]); ops.push([k, obj[k]]); }
+    notify(); await persist(ops);
+  }
+  return {init, doc: docRef, collection: coll, all: () => Object.fromEntries(mem), replaceAll, size: () => mem.size};
+})();
+const localDownloads = {save: async ({filename, data}) => {
+  const blob = data instanceof Blob ? data : new Blob([data]);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); return {status: 'saved'};
+}};
+const SEED = [{"op": "set", "path": "products/SAR-001", "data": {"sku": "SAR-001", "name": "Kanjivaram Silk Saree", "category": "Saree", "fabric": "Silk", "colour": "Maroon & Gold", "size": "Free Size", "cost": 6500, "price": 9800, "opening": 6, "reorder": 2, "createdAt": 1790000000000, "sample": true}}, {"op": "set", "path": "products/SAR-002", "data": {"sku": "SAR-002", "name": "Cotton Handloom Saree", "category": "Saree", "fabric": "Cotton", "colour": "Mustard Yellow", "size": "Free Size", "cost": 850, "price": 1450, "opening": 15, "reorder": 4, "createdAt": 1790000000001, "sample": true}}, {"op": "set", "path": "products/SAR-003", "data": {"sku": "SAR-003", "name": "Georgette Printed Saree", "category": "Saree", "fabric": "Georgette", "colour": "Navy Floral", "size": "Free Size", "cost": 650, "price": 1199, "opening": 20, "reorder": 5, "createdAt": 1790000000002, "sample": true}}, {"op": "set", "path": "products/CHU-001", "data": {"sku": "CHU-001", "name": "Cotton Chudithar Set", "category": "Chudithar Set (stitched)", "fabric": "Cotton", "colour": "Peach", "size": "M", "cost": 550, "price": 999, "opening": 12, "reorder": 4, "createdAt": 1790000000003, "sample": true}}, {"op": "set", "path": "products/CHU-002", "data": {"sku": "CHU-002", "name": "Cotton Chudithar Set", "category": "Chudithar Set (stitched)", "fabric": "Cotton", "colour": "Peach", "size": "L", "cost": 550, "price": 999, "opening": 10, "reorder": 4, "createdAt": 1790000000004, "sample": true}}, {"op": "set", "path": "products/CHU-003", "data": {"sku": "CHU-003", "name": "Embroidered Chudithar Set", "category": "Chudithar Set (stitched)", "fabric": "Rayon", "colour": "Bottle Green", "size": "XL", "cost": 1100, "price": 1899, "opening": 8, "reorder": 3, "createdAt": 1790000000005, "sample": true}}, {"op": "set", "path": "products/CHM-001", "data": {"sku": "CHM-001", "name": "Block Print Chudithar Material", "category": "Chudithar Material (unstitched)", "fabric": "Cotton", "colour": "Pink", "size": "Unstitched", "cost": 450, "price": 799, "opening": 10, "reorder": 3, "createdAt": 1790000000006, "sample": true}}, {"op": "set", "path": "products/KUR-001", "data": {"sku": "KUR-001", "name": "Rayon A-line Kurti", "category": "Kurti", "fabric": "Rayon", "colour": "Black", "size": "L", "cost": 320, "price": 649, "opening": 25, "reorder": 6, "createdAt": 1790000000007, "sample": true}}, {"op": "set", "path": "products/ANA-001", "data": {"sku": "ANA-001", "name": "Anarkali Gown", "category": "Anarkali", "fabric": "Georgette", "colour": "Wine", "size": "M", "cost": 1800, "price": 3299, "opening": 3, "reorder": 2, "createdAt": 1790000000008, "sample": true}}, {"op": "set", "path": "products/DUP-001", "data": {"sku": "DUP-001", "name": "Phulkari Dupatta", "category": "Dupatta", "fabric": "Chiffon", "colour": "Multicolour", "size": "Free Size", "cost": 380, "price": 749, "opening": 10, "reorder": 3, "createdAt": 1790000000009, "sample": true}}, {"op": "set", "path": "products/LEG-001", "data": {"sku": "LEG-001", "name": "Ankle Leggings", "category": "Leggings / Bottoms", "fabric": "Cotton Lycra", "colour": "White", "size": "Free Size", "cost": 140, "price": 299, "opening": 30, "reorder": 8, "createdAt": 1790000000010, "sample": true}}, {"op": "set", "path": "purchases/sample-1", "data": {"sku": "SAR-003", "name": "Georgette Printed Saree", "qty": 10, "cost": 650, "date": "2026-10-10", "status": "Paid", "supplier": "Surat Textile Traders", "ref": "ST/2231", "notes": "", "createdAt": 1790000000100, "sample": true}}, {"op": "set", "path": "purchases/sample-2", "data": {"sku": "KUR-001", "name": "Rayon A-line Kurti", "qty": 20, "cost": 310, "date": "2026-11-01", "status": "Partly Paid", "supplier": "Jaipur Kurti House", "ref": "JK-0457", "notes": "Balance due 30-Nov", "createdAt": 1790000000101, "sample": true}}, {"op": "set", "path": "purchases/sample-3", "data": {"sku": "LEG-001", "name": "Ankle Leggings", "qty": 24, "cost": 140, "date": "2026-11-15", "status": "Paid", "supplier": "Tiruppur Knits", "ref": "TP-118", "notes": "", "createdAt": 1790000000102, "sample": true}}, {"op": "set", "path": "sales/INV-0001", "data": {"invoice": "INV-0001", "date": "2026-09-06", "customer": "Lakshmi R", "phone": "9840012345", "pay": "UPI", "channel": "Shop / Walk-in", "items": [{"sku": "SAR-002", "name": "Cotton Handloom Saree", "category": "Saree", "size": "Free Size", "qty": 2, "price": 1450, "disc": 0, "gross": 2900, "discAmt": 0.0, "net": 2900.0, "rate": 0, "taxable": 2900.0, "gst": 0, "total": 2900.0, "cost": 850}], "qty": 2, "taxable": 2900.0, "gst": 0, "total": 2900, "round": 0.0, "createdAt": 1790000000200, "sample": true}}, {"op": "set", "path": "sales/INV-0002", "data": {"invoice": "INV-0002", "date": "2026-09-18", "customer": "Priya S", "phone": "9884023456", "pay": "Cash", "channel": "Shop / Walk-in", "items": [{"sku": "CHU-001", "name": "Cotton Chudithar Set", "category": "Chudithar Set (stitched)", "size": "M", "qty": 1, "price": 999, "disc": 0, "gross": 999, "discAmt": 0.0, "net": 999.0, "rate": 0, "taxable": 999.0, "gst": 0, "total": 999.0, "cost": 550}, {"sku": "KUR-001", "name": "Rayon A-line Kurti", "category": "Kurti", "size": "L", "qty": 2, "price": 649, "disc": 0, "gross": 1298, "discAmt": 0.0, "net": 1298.0, "rate": 0, "taxable": 1298.0, "gst": 0, "total": 1298.0, "cost": 320}], "qty": 3, "taxable": 2297.0, "gst": 0, "total": 2297, "round": 0.0, "createdAt": 1790000000201, "sample": true}}, {"op": "set", "path": "sales/INV-0003", "data": {"invoice": "INV-0003", "date": "2026-10-02", "customer": "Meena K", "phone": "9790034567", "pay": "Card", "channel": "Shop / Walk-in", "items": [{"sku": "SAR-001", "name": "Kanjivaram Silk Saree", "category": "Saree", "size": "Free Size", "qty": 1, "price": 9800, "disc": 5, "gross": 9800, "discAmt": 490.0, "net": 9310.0, "rate": 0, "taxable": 9310.0, "gst": 0, "total": 9310.0, "cost": 6500}], "qty": 1, "taxable": 9310.0, "gst": 0, "total": 9310, "round": 0.0, "createdAt": 1790000000202, "sample": true}}, {"op": "set", "path": "sales/INV-0004", "data": {"invoice": "INV-0004", "date": "2026-10-20", "customer": "Divya M", "phone": "9176045678", "pay": "UPI", "channel": "Instagram", "items": [{"sku": "ANA-001", "name": "Anarkali Gown", "category": "Anarkali", "size": "M", "qty": 1, "price": 3299, "disc": 0, "gross": 3299, "discAmt": 0.0, "net": 3299.0, "rate": 0, "taxable": 3299.0, "gst": 0, "total": 3299.0, "cost": 1800}], "qty": 1, "taxable": 3299.0, "gst": 0, "total": 3299, "round": 0.0, "createdAt": 1790000000203, "sample": true}}, {"op": "set", "path": "sales/INV-0005", "data": {"invoice": "INV-0005", "date": "2026-11-08", "customer": "Kavitha N", "phone": "9600056789", "pay": "UPI", "channel": "WhatsApp", "items": [{"sku": "SAR-003", "name": "Georgette Printed Saree", "category": "Saree", "size": "Free Size", "qty": 3, "price": 1199, "disc": 10, "gross": 3597, "discAmt": 359.7, "net": 3237.3, "rate": 0, "taxable": 3237.3, "gst": 0, "total": 3237.3, "cost": 650}], "qty": 3, "taxable": 3237.3, "gst": 0, "total": 3237, "round": -0.3, "createdAt": 1790000000204, "sample": true}}, {"op": "set", "path": "sales/INV-0006", "data": {"invoice": "INV-0006", "date": "2026-11-25", "customer": "Anitha V", "phone": "9445067890", "pay": "Cash", "channel": "Shop / Walk-in", "items": [{"sku": "CHU-003", "name": "Embroidered Chudithar Set", "category": "Chudithar Set (stitched)", "size": "XL", "qty": 1, "price": 1899, "disc": 0, "gross": 1899, "discAmt": 0.0, "net": 1899.0, "rate": 0, "taxable": 1899.0, "gst": 0, "total": 1899.0, "cost": 1100}, {"sku": "DUP-001", "name": "Phulkari Dupatta", "category": "Dupatta", "size": "Free Size", "qty": 1, "price": 749, "disc": 0, "gross": 749, "discAmt": 0.0, "net": 749.0, "rate": 0, "taxable": 749.0, "gst": 0, "total": 749.0, "cost": 380}], "qty": 2, "taxable": 2648.0, "gst": 0, "total": 2648, "round": 0.0, "createdAt": 1790000000205, "sample": true}}];
+
+$('#backupx').onclick = async () => {
+  if (!needDb()) return;
+  const data = JSON.stringify({app: 'boutique-stock', version: 1, savedAt: new Date().toISOString(), docs: db.all()});
+  await downloads.save({filename: 'Backup_' + (S.name || 'Boutique').replace(/[^A-Za-z0-9 ]/g, '').trim().replace(/ +/g, '_') + '_' + todayStr() + '.json', data: new Blob([data], {type: 'application/json'})});
+  try { await db.doc('config/meta').set(Object.assign({}, (await db.doc('config/meta').get()).data() || {}, {lastBackup: todayStr()})); } catch {}
+  toast('Backup saved to Downloads');
+};
+$('#restorex').onclick = () => $('#restorefile').click();
+$('#restorefile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f || !needDb()) return;
+  try {
+    const o = JSON.parse(await f.text());
+    if (!o || o.app !== 'boutique-stock' || typeof o.docs !== 'object') { toast('That is not a backup from this app.'); return; }
+    const n = Object.keys(o.docs).filter(k => k.startsWith('sales/')).length;
+    if (!(await ask('Replace everything on this phone with the backup from ' + String(o.savedAt || '').slice(0, 10) + ' (' + n + ' bills)?', 'Restore', true))) return;
+    await db.replaceAll(o.docs); settingsDirty = false; toast('Backup restored');
+  } catch (err) { console.error(err); toast('Could not read that backup file.'); }
+};
+function showLastBackup() {
+  db.doc('config/meta').onSnapshot(s => { const d = s.data() || {}; $('#lastbackup').textContent = d.lastBackup ? 'Last backup: ' + nice(d.lastBackup) : 'No backup made yet.'; });
+}
+
+renderAll();
+(async () => {
+  await LocalDB.init();
+  db = LocalDB; downloads = localDownloads;
+  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch {}
+  if (!(await db.doc('config/meta').get()).exists) {
+    for (const op of SEED) await db.doc(op.path).set(op.data);
+    await db.doc('config/meta').set({seeded: true});
+  }
+  $('#sync').textContent = 'Saved on phone';
+  let raf = 0; const later = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(renderAll); };
+  db.doc('config/settings').onSnapshot(s => { const d = s.exists ? s.data() : null; S = Object.assign(structuredClone(DEFAULTS), d ? structuredClone(d) : {}); later(); });
+  db.collection('products').onSnapshot(s => { products = new Map(s.docs.map(d => { const x = d.data(); return [x.sku || d.id, Object.assign({}, x, {sku: x.sku || d.id})]; })); later(); });
+  db.collection('sales').onSnapshot(s => { sales = s.docs.map(d => Object.assign({id: d.id}, d.data())); later(); });
+  db.collection('purchases').onSnapshot(s => { purchases = s.docs.map(d => Object.assign({id: d.id}, d.data())); later(); });
+  showLastBackup();
+})();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
