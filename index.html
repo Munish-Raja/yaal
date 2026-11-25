@@ -104,7 +104,6 @@ label{display:block;font-size:13px;font-weight:600;color:var(--mute);margin:10px
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:linear-gradient(180deg,var(--cream),#EEF1E2);border-top:2px solid var(--gold);box-shadow:0 -2px 0 var(--sage2);padding-inline:max(0px,calc(50% - 380px));display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom)}
 nav.tabs button{border:0;background:none;min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:600;color:var(--mute);cursor:pointer}
 nav.tabs button.on{color:var(--maroon2)}
-nav.tabs button.on svg{stroke:var(--maroon2)}
 nav.tabs .billtab span.dot{width:46px;height:30px;border-radius:15px;background:var(--maroon);display:flex;align-items:center;justify-content:center}
 nav.tabs .billtab svg{stroke:#fff}
 .sheetwrap{position:fixed;inset:0;z-index:40;background:rgba(20,10,14,.5);display:none;align-items:flex-end;justify-content:center}
@@ -136,6 +135,90 @@ nav.tabs .billtab svg{stroke:#fff}
 .hr{height:1px;background:var(--line);margin:18px 0}
 a{color:var(--maroon2)}
 @media(min-width:620px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.kpi.hero{grid-column:span 3}}
+
+/* ---------- premium layer ---------- */
+:root{--sh1:0 1px 1px rgba(8,30,17,.10),0 2px 6px -1px rgba(8,30,17,.16);--sh2:0 1px 2px rgba(8,30,17,.12),0 10px 28px -10px rgba(8,30,17,.45);--ease:cubic-bezier(.2,.8,.2,1);--hair:rgba(192,138,30,.30)}
+h2,h3{font-family:Marcellus,Georgia,serif;font-weight:400;letter-spacing:.03em}
+h2{font-size:28px}
+h3{font-size:19px;display:flex;align-items:center;gap:10px}
+h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(233,217,166,.55),transparent)}
+.card h3::after{background:linear-gradient(90deg,var(--hair),transparent)}
+.kpi,.list,.card{border:1px solid var(--hair);box-shadow:var(--sh2);border-radius:18px}
+.kpi{position:relative;overflow:hidden;transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+.kpi::before{content:"";position:absolute;inset:0 0 auto;height:40%;background:linear-gradient(180deg,rgba(255,255,255,.55),transparent);pointer-events:none}
+.kpi span{letter-spacing:.01em}
+.kpi>*{position:relative;z-index:1}
+.kpi.hero{background:linear-gradient(135deg,#FFF7E2 0%,#F6E6BC 55%,#EBD397 100%);border-color:#E2C985}
+.kpi.hero::after{content:"";position:absolute;top:-60%;left:-30%;width:40%;height:220%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:rotate(18deg);animation:sheen 5.5s var(--ease) 1.2s infinite}
+@keyframes sheen{0%{left:-40%}22%,100%{left:130%}}
+@media(hover:hover){.kpi:hover,.list:hover{box-shadow:0 2px 3px rgba(8,30,17,.12),0 16px 34px -12px rgba(8,30,17,.5)}.kpi:hover{transform:translateY(-2px)}}
+.row{transition:background .2s var(--ease)}
+.badge{box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}
+.btn{border-radius:14px;box-shadow:var(--sh1);transition:transform .15s var(--ease),box-shadow .2s var(--ease),filter .2s}
+.btn:active,.chip:active,.qty button:active,.x:active{transform:scale(.96)}
+.btn.p{background:linear-gradient(180deg,#1B6A3E,#0F4A2A);border-color:#0C3F23;box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 8px 18px -8px rgba(15,74,42,.8)}
+.btn.gold,.fab{background:linear-gradient(180deg,#D9A63A,#B9801A);border-color:#A9741A;box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 8px 18px -8px rgba(150,100,10,.8)}
+.fab{border-radius:18px;transition:transform .2s var(--ease);animation:pop .45s var(--ease) both}
+.fab:active{transform:scale(.95)}
+input,select,textarea{transition:border-color .2s,box-shadow .2s;background:#FFFBF1}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(192,138,30,.18)}
+.chip{box-shadow:var(--sh1);transition:background .2s,color .2s,transform .15s var(--ease)}
+.seg{border-radius:14px;padding:4px}
+.seg button{transition:background .25s var(--ease),color .25s}
+.seg button.on{box-shadow:0 2px 8px -2px rgba(8,30,17,.4)}
+.banner{border:1px solid rgba(192,138,30,.35);box-shadow:var(--sh2);border-radius:16px}
+/* view + content entrance */
+.view.on{animation:viewIn .38s var(--ease) both}
+.view.on>*{animation:rise .5s var(--ease) both}
+.view.on>*:nth-child(2){animation-delay:.04s}.view.on>*:nth-child(3){animation-delay:.08s}.view.on>*:nth-child(4){animation-delay:.12s}
+.view.on>*:nth-child(5){animation-delay:.16s}.view.on>*:nth-child(6){animation-delay:.2s}.view.on>*:nth-child(n+7){animation-delay:.24s}
+.kpis .kpi{animation:rise .5s var(--ease) both}
+.kpis .kpi:nth-child(2){animation-delay:.05s}.kpis .kpi:nth-child(3){animation-delay:.1s}.kpis .kpi:nth-child(4){animation-delay:.15s}.kpis .kpi:nth-child(5){animation-delay:.2s}.kpis .kpi:nth-child(n+6){animation-delay:.25s}
+.bar i{transform-origin:left;animation:grow .7s var(--ease) both;background:linear-gradient(90deg,#1B6A3E,#0F4A2A)}
+.bar i.g{background:linear-gradient(90deg,#D9A63A,#B9801A)}
+@keyframes viewIn{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes pop{from{opacity:0;transform:scale(.8) translateY(10px)}to{opacity:1;transform:none}}
+/* header */
+header.top{backdrop-filter:saturate(1.2)}
+.logo{box-shadow:0 0 0 2px var(--gold),0 4px 10px -3px rgba(90,60,10,.45);transition:transform .4s var(--ease)}
+.logo:active{transform:rotate(-8deg) scale(.96)}
+.sync{display:flex;align-items:center;justify-content:center;min-width:28px}
+.st{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;flex:none}
+.st svg{width:14px;height:14px;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.st.ok{background:linear-gradient(180deg,#1B6A3E,#0F4A2A);box-shadow:0 0 0 2px var(--gold),0 3px 8px -2px rgba(15,74,42,.6);animation:pop .4s var(--ease) both}
+.st.ok svg{stroke:var(--cream)}
+.st.ok path{stroke-dasharray:24;stroke-dashoffset:24;animation:draw .5s var(--ease) .15s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.st.busy{border:3px solid rgba(192,138,30,.25);border-top-color:var(--gold);animation:spin .8s linear infinite;width:22px;height:22px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.st.wait{background:#F3D9A0;color:#7A5200;font:700 12px/1 Hind,sans-serif;box-shadow:0 0 0 2px #E2B85C}
+.st.bad{background:#FDE3E1;color:var(--bad);font:700 15px/1 Hind,sans-serif;box-shadow:0 0 0 2px #F2A7A1}
+.st.local{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(15,74,42,.45)}
+.st.local svg{stroke:var(--maroon);stroke-width:2}
+/* bottom navigation */
+nav.tabs{backdrop-filter:blur(8px);box-shadow:0 -2px 0 var(--sage2),0 -10px 24px -12px rgba(8,30,17,.45)}
+nav.tabs button{transition:color .25s var(--ease)}
+nav.tabs .ico{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .3s var(--ease),transform .3s var(--ease),box-shadow .3s var(--ease)}
+nav.tabs button.on{color:var(--maroon)}
+nav.tabs button.on .ico{background:radial-gradient(circle at 35% 30%,#22774A,#0F4A2A 70%);box-shadow:0 0 0 2px rgba(192,138,30,.55),0 6px 14px -4px rgba(15,74,42,.65);transform:translateY(-3px)}
+nav.tabs button.on .ico svg{stroke:var(--cream)}
+nav.tabs button:active .ico{transform:scale(.9)}
+nav.tabs .billtab span.dot{width:50px;height:40px;border-radius:20px;background:linear-gradient(180deg,#1B6A3E,#0F4A2A);box-shadow:0 6px 14px -4px rgba(15,74,42,.7);transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+nav.tabs .billtab.on span.dot{box-shadow:0 0 0 2px var(--gold),0 8px 18px -4px rgba(15,74,42,.8);transform:translateY(-3px)}
+/* sheets + toast */
+.sheetwrap{backdrop-filter:blur(3px);transition:opacity .2s}
+.sheetwrap.on{animation:fade .2s ease-out}
+.sheetwrap.closing{opacity:0}
+.sheetwrap.closing .sheet{transform:translateY(30px);transition:transform .2s ease-in}
+.sheet{box-shadow:0 -12px 40px -10px rgba(8,30,17,.55);border-top:2px solid var(--gold);animation:sheetUp .38s var(--ease)}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.toast{display:block;opacity:0;pointer-events:none;transform:translate(-50%,12px);transition:opacity .25s var(--ease),transform .25s var(--ease);border-radius:999px;padding:11px 18px;background:#123F26;color:var(--cream);box-shadow:0 0 0 1px rgba(192,138,30,.5),0 12px 28px -10px rgba(0,0,0,.6)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.memo{border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 30px -14px rgba(8,30,17,.45)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -285,11 +368,11 @@ a{color:var(--maroon2)}
 <button class="fab" id="fab" style="display:none"></button>
 
 <nav class="tabs" id="tabs">
-  <button data-v="home" class="on"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>Home</button>
-  <button data-v="stock"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>Stock</button>
+  <button data-v="home" class="on"><span class="ico"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg></span>Home</button>
+  <button data-v="stock"><span class="ico"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg></span>Stock</button>
   <button data-v="bill" class="billtab"><span class="dot"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></span>New bill</button>
-  <button data-v="sales"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Bills</button>
-  <button data-v="more"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-2.7 1.1V21a2 2 0 11-4 0v-.1a1.6 1.6 0 00-2.7-1.1l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.6 1.6 0 003 15.3H3a2 2 0 110-4h.1a1.6 1.6 0 001.1-2.7l-.1-.1a2 2 0 112.8-2.8l.1.1A1.6 1.6 0 009 4.6V4.5a2 2 0 114 0v.1a1.6 1.6 0 002.7 1.1l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 001.1 2.7h.1a2 2 0 110 4h-.1a1.6 1.6 0 00-1.2.8z"/></svg>Settings</button>
+  <button data-v="sales"><span class="ico"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span>Bills</button>
+  <button data-v="more"><span class="ico"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-2.7 1.1V21a2 2 0 11-4 0v-.1a1.6 1.6 0 00-2.7-1.1l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.6 1.6 0 003 15.3H3a2 2 0 110-4h.1a1.6 1.6 0 001.1-2.7l-.1-.1a2 2 0 112.8-2.8l.1.1A1.6 1.6 0 009 4.6V4.5a2 2 0 114 0v.1a1.6 1.6 0 002.7 1.1l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 001.1 2.7h.1a2 2 0 110 4h-.1a1.6 1.6 0 00-1.2.8z"/></svg></span>Settings</button>
 </nav>
 
 <div class="sheetwrap" id="sheetwrap"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
@@ -336,8 +419,8 @@ const loaded = {settings:false, products:false, sales:false, purchases:false};
 /* ---------- small UI helpers ---------- */
 let toastT;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); }
-function openSheet(html) { $('#sheet').innerHTML = '<div class="grab"></div>' + html; $('#sheetwrap').classList.add('on'); $('#sheet').scrollTop = 0; }
-function closeSheet() { $('#sheetwrap').classList.remove('on'); $('#sheet').innerHTML = ''; }
+function openSheet(html) { const w = $('#sheetwrap'); w.classList.remove('closing'); $('#sheet').innerHTML = '<div class="grab"></div>' + html; w.classList.add('on'); $('#sheet').scrollTop = 0; }
+function closeSheet() { const w = $('#sheetwrap'); if (!w.classList.contains('on')) return; w.classList.add('closing'); setTimeout(() => { w.classList.remove('on', 'closing'); if (!w.classList.contains('on')) $('#sheet').innerHTML = ''; }, 190); }
 $('#sheetwrap').addEventListener('click', e => { if (e.target.id === 'sheetwrap') closeSheet(); });
 function ask(msg, okText = 'Yes', danger = false) {
   return new Promise(res => {
@@ -394,6 +477,15 @@ function makeSku(category) {
 /* ---------- render: header + home ---------- */
 function renderAll() { recompute(); $('#brand').textContent = S.name || 'YAAL'; renderHome(); renderBillPickers(); renderCart(); renderProducts(); renderPurchases(); renderSales(); if (!settingsDirty) fillSettings(); setFab(); }
 
+let heroShown = null, heroRaf = 0;
+function countUp(el, to) {
+  if (!el) return;
+  const from = heroShown == null ? 0 : heroShown; heroShown = to;
+  if (from === to || matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = R0(to); return; }
+  cancelAnimationFrame(heroRaf); const t0 = performance.now(), d = 700;
+  const step = t => { const p = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - p, 3); el.textContent = R0(from + (to - from) * e); if (p < 1) heroRaf = requestAnimationFrame(step); };
+  heroRaf = requestAnimationFrame(step);
+}
 function renderHome() {
   const t = todayStr(), m = monthStr(t);
   const todays = sales.filter(b => b.date === t), months = sales.filter(b => monthStr(b.date || '') === m);
@@ -409,7 +501,10 @@ function renderHome() {
     ['', 'Low / out of stock', low + ' / ' + out],
     ['', 'Products', products.size.toLocaleString('en-IN')]
   ];
-  $('#kpis').innerHTML = k.map(([c, l, v]) => '<div class="kpi ' + c + '"><span>' + esc(l) + '</span><b>' + esc(v) + '</b></div>').join('');
+  const heroVal = sum(todays);
+  if (!$('#kpis').children.length) $('#kpis').innerHTML = k.map(([c, l, v]) => '<div class="kpi ' + c + '"><span></span><b></b></div>').join('');
+  [...$('#kpis').children].forEach((el, n) => { if (!k[n]) return; el.className = 'kpi ' + k[n][0]; el.firstChild.textContent = k[n][1]; if (n) el.lastChild.textContent = k[n][2]; });
+  countUp($('#kpis .kpi.hero b'), heroVal);
 
   const now = new Date(), ms = [];
   for (let i = 5; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); ms.push(d.getFullYear() + '-' + pad(d.getMonth() + 1)); }
@@ -974,7 +1069,15 @@ function renderCloud() {
   $('#cloudon').style.display = i.cloud && !i.badKey ? '' : 'none';
   el.classList.toggle('on', !!i.cloud);
   const sync = $('#sync');
-  sync.textContent = !i.cloud ? 'On this phone' : i.badKey ? 'Key wrong' : i.pending ? (i.online === false ? 'Offline · ' + i.pending + ' waiting' : 'Saving…') : i.online === false ? 'Offline' : 'Cloud ✓';
+  let ic, lbl;
+  if (!i.cloud) { ic = '<span class="st local"><svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17h2"/></svg></span>'; lbl = 'Saved on this phone only'; }
+  else if (i.badKey) { ic = '<span class="st bad">!</span>'; lbl = 'Cloud key not accepted'; }
+  else if (i.pending && i.online === false) { ic = '<span class="st wait">' + Math.min(i.pending, 99) + '</span>'; lbl = 'Offline - ' + i.pending + ' change(s) waiting to upload'; }
+  else if (i.pending || i.flushing) { ic = '<span class="st busy"></span>'; lbl = 'Saving to cloud'; }
+  else if (i.online === false) { ic = '<span class="st wait">!</span>'; lbl = 'Offline'; }
+  else { ic = '<span class="st ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>'; lbl = 'Saved to cloud'; }
+  if (sync.dataset.k !== ic) { sync.innerHTML = ic; sync.dataset.k = ic; }
+  sync.title = lbl; sync.setAttribute('aria-label', lbl); sync.setAttribute('role', 'img');
   const b = $('#banner');
   if (!i.cloud) { b.innerHTML = 'Your data is only on this phone. <a href="#" id="gocloud">Connect your Google Sheet</a> to store it in the cloud.'; b.classList.add('on'); const g = $('#gocloud'); if (g) g.onclick = ev => { ev.preventDefault(); go('more'); $('#cloudbox').scrollIntoView({behavior: 'smooth'}); }; }
   else if (i.badKey) { b.textContent = 'Cloud key not accepted - open Settings and connect again.'; b.classList.add('on'); }
