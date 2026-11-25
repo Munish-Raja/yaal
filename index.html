@@ -175,6 +175,15 @@ a{color:var(--maroon2)}
 .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
 .thumb.has img{opacity:1}
 .thumb.has i{visibility:hidden}
+.mbc{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:12px;font-size:11px;color:#6B7266}
+.mbc svg{height:34px;max-width:170px;width:auto}
+
+.memoimg{display:block;width:100%;height:auto;border-radius:10px;box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 30px -14px rgba(8,30,17,.45);animation:fade .25s ease-out}
+.phstatus{text-align:center;font-size:13px;margin:-2px 0 8px;color:var(--mute)}
+.phstatus.ok{color:var(--ok)}.phstatus.warn{color:var(--warn)}.phstatus.bad{color:var(--bad)}
+.photoline{margin-top:12px;padding:10px 12px;border-radius:12px;background:#F7EFD9;border:1px solid var(--line);font-size:14px}
+.photoline.bad{background:#FDE9E6;border-color:#F2B8B1;color:#8A1F17}
+.photoline ol{margin:6px 0 0;padding-left:20px}
 /* ---------- premium layer ---------- */
 :root{--sh1:0 1px 1px rgba(8,30,17,.10),0 2px 6px -1px rgba(8,30,17,.16);--sh2:0 1px 2px rgba(8,30,17,.12),0 10px 28px -10px rgba(8,30,17,.45);--ease:cubic-bezier(.2,.8,.2,1);--hair:rgba(192,138,30,.30)}
 h2,h3{font-family:Marcellus,Georgia,serif;font-weight:400;letter-spacing:.03em}
@@ -312,7 +321,7 @@ header.top,nav.tabs,.sheetwrap{backdrop-filter:none!important;-webkit-backdrop-f
   <!-- NEW BILL -->
   <section class="view" id="v-bill">
     <h2>New bill</h2>
-    <div class="search scanrow"><input id="pq" type="search" placeholder="Search, or scan a barcode…" autocomplete="off" enterkeyhint="go"><button class="btn p scanbtn" id="scanbtn" aria-label="Scan barcode with camera"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a1 1 0 011-1h2M17 4h2a1 1 0 011 1v2M20 17v2a1 1 0 01-1 1h-2M7 20H5a1 1 0 01-1-1v-2"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8"/></svg>Scan</button></div>
+    <div class="search scanrow"><input id="pq" type="search" placeholder="Search, or scan a barcode…" autocomplete="off" enterkeyhint="go"><button class="btn gold scanbtn" id="scanbtn" aria-label="Scan barcode with camera"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a1 1 0 011-1h2M17 4h2a1 1 0 011 1v2M20 17v2a1 1 0 01-1 1h-2M7 20H5a1 1 0 01-1-1v-2"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8"/></svg>Scan</button></div>
     <div class="list" id="presults" style="margin-bottom:12px"></div>
     <div class="list" id="cart"></div>
     <div class="card" style="margin-top:12px">
@@ -404,6 +413,7 @@ header.top,nav.tabs,.sheetwrap{backdrop-filter:none!important;-webkit-backdrop-f
         <div class="btns" style="margin-top:8px"><a class="btn gold" id="cloudwa" href="#" target="_blank" rel="noopener">Send staff link on WhatsApp</a><button class="btn danger" id="cloudoff">Disconnect</button></div>
         <p class="small mute" style="margin-bottom:0">The staff link connects a phone to your sheet in one tap. Share it only with people you trust.</p>
       </div>
+      <div class="photoline" id="photoline"></div>
     </div>
     <h3>Excel</h3>
     <div class="card">
@@ -739,11 +749,19 @@ function showBill(b) {
     (gstOn ? '<tr class="sum"><td></td><td colspan="3">Taxable value</td><td class="n">' + R2(b.taxable) + '</td></tr><tr><td></td><td colspan="3">CGST</td><td class="n">' + R2(b.gst / 2) + '</td></tr><tr><td></td><td colspan="3">SGST</td><td class="n">' + R2(b.gst / 2) + '</td></tr>' : '') +
     (num(b.round) ? '<tr><td></td><td colspan="3">Round off</td><td class="n">' + R2(b.round) + '</td></tr>' : '') +
     '<tr class="sum gt"><td></td><td colspan="3">Total</td><td class="n">' + R0(b.total) + '</td></tr></table>' +
-    (S.footer ? '<p style="text-align:center;font-style:italic;color:#6B7266;margin:10px 0 0">' + esc(S.footer) + '</p>' : '') + '</div>' +
+    (S.footer ? '<p style="text-align:center;font-style:italic;color:#6B7266;margin:10px 0 0">' + esc(S.footer) + '</p>' : '') + '<div class="mbc"><svg id="memo-bc"></svg><span>' + esc(b.invoice) + '</span></div></div>' +
     '<div class="btns" style="margin-top:14px"><button class="btn gold" id="sharepdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>Send PDF on WhatsApp</button><button class="btn" id="dlpdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Download PDF</button></div>' +
     '<div class="btns" style="margin-top:8px"><a class="btn" href="' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp text</a><button class="btn" id="copybill">Copy text</button></div>' +
     '<div class="btns" style="margin-top:8px"><button class="btn danger" id="delbill">Delete bill</button><button class="btn p" id="closebill">Done</button></div>');
-  const pdfP = billPdf(b); pdfP.catch(() => {});
+  getJsBarcode().then(J => { const el = $('#memo-bc'); if (el) J(el, b.invoice, {format: 'CODE128', height: 34, width: 1.4, displayValue: false, margin: 0, background: 'transparent', lineColor: '#1C2A20'}); }).catch(() => {});
+  const canvasP = billCanvas(b);
+  const pdfP = canvasP.then(c => billPdf(b, c)); pdfP.catch(() => {});
+  canvasP.then(c => {
+    const memo = document.querySelector('#sheet .memo'); if (!memo) return;
+    const img = new Image(); img.className = 'memoimg'; img.alt = 'Bill ' + b.invoice + ', total ' + R0(b.total);
+    img.onload = () => { if (memo.isConnected) memo.replaceWith(img); };
+    img.src = c.toDataURL('image/png');
+  }).catch(() => {});
   const fname = billFileName(b);
   $('#dlpdf').onclick = async () => { try { await saveBlob(await pdfP, fname); toast('Bill saved as ' + fname); } catch (e) { console.error(e); toast('Could not make the PDF. Open the app with internet once so it can load the PDF tool.'); } };
   $('#sharepdf').onclick = async () => {
@@ -795,6 +813,7 @@ function productForm(sku) {
     '<div class="phbtns"><label class="btn slim"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8a2 2 0 012-2h2l1.5-2h5L16 6h2a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg>Take photo<input type="file" accept="image/*" capture="environment" id="f-cam" hidden></label>' +
     '<label class="btn slim"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>Gallery<input type="file" accept="image/*" id="f-gal" hidden></label>' +
     '<button class="btn slim danger" id="f-phdel" type="button"' + (p && p.photo ? '' : ' hidden') + '>Remove</button></div>' +
+    '<div class="phstatus" id="f-phst"></div>' +
     (p ? '<p class="small mute" style="margin-top:-6px">' + esc(p.sku) + ' · Opening ' + num(p.opening) + ' + bought ' + (inQty.get(sku) || 0) + ' − sold ' + (soldQty.get(sku) || 0) + ' = <b>' + cur + ' in stock</b></p>' : '') +
     '<label for="f-cat">Category</label><select id="f-cat">' + opts(S.categories.map(c => c.name), p ? p.category : S.categories[0] && S.categories[0].name) + '</select>' +
     '<label for="f-name">Product name</label><input id="f-name" value="' + esc(p ? p.name : '') + '" placeholder="e.g. Cotton Chudithar Set">' +
@@ -817,6 +836,22 @@ function productForm(sku) {
   const pick = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; $('#f-ph').classList.add('loading'); try { newPhoto = await compressImage(f); removePhoto = false; showPh(newPhoto.full); $('#f-phdel').hidden = false; } catch (err) { console.error(err); $('#f-ph').classList.remove('loading'); toast('Could not read that photo'); } };
   $('#f-cam').onchange = pick; $('#f-gal').onchange = pick;
   $('#f-phdel').onclick = () => { newPhoto = null; removePhoto = true; showPh(null); $('#f-phdel').hidden = true; };
+  refreshFormPhotoStatus = () => {
+    const el = $('#f-phst'); if (!el) return;
+    const cur = p ? products.get(p.sku) : null, key = cur && cur.photo, cloud = db.info().cloud;
+    let t = '', c = '';
+    if (newPhoto) t = cloud ? 'New photo - it uploads to Google Drive when you save.' : 'New photo - saved on this phone when you save.';
+    else if (removePhoto) t = 'Photo will be removed when you save.';
+    else if (!key) t = '';
+    else if (key.startsWith('drive:')) { t = '✓ Saved in Google Drive - visible on every phone'; c = 'ok'; }
+    else if (!cloud) { t = 'Saved on this phone only - connect the Google Sheet to share it'; c = 'warn'; }
+    else if (photoState.error === 'outdated') { t = 'Waiting: update the Google Sheet script to store photos (see Settings)'; c = 'bad'; }
+    else { t = photoState.uploading ? 'Uploading to Google Drive…' : 'Waiting to upload to Google Drive…'; c = 'warn'; }
+    el.className = 'phstatus ' + c; el.textContent = t;
+  };
+  refreshFormPhotoStatus();
+  const _pick = pick; $('#f-cam').onchange = $('#f-gal').onchange = async e => { await _pick(e); refreshFormPhotoStatus(); };
+  const _del = $('#f-phdel').onclick; $('#f-phdel').onclick = () => { _del(); refreshFormPhotoStatus(); };
   if (p) { getJsBarcode().then(J => { const el = $('#f-bc'); if (el) J(el, p.sku, {format: 'CODE128', height: 46, width: 1.8, fontSize: 14, margin: 4, background: 'transparent', lineColor: '#1E2B21', font: 'Hind'}); }).catch(() => { const el = $('#f-bc'); if (el) el.outerHTML = '<span class="small mute">Barcode: ' + esc(p.sku) + '</span>'; }); $('#f-label').onclick = () => labelsForm(p.sku); }
   if (!p) { const upd = () => { $('#f-sku').placeholder = makeSku($('#f-cat').value) + ' (auto)'; }; $('#f-cat').onchange = upd; upd(); $('#f-cancel').onclick = closeSheet; }
   else {
@@ -1050,7 +1085,7 @@ function photoGet(key) {
       const res = await db.cloudCall({action: 'getPhoto', id: key.slice(6)});
       const full = 'data:' + (res.mime || 'image/jpeg') + ';base64,' + res.data, r = {full, thumb: await makeThumb(full)};
       await PhotoDB.put(key, r); phMem.set(key, r); return r;
-    } catch (e) { return null; }
+    } catch (e) { if (e && e.server === 'bad_action') { photoState.error = 'outdated'; renderPhotoStatus(); } return null; }
     finally { phActive--; pump(); }
   })();
   phWaiting.set(key, p); p.finally(() => phWaiting.delete(key));
@@ -1064,10 +1099,28 @@ function thumbHtml(p) {
   return '<span class="thumb' + (c ? ' has' : '') + '">' + (k ? '<img alt="" ' + (c ? 'src="' + c.thumb + '"' : 'data-ph="' + esc(k) + '"') + '>' : '') + '<i>' + esc(((p && p.name) || '?').trim().charAt(0).toUpperCase()) + '</i></span>';
 }
 function hydratePhotos(root) { root.querySelectorAll('img[data-ph]').forEach(img => { if (img.dataset.done) return; img.dataset.done = 1; phIO ? phIO.observe(img) : loadThumb(img); }); }
+const photoState = {error: '', uploading: false, lastOk: 0};
+let refreshFormPhotoStatus = null;
+function pendingPhotos() { return [...products.values()].filter(p => p.photo && p.photo.startsWith('local:')).length; }
+function renderPhotoStatus() {
+  const el = $('#photoline'); if (!el) return;
+  const i = db && db.info(), n = pendingPhotos();
+  if (!i || !i.cloud) { el.className = 'photoline'; el.textContent = n ? n + ' product photo(s) are saved on this phone only. Connect the Google Sheet to share them.' : 'Product photos: saved on this phone until the Google Sheet is connected.'; return; }
+  if (photoState.error === 'outdated') {
+    el.className = 'photoline bad';
+    el.innerHTML = '<b>Photos are not reaching the cloud yet.</b> Your Google Sheet script is the older version without photo support' + (n ? ' (' + n + ' photo(s) waiting)' : '') + '. To fix it:<ol><li>Paste the new <b>Code.gs</b> into Apps Script and Save.</li><li>Run <b>setup</b> and allow <b>Google Drive</b>.</li><li>Deploy → Manage deployments → ✏️ Edit → Version: <b>New version</b> → Deploy (not "New deployment").</li></ol><button class="btn slim" id="photoretry" style="margin-top:8px">Check again</button>';
+    $('#photoretry').onclick = () => { photoState.error = ''; syncPhotos(true); };
+    return;
+  }
+  if (photoState.error) { el.className = 'photoline bad'; el.innerHTML = 'Photo upload problem: ' + esc(photoState.error) + (n ? ' · ' + n + ' waiting' : '') + ' <button class="btn slim" id="photoretry">Retry</button>'; $('#photoretry').onclick = () => { photoState.error = ''; syncPhotos(true); }; return; }
+  el.className = 'photoline';
+  el.textContent = photoState.uploading ? 'Uploading ' + n + ' photo(s) to Google Drive…' : n ? n + ' photo(s) waiting to upload (will retry automatically).' : 'All product photos are saved in your Google Drive (folder "YAAL Product Photos").';
+}
 let photoSyncing = false;
-async function syncPhotos() {
-  if (photoSyncing || !db || !db.info().cloud) return;
-  photoSyncing = true;
+async function syncPhotos(manual) {
+  if (photoSyncing || !db || !db.info().cloud) { renderPhotoStatus(); return; }
+  if (photoState.error === 'outdated' && !manual) { renderPhotoStatus(); return; }
+  photoSyncing = true; photoState.uploading = pendingPhotos() > 0; renderPhotoStatus();
   try {
     for (const p of [...products.values()]) {
       if (!p.photo || !p.photo.startsWith('local:')) continue;
@@ -1079,8 +1132,14 @@ async function syncPhotos() {
       await db.doc('products/' + safeId(p.sku)).set(Object.assign({}, cur, {photo: key}));
       PhotoDB.del(p.photo); phMem.delete(p.photo);
     }
-  } catch (e) { console.warn('photo upload paused', e); }
-  finally { photoSyncing = false; }
+    photoState.error = ''; photoState.lastOk = Date.now();
+  } catch (e) {
+    console.warn('photo upload paused', e);
+    if (e && e.server === 'bad_action') { if (photoState.error !== 'outdated') toast('Photos stay on this phone until the Google Sheet script is updated - see Settings.'); photoState.error = 'outdated'; }
+    else if (e && e.server) photoState.error = e.server.replace(/_/g, ' ');
+    else photoState.error = '';
+  }
+  finally { photoSyncing = false; photoState.uploading = false; renderPhotoStatus(); if (typeof refreshFormPhotoStatus === 'function') refreshFormPhotoStatus(); }
 }
 function trashCloudPhoto(key) { if (key && key.startsWith('drive:') && db && db.info().cloud) db.cloudCall({action: 'deletePhoto', id: key.slice(6)}).catch(() => {}); }
 
@@ -1097,7 +1156,12 @@ const imgCache = {};
 function loadImg(src) { return imgCache[src] ||= new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
 const fileSafe = s => String(s || '').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'file';
 function saveBlob(blob, filename) { return localDownloads.save({filename, data: blob}); }
-async function fontsReady() { try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]); } catch {} }
+async function fontsReady() {
+  try {
+    const want = ['400 24px Marcellus', '400 13px Hind', '600 13px Hind', '700 13px Hind', 'italic 400 14px Hind', 'italic 400 14px Lora'];
+    await Promise.race([Promise.all(want.map(f => document.fonts.load(f).catch(() => {}))).then(() => document.fonts.ready), new Promise(r => setTimeout(r, 2500))]);
+  } catch {}
+}
 function wrapText(ctx, text, maxW, maxLines) {
   const words = String(text).split(/\s+/), lines = []; let cur = '';
   for (const w of words) { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width <= maxW || !cur) cur = t; else { lines.push(cur); cur = w; } }
@@ -1113,64 +1177,96 @@ async function barcodeCanvas(text, opts) {
 
 /* ---- bill rendered as an image page, wrapped in a PDF ---- */
 async function billCanvas(b) {
+  // Mirrors the on-screen bill (.memo) exactly, drawn at 3.2x for a sharp PDF.
   await fontsReady();
-  const W = 1240, P = 84, G = '#0F4A2A', GOLD = '#B9801A', INK = '#1E2B21', MUTE = '#6B7266';
-  const c = document.createElement('canvas'); c.width = W; c.height = 3600; const x = c.getContext('2d');
-  x.fillStyle = '#FFFDF6'; x.fillRect(0, 0, W, c.height);
-  x.fillStyle = G; x.fillRect(0, 0, W, 22); x.fillStyle = GOLD; x.fillRect(0, 22, W, 5);
-  let y = 70;
-  try { const logo = await loadImg('logo.png'); x.drawImage(logo, (W - 210) / 2, y, 210, 210); y += 236; } catch { y += 20; }
-  const center = (t, font, color, lh) => { x.font = font; x.fillStyle = color; x.textAlign = 'center'; x.fillText(t, W / 2, y); y += lh; x.textAlign = 'left'; };
-  center(S.name || 'YAAL', '400 60px Marcellus, Georgia, serif', G, 50);
-  if (S.address) center(S.address, '400 28px Hind, sans-serif', MUTE, 38);
-  const contact = [S.phone && 'Phone: ' + S.phone, S.gstin && 'GSTIN: ' + S.gstin].filter(Boolean).join('   |   ');
-  if (contact) center(contact, '400 28px Hind, sans-serif', MUTE, 38);
-  y += 18;
-  const dash = yy => { x.save(); x.strokeStyle = '#D9CBA3'; x.lineWidth = 2; x.setLineDash([10, 8]); x.beginPath(); x.moveTo(P, yy); x.lineTo(W - P, yy); x.stroke(); x.restore(); };
-  dash(y); y += 52;
-  center(S.gstReg === 'Yes' ? 'TAX INVOICE' : 'BILL / CASH MEMO', '700 32px Hind, sans-serif', INK, 26); dash(y); y += 58;
-  x.font = '700 34px Hind, sans-serif'; x.fillStyle = INK; x.fillText(b.invoice, P, y);
-  x.textAlign = 'right'; x.font = '400 30px Hind, sans-serif'; x.fillText(nice(b.date), W - P, y); x.textAlign = 'left'; y += 44;
-  x.font = '400 30px Hind, sans-serif'; x.fillText(b.customer || 'Walk-in customer', P, y);
-  x.textAlign = 'right'; x.fillText(b.pay || '', W - P, y); x.textAlign = 'left'; y += 40;
-  if (b.phone) { x.fillStyle = MUTE; x.fillText(b.phone, P, y); y += 40; }
-  y += 24;
-  const cols = {n: P, item: P + 54, qty: 790, rate: 960, amt: W - P};
-  x.font = '600 26px Hind, sans-serif'; x.fillStyle = MUTE;
-  x.fillText('#', cols.n, y); x.fillText('Item', cols.item, y); x.textAlign = 'right'; x.fillText('Qty', cols.qty, y); x.fillText('Rate', cols.rate, y); x.fillText('Amount', cols.amt, y); x.textAlign = 'left';
-  y += 18; x.fillStyle = '#D9CBA3'; x.fillRect(P, y, W - 2 * P, 2); y += 44;
+  const k = 3.2, CW = 380, W = Math.round(CW * k), PX = 16 * k, PY = 18 * k;
+  const G = '#0F4A2A', INK = '#1C2A20', MUTE = '#6B7266', LINE = '#D9CBA3', BG = '#FFFDF6';
+  const c = document.createElement('canvas'); c.width = W; c.height = 5000; const x = c.getContext('2d');
+  x.fillStyle = BG; x.fillRect(0, 0, W, c.height);
+  x.fillStyle = G; x.fillRect(0, 0, W, 6 * k);
+  x.textBaseline = 'middle';
+  const font = (size, weight = 400, fam = 'Hind, sans-serif', style = '') => { x.font = (style ? style + ' ' : '') + weight + ' ' + (size * k) + 'px ' + fam; };
+  const spacing = em => { if ('letterSpacing' in x) x.letterSpacing = em ? (em * parseFloat(x.font.match(/(\d+(\.\d+)?)px/)[1])) + 'px' : '0px'; };
+  const text = (t, X, Y, color, align = 'left') => { x.fillStyle = color; x.textAlign = align; x.fillText(t, X, Y); x.textAlign = 'left'; };
+  const hline = (Y, dashed) => { x.save(); x.strokeStyle = LINE; x.lineWidth = k; if (dashed) x.setLineDash([3 * k, 2.2 * k]); x.beginPath(); x.moveTo(PX, Y); x.lineTo(W - PX, Y); x.stroke(); x.restore(); };
+  let y = 6 * k + PY;
+  // logo 84px + 6px gap
+  try { const logo = await loadImg('logo.png'); x.drawImage(logo, (W - 84 * k) / 2, y, 84 * k, 84 * k); } catch {}
+  y += 90 * k;
+  // shop name: Marcellus 24px, line-height 1.15, letter-spacing .05em
+  font(24, 400, 'Marcellus, Georgia, serif'); spacing(.05);
+  wrapText(x, S.name || 'YAAL', W - 2 * PX).forEach(l => { text(l, W / 2, y + 13.8 * k, G, 'center'); y += 27.6 * k; });
+  spacing(0);
+  // address line(s): 12px muted
+  const addr = [S.address, S.phone].filter(Boolean).join(' · ');
+  font(12); if (addr) wrapText(x, addr, W - 2 * PX).forEach(l => { text(l, W / 2, y + 8.7 * k, MUTE, 'center'); y += 17.4 * k; });
+  if (S.gstin) { text('GSTIN ' + S.gstin, W / 2, y + 8.7 * k, MUTE, 'center'); y += 17.4 * k; }
+  // title box: margin 8, dashed borders, padding 4, bold 14px
+  y += 8 * k; hline(y, true); y += 4 * k;
+  font(14, 700); spacing(.02); text(S.gstReg === 'Yes' ? 'TAX INVOICE' : 'BILL / CASH MEMO', W / 2, y + 10.15 * k, INK, 'center'); spacing(0);
+  y += 20.3 * k + 4 * k; hline(y, true); y += 8 * k;
+  // meta: 13px; left invoice (bold) / customer / phone, right date / payment
+  const lh13 = 18.85 * k;
+  font(13, 700); text(b.invoice, PX, y + lh13 / 2, INK);
+  font(13); text(nice(b.date), W - PX, y + lh13 / 2, INK, 'right'); y += lh13;
+  text(b.customer || 'Walk-in customer', PX, y + lh13 / 2, INK); text(b.pay || '', W - PX, y + lh13 / 2, INK, 'right'); y += lh13;
+  if (b.phone) { text(b.phone, PX, y + lh13 / 2, INK); y += lh13; }
+  // table (margin-top 8): # | Item | Qty | Rate | Amount
+  y += 8 * k;
+  const cAmt = W - PX - 2 * k, cRate = cAmt - 80 * k, cQty = cRate - 74 * k, cItem = PX + 16 * k, itemW = cQty - 30 * k - cItem;
+  const rowPad = 4 * k, lh12 = 17.4 * k;
+  font(12, 700);
+  text('#', PX + 2 * k, y + rowPad + lh12 / 2, MUTE); text('Item', cItem, y + rowPad + lh12 / 2, MUTE);
+  text('Qty', cQty, y + rowPad + lh12 / 2, MUTE, 'right'); text('Rate', cRate, y + rowPad + lh12 / 2, MUTE, 'right'); text('Amount', cAmt, y + rowPad + lh12 / 2, MUTE, 'right');
+  y += lh12 + 2 * rowPad; hline(y); y += k;
   b.items.forEach((it, i) => {
-    x.font = '400 30px Hind, sans-serif'; x.fillStyle = INK;
-    const lines = wrapText(x, it.name, cols.qty - 90 - cols.item, 3);
-    x.fillText(String(i + 1), cols.n, y);
-    x.textAlign = 'right'; x.fillText(String(it.qty), cols.qty, y); x.fillText(R2(it.price), cols.rate, y); x.fillText(R2(it.net), cols.amt, y); x.textAlign = 'left';
-    lines.forEach((l, k) => { x.fillText(l, cols.item, y + k * 38); });
-    let yy = y + lines.length * 38;
-    const sub = [it.size, it.disc ? it.disc + '% off' : '', S.gstReg === 'Yes' || it.gst ? 'GST ' + it.rate + '%' : ''].filter(Boolean).join(' · ');
-    if (sub) { x.font = '400 25px Hind, sans-serif'; x.fillStyle = MUTE; x.fillText(sub, cols.item, yy - 4); yy += 30; }
-    y = yy + 22;
+    const top = y + rowPad;
+    font(13);
+    const lines = wrapText(x, it.name, itemW);
+    let yy = top;
+    lines.forEach((l, n) => {
+      text(l, cItem, yy + lh13 / 2, INK);
+      if (n === lines.length - 1 && it.size) {
+        const w = x.measureText(l + ' ').width, s = '(' + it.size + ')';
+        if (cItem + w + x.measureText(s).width <= cItem + itemW) text(s, cItem + w, yy + lh13 / 2, MUTE);
+        else { yy += lh13; text(s, cItem, yy + lh13 / 2, MUTE); }
+      }
+      yy += lh13;
+    });
+    if (it.disc) { text(it.disc + '% off', cItem, yy + lh13 / 2, MUTE); yy += lh13; }
+    text(String(i + 1), PX + 2 * k, top + lh13 / 2, INK);
+    text(String(it.qty), cQty, top + lh13 / 2, INK, 'right'); text(R2(it.price), cRate, top + lh13 / 2, INK, 'right'); text(R2(it.net), cAmt, top + lh13 / 2, INK, 'right');
+    y = yy + rowPad;
   });
-  x.fillStyle = '#D9CBA3'; x.fillRect(P, y - 10, W - 2 * P, 2); y += 40;
-  const line = (label, val, big) => { x.font = (big ? '700 44px' : '400 30px') + ' Hind, sans-serif'; x.fillStyle = big ? G : INK; x.fillText(label, 640, y); x.textAlign = 'right'; x.fillText(val, W - P, y); x.textAlign = 'left'; y += big ? 64 : 44; };
+  // totals
   const gstOn = S.gstReg === 'Yes' || num(b.gst) > 0;
-  line('Items', String(b.qty));
-  if (gstOn) { line('Taxable value', R2(b.taxable)); line('CGST', R2(b.gst / 2)); line('SGST', R2(b.gst / 2)); }
-  if (num(b.round)) line('Round off', R2(b.round));
-  y += 10; x.fillStyle = GOLD; x.fillRect(620, y - 34, W - P - 620, 3); y += 26;
-  line('Total', R0(b.total), true);
-  y += 30;
-  if (S.footer) { x.font = 'italic 400 28px Lora, Georgia, serif'; x.fillStyle = '#8A6414'; x.textAlign = 'center'; wrapText(x, S.footer, W - 2 * P, 3).forEach(l => { x.fillText(l, W / 2, y); y += 40; }); x.textAlign = 'left'; y += 10; }
-  try { const bc = await barcodeCanvas(b.invoice, {width: 3, height: 80}); const bw = Math.min(bc.width, 520); x.drawImage(bc, (W - bw) / 2, y, bw, 80); y += 112; x.font = '400 24px Hind, sans-serif'; x.fillStyle = MUTE; x.textAlign = 'center'; x.fillText(b.invoice, W / 2, y - 6); x.textAlign = 'left'; y += 30; } catch {}
-  x.fillStyle = GOLD; x.fillRect(0, y + 20, W, 5); x.fillStyle = G; x.fillRect(0, y + 25, W, 22);
-  const out = document.createElement('canvas'); out.width = W; out.height = y + 47; out.getContext('2d').drawImage(c, 0, 0);
+  const rows = [];
+  if (gstOn) rows.push(['Taxable value', R2(b.taxable)], ['CGST', R2(b.gst / 2)], ['SGST', R2(b.gst / 2)]);
+  if (num(b.round)) rows.push(['Round off', R2(b.round)]);
+  rows.forEach((r, n) => { if (n === 0) hline(y); font(13); text(r[0], cItem, y + rowPad + lh13 / 2, INK); text(r[1], cAmt, y + rowPad + lh13 / 2, INK, 'right'); y += lh13 + 2 * rowPad; });
+  hline(y);
+  const lh17 = 24.65 * k; font(17, 700);
+  text('Total', cItem, y + rowPad + lh17 / 2, INK); text(R0(b.total), cAmt, y + rowPad + lh17 / 2, INK, 'right');
+  y += lh17 + 2 * rowPad;
+  // footer note: italic, muted, centered, margin-top 10
+  if (S.footer) { y += 10 * k; font(14, 400, 'Hind, sans-serif', 'italic'); wrapText(x, S.footer, W - 2 * PX).forEach(l => { text(l, W / 2, y + 10.15 * k, MUTE, 'center'); y += 20.3 * k; }); }
+  // invoice barcode (also shown on screen)
+  try {
+    y += 12 * k; const bc = await barcodeCanvas(b.invoice, {width: 1, height: 10, lineColor: INK});
+    const unit = Math.max(1, Math.floor(170 * k / bc.width)), bw = bc.width * unit;
+    x.imageSmoothingEnabled = false; x.drawImage(bc, Math.round((W - bw) / 2), y, bw, 34 * k); y += 34 * k;
+    font(11); text(b.invoice, W / 2, y + 8 * k, MUTE, 'center'); y += 16 * k;
+  } catch {}
+  y += PY;
+  const out = document.createElement('canvas'); out.width = W; out.height = Math.ceil(y); out.getContext('2d').drawImage(c, 0, 0);
   return out;
 }
-async function billPdf(b) {
-  const jsPDF = await getJsPDF(), c = await billCanvas(b);
+async function billPdf(b, canvas) {
+  const jsPDF = await getJsPDF(), c = canvas || await billCanvas(b);
   const w = 148, h = Math.round(c.height / c.width * w * 10) / 10;
   const pdf = new jsPDF({unit: 'mm', format: [w, h], orientation: h >= w ? 'portrait' : 'landscape', compress: true});
   pdf.setProperties({title: (S.name || 'YAAL') + ' ' + b.invoice});
-  pdf.addImage(c.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, w, h);
+  pdf.addImage(c.toDataURL('image/png'), 'PNG', 0, 0, w, h, undefined, 'FAST');
   return pdf.output('blob');
 }
 const billFileName = b => fileSafe((S.name || 'YAAL').split(' ')[0]) + '_' + fileSafe(b.invoice) + '.pdf';
@@ -1615,7 +1711,7 @@ renderAll();
   db.collection('sales').onSnapshot(s => { sales = s.docs.map(d => Object.assign({id: d.id}, d.data())); later(); });
   db.collection('purchases').onSnapshot(s => { purchases = s.docs.map(d => Object.assign({id: d.id}, d.data())); later(); });
   db.doc('local/meta').onSnapshot(s => { const d = s.data() || {}; $('#lastbackup').textContent = d.lastBackup ? 'Last backup: ' + nice(d.lastBackup) : 'No backup made yet.'; });
-  db.onStatus(renderCloud); renderCloud();
+  db.onStatus(renderCloud); renderCloud(); renderPhotoStatus();
   if (join) { go('more'); await connectFlow(join.url, join.key, true); }
   db.sync();
   setInterval(() => { if (document.visibilityState === 'visible') db.sync().then(syncPhotos); }, 20000);
