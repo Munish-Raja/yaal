@@ -17,14 +17,14 @@
    COLOUR and TYPE: from the YAAL logo - deep leaf green ground, antique gold accent, warm cream surface; Marcellus for the shop name, Lora italic for the tagline, Hind for everything else.
    LAYOUT: top bar, one screen per task, bottom tab bar, sheets that slide up for forms. */
 :root{color-scheme:light;
---bg:light-dark(#F4ECDA,#F4ECDA);--card:light-dark(#FFFBF2,#FFFBF2);--ink:light-dark(#1E2B21,#1E2B21);--mute:light-dark(#76705F,#76705F);
---line:light-dark(#E4D5B3,#E4D5B3);--maroon:#0F4A2A;--maroon2:light-dark(#165C35,#165C35);--gold:#C08A1E;--goldsoft:light-dark(#F7E9C4,#F7E9C4);--cream:#FBF3DC;--sage:#E3EBDA;--sage2:#C9D8BF;
+--bg:light-dark(#F4ECDA,#F4ECDA);--card:light-dark(#FBF3DF,#FBF3DF);--ink:light-dark(#1E2B21,#1E2B21);--mute:light-dark(#76705F,#76705F);
+--line:light-dark(#E2D0A6,#E2D0A6);--maroon:#0F4A2A;--maroon2:light-dark(#165C35,#165C35);--gold:#C08A1E;--goldsoft:light-dark(#F7E9C4,#F7E9C4);--cream:#FBF3DC;--sage:#E3EBDA;--sage2:#C9D8BF;
 --ok:light-dark(#1F7A45,#5FCB8B);--oksoft:light-dark(#E2F4E9,#16301F);--warn:light-dark(#9A6200,#F0B54A);--warnsoft:light-dark(#FFF1D1,#3A2C0E);
 --bad:light-dark(#B3261E,#FF8A80);--badsoft:light-dark(#FDE3E1,#3D1A18)}
 :root[data-theme]{color-scheme:light}
 *{box-sizing:border-box;min-width:0}
 html,body{height:100%}
-body{margin:0;background:var(--bg) linear-gradient(180deg,#F4ECDA 0,#F4ECDA 40%,#EAEEDC 100%) fixed;color:var(--ink);font:16px/1.45 Hind,system-ui,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#0F4127 linear-gradient(180deg,#0D3A22 0,#124A2C 55%,#175634 100%) fixed;color:var(--ink);font:16px/1.45 Hind,system-ui,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
 button,input,select,textarea{font:inherit;color:inherit}
 header.top{position:sticky;top:0;z-index:20;background:var(--cream);color:var(--maroon);padding:10px 16px 12px;display:flex;align-items:center;gap:12px;
   background-image:linear-gradient(90deg,rgba(192,138,30,.10),transparent 40%,transparent 60%,rgba(15,74,42,.06));box-shadow:0 2px 0 var(--gold),0 4px 0 var(--sage2),0 8px 16px rgba(60,70,30,.08);padding-inline:max(16px,calc(50% - 380px))}
@@ -36,8 +36,10 @@ header.top{position:sticky;top:0;z-index:20;background:var(--cream);color:var(--
 main{max-width:760px;margin:0 auto;padding:14px 14px 104px}
 .view{display:none}.view.on{display:block}
 h2{font-size:24px;line-height:1.1;margin:6px 0 12px}
-h3{font-size:17px;margin:20px 0 8px;color:var(--maroon)}
-h2{color:var(--maroon)}
+h3{font-size:17px;margin:20px 0 8px;color:var(--cream)}
+h2{color:var(--cream)}
+.view>.grid2 label,#ssum,#isum{color:#D6E2CC}
+.card h3,.sheet h2,.sheet h3{color:var(--maroon)}
 .mute{color:var(--mute)}.small{font-size:13px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
 .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -54,7 +56,7 @@ h2{color:var(--maroon)}
 .list{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .row{display:flex;gap:10px;align-items:center;padding:12px 14px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;cursor:pointer}
 .row:first-child{border-top:0}
-button.row:active,button.row:hover{background:#F1F4EA}
+button.row:active,button.row:hover{background:#F2EED9}
 .row .grow{flex:1}
 .row .t{font-weight:600;line-height:1.25}
 .row .s{font-size:13px;color:var(--mute)}
@@ -79,11 +81,11 @@ input:focus,select:focus,textarea:focus,.btn:focus-visible,.row:focus-visible,na
 label{display:block;font-size:13px;font-weight:600;color:var(--mute);margin:10px 0 4px}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
-.chip{flex:none;min-height:36px;padding:0 14px;border-radius:99px;border:1px solid var(--sage2);background:var(--card);color:var(--maroon2);font-size:14px;cursor:pointer;white-space:nowrap}
-.chip.on{background:var(--maroon);color:var(--cream);border-color:var(--maroon)}
-.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--sage);border-radius:12px;padding:3px;margin-bottom:12px}
-.seg button{min-height:40px;border:0;border-radius:10px;background:none;font-weight:600;cursor:pointer}
-.seg button.on{background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.chip{flex:none;min-height:36px;padding:0 14px;border-radius:99px;border:1px solid transparent;background:var(--card);color:var(--maroon2);font-size:14px;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--gold);color:#1C1606;border-color:var(--gold);font-weight:600}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:rgba(251,243,220,.14);border-radius:12px;padding:3px;margin-bottom:12px}
+.seg button{min-height:40px;border:0;border-radius:10px;background:none;font-weight:600;cursor:pointer;color:var(--cream)}
+.seg button.on{color:var(--maroon);background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .search{position:relative;margin-bottom:8px}
 .qty{display:flex;align-items:center;gap:4px}
 .qty button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:20px;font-weight:600;cursor:pointer}
@@ -107,7 +109,7 @@ nav.tabs .billtab span.dot{width:46px;height:30px;border-radius:15px;background:
 nav.tabs .billtab svg{stroke:#fff}
 .sheetwrap{position:fixed;inset:0;z-index:40;background:rgba(20,10,14,.5);display:none;align-items:flex-end;justify-content:center}
 .sheetwrap.on{display:flex}
-.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:8px 16px 24px;animation:up .22s ease-out}
+.sheet{background:#F4ECDA;width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:8px 16px 24px;animation:up .22s ease-out}
 .sheet .grab{width:44px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 8px}
 .sheet h2{margin-top:4px}
 @keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
