@@ -298,6 +298,13 @@ body{background:transparent!important}
 html{background:#124A2C}
 body>.bgfill{position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(120% 60% at 100% 0%,rgba(111,163,90,.30),transparent 60%),radial-gradient(90% 50% at 0% 100%,rgba(192,138,30,.16),transparent 65%),linear-gradient(180deg,#0D3A22 0%,#124A2C 55%,#175634 100%);transform:translateZ(0)}
 body::before,body::after{transform-origin:center;will-change:auto}
+
+nav.tabs,nav.tabs *,nav.tabs *::before,nav.tabs *::after{transition:none!important;animation:none!important}
+nav.tabs button:active .ico{transform:none}
+
+/* page slide must never make the page wider than the screen (that pushed the bottom bar off-screen) */
+html{overflow-x:hidden}
+main{overflow-x:clip;max-width:100vw}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* ---------- leaf background (from the logo sprig) ---------- */
@@ -1466,6 +1473,7 @@ function setFab() {
   else f.style.display = 'none';
 }
 $('#fab').onclick = () => { stockTab === 'p' ? productForm(null) : purchaseForm(null); };
+let tabPushed = false;
 function go(v, fromPop) {
   const prev = view;
   if (v !== prev) { const O = ['home', 'stock', 'bill', 'sales', 'more']; document.querySelector('main').dataset.dir = O.indexOf(v) > O.indexOf(prev) ? 'next' : 'prev'; }
@@ -1478,18 +1486,23 @@ function go(v, fromPop) {
   setFab(); window.scrollTo(0, 0);
   if (fromPop === true || v === prev) return;
   try {
-    if (prev === 'home' && v !== 'home') history.pushState({v}, '');        // Home -> tab: back returns Home
-    else if (v === 'home' && history.state && history.state.v && history.state.v !== 'home') { popClosing = true; history.back(); } // tab -> Home: drop the tab entry
-    else history.replaceState({v}, '');                                       // tab -> tab: back still returns Home
+    if (prev === 'home' && v !== 'home') { history.pushState({v, tab: 1}, ''); tabPushed = true; }          // Home -> tab: Back returns Home
+    else if (v === 'home') {                                                                                 // tab -> Home
+      if (tabPushed && history.state && history.state.tab) { popClosing = true; history.back(); }
+      else history.replaceState({v: 'home', root: 1}, '');
+      tabPushed = false;
+    }
+    else history.replaceState({v, tab: tabPushed ? 1 : 0}, '');                                            // tab -> tab
   } catch {}
 }
 addEventListener('popstate', e => {
   if (popClosing) { popClosing = false; if (pendingPush) { pendingPush = false; try { history.pushState({sheet: 1, v: view}, ''); } catch {} } return; }
   if ($('#sheetwrap').classList.contains('on') && !$('#sheetwrap').classList.contains('closing')) { sheetHist = false; closeSheet(true); return; }
   const st = e.state || {};
-  go(st.v || 'home', true);
+  tabPushed = !!st.tab;
+  go(st.tab ? (st.v || 'home') : 'home', true);
 });
-try { if (!history.state) history.replaceState({v: 'home'}, ''); } catch {}
+try { history.replaceState({v: 'home', root: 1}, ''); } catch {}
 setTimeout(() => { const h = $('#v-home'); h.classList.add('anim', 'seen'); setTimeout(() => h.classList.remove('anim'), 1200); }, 50);
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.dataset.v !== view) go(b.dataset.v); });
 $('#sg-p').onclick = () => { stockTab = 'p'; $('#sg-p').classList.add('on'); $('#sg-i').classList.remove('on'); $('#stock-p').style.display = ''; $('#stock-i').style.display = 'none'; setFab(); };
@@ -1781,7 +1794,7 @@ renderAll();
   let join = null;
   if (location.hash.startsWith('#connect=')) {
     try { const o = JSON.parse(atob(decodeURIComponent(location.hash.slice(9)))); join = {url: o.u, key: o.k}; } catch {}
-    history.replaceState(null, '', location.pathname + location.search);
+    history.replaceState({v: 'home', root: 1}, '', location.pathname + location.search);
   }
   if (!join && !db.info().cloud && !(await db.doc('local/meta').get()).exists && db.size() === 0) {
     for (const op of SEED) await db.doc(op.path).set(op.data);
