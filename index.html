@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="preload">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
@@ -9,7 +9,8 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>YAAL Stock &amp; Billing</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600;700&family=Marcellus&family=Lora:ital@1&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600;700&family=Marcellus&family=Lora:ital@1&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600;700&family=Marcellus&family=Lora:ital@1&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 /* VOICE: a shopkeeper's counter tool - quick, warm, trustworthy, thumb-first.
    IDEA: the bill book and stock register of an Indian saree shop, in your pocket.
@@ -287,6 +288,16 @@ main[data-dir=prev] .view.on{animation:slidePrev .3s cubic-bezier(.22,1,.36,1) b
 @keyframes slideNext{from{opacity:.35;transform:translate3d(48px,0,0)}to{opacity:1;transform:none}}
 @keyframes slidePrev{from{opacity:.35;transform:translate3d(-48px,0,0)}to{opacity:1;transform:none}}
 .view{will-change:auto}
+
+/* ---------- bottom bar & top bar: always on screen, no lag ---------- */
+html.preload header.top *,html.preload nav.tabs,html.preload nav.tabs *{transition:none!important;animation:none!important}
+nav.tabs,header.top{transform:translateZ(0);will-change:transform;contain:layout paint;isolation:isolate;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+nav.tabs{bottom:0;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs .ico,nav.tabs .billtab span.dot{transition-duration:.16s!important}
+body{background:transparent!important}
+html{background:#124A2C}
+body>.bgfill{position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(120% 60% at 100% 0%,rgba(111,163,90,.30),transparent 60%),radial-gradient(90% 50% at 0% 100%,rgba(192,138,30,.16),transparent 65%),linear-gradient(180deg,#0D3A22 0%,#124A2C 55%,#175634 100%);transform:translateZ(0)}
+body::before,body::after{transform-origin:center;will-change:auto}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* ---------- leaf background (from the logo sprig) ---------- */
@@ -318,6 +329,7 @@ header.top,nav.tabs,.sheetwrap{backdrop-filter:none!important;-webkit-backdrop-f
 </style>
 </head>
 <body>
+<div class="bgfill" aria-hidden="true"></div>
 <header class="top">
   <img class="logo" src="logo.png" alt=""><div class="brandbox"><div class="brand" id="brand">YAAL</div><div class="tag" id="tagline">Rooted in Tradition. Styled for Today.</div></div>
   <div class="sync" id="sync">Opening…</div>
@@ -475,6 +487,7 @@ header.top,nav.tabs,.sheetwrap{backdrop-filter:none!important;-webkit-backdrop-f
 <div class="sheetwrap" id="sheetwrap"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast"></div>
 
+<script>requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('preload')));</script>
 <script>
 {
 const $ = s => document.querySelector(s);
