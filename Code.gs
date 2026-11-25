@@ -10,25 +10,7 @@
  * in the app, not by typing in the sheet.
  */
 
-var SHEETS = {
-  products: {tab: 'Products', cols: [
-    ['SKU', 'sku'], ['Product Name', 'name'], ['Category', 'category'], ['Fabric', 'fabric'], ['Colour', 'colour'],
-    ['Size', 'size'], ['Cost Price', 'cost'], ['Selling Price', 'price'], ['Opening Stock', 'opening'], ['Reorder Level', 'reorder']]},
-  sales: {tab: 'Sales', cols: [
-    ['Invoice', 'invoice'], ['Date', 'date'], ['Customer', 'customer'], ['Phone', 'phone'], ['Payment', 'pay'], ['Channel', 'channel'],
-    ['Pieces', 'qty'], ['Taxable Value', 'taxable'], ['GST', 'gst'], ['Bill Total', 'total'], ['Items', itemsText]]},
-  purchases: {tab: 'Purchases', cols: [
-    ['Date', 'date'], ['SKU', 'sku'], ['Product', 'name'], ['Qty', 'qty'], ['Unit Cost', 'cost'], ['Supplier', 'supplier'],
-    ['Supplier Bill No', 'ref'], ['Payment', 'status'], ['Notes', 'notes']]},
-  config: {tab: 'App Settings', cols: [['Business Name', 'name'], ['GST Registered', 'gstReg'], ['Invoice Prefix', 'prefix']]}
-};
-var TEXT_KEYS = {phone: 1, ref: 1, sku: 1, invoice: 1};
-var DELETED_TAB = '_deleted';
-
-function itemsText(d) {
-  return (d.items || []).map(function (i) { return i.name + (i.size ? ' (' + i.size + ')' : '') + ' x' + i.qty; }).join(', ');
-}
-
+/* RUN THIS ONE: pick "setup" in the function list above, then click Run. */
 /* ------------------------------------------------------------------ setup */
 function setup() {
   var ss = SpreadsheetApp.getActive();
@@ -64,6 +46,22 @@ function resetKey() {
   setup();
 }
 
+var SHEETS = {
+  products: {tab: 'Products', cols: [
+    ['SKU', 'sku'], ['Product Name', 'name'], ['Category', 'category'], ['Fabric', 'fabric'], ['Colour', 'colour'],
+    ['Size', 'size'], ['Cost Price', 'cost'], ['Selling Price', 'price'], ['Opening Stock', 'opening'], ['Reorder Level', 'reorder']]},
+  sales: {tab: 'Sales', cols: [
+    ['Invoice', 'invoice'], ['Date', 'date'], ['Customer', 'customer'], ['Phone', 'phone'], ['Payment', 'pay'], ['Channel', 'channel'],
+    ['Pieces', 'qty'], ['Taxable Value', 'taxable'], ['GST', 'gst'], ['Bill Total', 'total'], ['Items', itemsText]]},
+  purchases: {tab: 'Purchases', cols: [
+    ['Date', 'date'], ['SKU', 'sku'], ['Product', 'name'], ['Qty', 'qty'], ['Unit Cost', 'cost'], ['Supplier', 'supplier'],
+    ['Supplier Bill No', 'ref'], ['Payment', 'status'], ['Notes', 'notes']]},
+  config: {tab: 'App Settings', cols: [['Business Name', 'name'], ['GST Registered', 'gstReg'], ['Invoice Prefix', 'prefix']]}
+};
+var TEXT_KEYS = {phone: 1, ref: 1, sku: 1, invoice: 1};
+var DELETED_TAB = '_deleted';
+
+
 /* ------------------------------------------------------------------ web app */
 function doGet() { return out({ok: true, app: 'boutique-stock'}); }
 
@@ -88,6 +86,11 @@ function doPost(e) {
 function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 
 /* ------------------------------------------------------------------ storage */
+function itemsText(d) {
+  d = d || {};
+  return (d.items || []).map(function (i) { return i.name + (i.size ? ' (' + i.size + ')' : '') + ' x' + i.qty; }).join(', ');
+}
+
 function header(coll) {
   return ['ID'].concat(SHEETS[coll].cols.map(function (c) { return c[0]; })).concat(['Rev', 'Data (do not edit)']);
 }
@@ -98,7 +101,7 @@ function sheetFor(coll) {
   if (!sh) {
     sh = ss.insertSheet(def.tab);
     var h = header(coll);
-    sh.getRange(1, 1, 1, h.length).setValues([h]).setFontWeight('bold').setBackground('#6E1530').setFontColor('#FFFFFF');
+    sh.getRange(1, 1, 1, h.length).setValues([h]).setFontWeight('bold').setBackground('#0B3D22').setFontColor('#FFFFFF');
     sh.setFrozenRows(1);
     sh.hideColumns(h.length - 1, 2);
   }

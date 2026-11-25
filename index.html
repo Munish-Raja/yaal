@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<meta name="theme-color" content="#0B3D22">
+<meta name="theme-color" content="#FBF3DC">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -16,23 +16,23 @@
    PICTURE: the working app itself - big totals, product rows, a bill that reads like a printed memo.
    COLOUR and TYPE: from the YAAL logo - deep leaf green ground, antique gold accent, warm cream surface; Marcellus for the shop name, Lora italic for the tagline, Hind for everything else.
    LAYOUT: top bar, one screen per task, bottom tab bar, sheets that slide up for forms. */
-:root{color-scheme:light dark;
---bg:light-dark(#FBF5E4,#0E1711);--card:light-dark(#FFFDF6,#17241B);--ink:light-dark(#1C2A20,#EEF0E6);--mute:light-dark(#6B7266,#A3AD9F);
---line:light-dark(#EADFC2,#2C3A2F);--maroon:#0B3D22;--maroon2:light-dark(#145A32,#7CC596);--gold:#C08A1E;--goldsoft:light-dark(#F7E9C4,#3A2F17);
+:root{color-scheme:light;
+--bg:light-dark(#F4ECDA,#F4ECDA);--card:light-dark(#FFFBF2,#FFFBF2);--ink:light-dark(#1E2B21,#1E2B21);--mute:light-dark(#76705F,#76705F);
+--line:light-dark(#E4D5B3,#E4D5B3);--maroon:#0F4A2A;--maroon2:light-dark(#165C35,#165C35);--gold:#C08A1E;--goldsoft:light-dark(#F7E9C4,#F7E9C4);--cream:#FBF3DC;
 --ok:light-dark(#1F7A45,#5FCB8B);--oksoft:light-dark(#E2F4E9,#16301F);--warn:light-dark(#9A6200,#F0B54A);--warnsoft:light-dark(#FFF1D1,#3A2C0E);
 --bad:light-dark(#B3261E,#FF8A80);--badsoft:light-dark(#FDE3E1,#3D1A18)}
-:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+:root[data-theme]{color-scheme:light}
 *{box-sizing:border-box;min-width:0}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Hind,system-ui,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
 button,input,select,textarea{font:inherit;color:inherit}
-header.top{position:sticky;top:0;z-index:20;background:var(--maroon);color:#fff;padding:10px 16px 12px;display:flex;align-items:center;gap:12px;
-  background-image:radial-gradient(circle at 92% -40%,rgba(192,138,30,.28),transparent 55%);box-shadow:0 3px 0 var(--gold)}
+header.top{position:sticky;top:0;z-index:20;background:var(--cream);color:var(--maroon);padding:10px 16px 12px;display:flex;align-items:center;gap:12px;
+  background-image:linear-gradient(90deg,rgba(192,138,30,.10),transparent 40%,transparent 60%,rgba(15,74,42,.06));box-shadow:0 2px 0 var(--gold),0 6px 14px rgba(90,70,20,.08);padding-inline:max(16px,calc(50% - 380px))}
 .logo{width:44px;height:44px;border-radius:50%;flex:none;box-shadow:0 0 0 2px var(--gold);background:#FBF3DC}
 .brandbox{flex:1;min-width:0;line-height:1.1}
-.tag{font:italic 12px/1.2 Lora,Georgia,serif;color:#E9D9A6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{font:italic 12px/1.2 Lora,Georgia,serif;color:#8A6414;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brand{font-family:Marcellus,Georgia,serif;font-size:20px;letter-spacing:.04em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sync{font-size:12px;opacity:.85;white-space:nowrap}
+.sync{font-size:12px;font-weight:600;color:var(--maroon2);white-space:nowrap}
 main{max-width:760px;margin:0 auto;padding:14px 14px 104px}
 .view{display:none}.view.on{display:block}
 h2{font-size:24px;line-height:1.1;margin:6px 0 12px}
@@ -43,8 +43,8 @@ h3{font-size:17px;margin:20px 0 8px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .kpi b{display:block;font-size:clamp(20px,5.5vw,26px);line-height:1.15;white-space:nowrap}
 .kpi span{font-size:13px;color:var(--mute)}
-.kpi.hero{grid-column:1/-1;background:var(--maroon);color:#fff;border:0;box-shadow:inset 0 -4px 0 var(--gold)}
-.kpi.hero span{color:#E9D9A6}.kpi.hero b{font-size:clamp(30px,9vw,40px)}
+.kpi.hero{grid-column:1/-1;background:linear-gradient(135deg,#FBF3DC,#F1DFB0);color:var(--maroon);border:1px solid #E4CF9A;box-shadow:inset 0 -4px 0 var(--gold)}
+.kpi.hero span{color:#7A5C14}.kpi.hero b{font-size:clamp(30px,9vw,40px)}
 .bars{display:grid;gap:8px}
 .bar{display:grid;grid-template-columns:52px minmax(0,1fr) 88px;align-items:center;gap:8px;font-size:14px}
 .bar i{display:block;height:14px;border-radius:7px;background:var(--maroon2);min-width:2px}
@@ -78,7 +78,7 @@ label{display:block;font-size:13px;font-weight:600;color:var(--mute);margin:10px
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
 .chip{flex:none;min-height:36px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-size:14px;cursor:pointer;white-space:nowrap}
-.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.on{background:var(--maroon);color:var(--cream);border-color:var(--maroon)}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--line);border-radius:12px;padding:3px;margin-bottom:12px}
 .seg button{min-height:40px;border:0;border-radius:10px;background:none;font-weight:600;cursor:pointer}
 .seg button.on{background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.12)}
@@ -97,7 +97,7 @@ label{display:block;font-size:13px;font-weight:600;color:var(--mute);margin:10px
 .totals .grand{font-size:24px;font-weight:700;border-top:2px dashed var(--line);padding-top:8px;margin-top:4px}
 .warnline{color:var(--bad);font-size:13px;font-weight:600}
 .fab{position:fixed;right:max(16px,calc(50% - 364px));bottom:84px;z-index:15;min-height:54px;padding:0 20px;border-radius:16px;border:0;background:var(--gold);color:#1C1606;font-weight:700;font-size:16px;box-shadow:0 6px 18px rgba(0,0,0,.22);cursor:pointer;display:flex;align-items:center;gap:6px}
-nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--cream);border-top:2px solid var(--gold);padding-inline:max(0px,calc(50% - 380px));display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom)}
 nav.tabs button{border:0;background:none;min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:600;color:var(--mute);cursor:pointer}
 nav.tabs button.on{color:var(--maroon2)}
 nav.tabs button.on svg{stroke:var(--maroon2)}
