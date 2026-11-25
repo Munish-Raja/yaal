@@ -151,6 +151,13 @@ a{color:var(--maroon2)}
 .btn.slim{min-height:38px;padding:0 12px;font-size:14px;border-radius:12px}
 .bcbox{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px dashed var(--line);border-radius:12px;padding:6px 10px;margin-top:6px}
 .bcbox svg{max-width:70%;height:auto}
+
+.sheethead{position:sticky;top:-8px;z-index:3;margin:-8px -16px 4px;padding:8px 16px 4px;background:linear-gradient(#F4ECDA 75%,rgba(244,236,218,0));display:flex;justify-content:center;touch-action:none;cursor:grab}
+.sheethead .grab{width:48px;height:5px;border-radius:3px;background:#CDBB8F;margin:6px auto 10px}
+.sheetx{position:absolute;right:10px;top:6px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#FFFBF1;color:var(--maroon);font-size:24px;line-height:1;cursor:pointer;box-shadow:var(--sh1);display:flex;align-items:center;justify-content:center}
+.sheetx:active{transform:scale(.92)}
+.sheet{overscroll-behavior:contain}
+.sheet>h2:first-of-type{padding-right:44px}
 /* ---------- premium layer ---------- */
 :root{--sh1:0 1px 1px rgba(8,30,17,.10),0 2px 6px -1px rgba(8,30,17,.16);--sh2:0 1px 2px rgba(8,30,17,.12),0 10px 28px -10px rgba(8,30,17,.45);--ease:cubic-bezier(.2,.8,.2,1);--hair:rgba(192,138,30,.30)}
 h2,h3{font-family:Marcellus,Georgia,serif;font-weight:400;letter-spacing:.03em}
@@ -434,9 +441,51 @@ const loaded = {settings:false, products:false, sales:false, purchases:false};
 /* ---------- small UI helpers ---------- */
 let toastT;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); }
-function openSheet(html) { if (typeof sheetCleanup === 'function') { try { sheetCleanup(); } catch {} sheetCleanup = null; } const w = $('#sheetwrap'); w.classList.remove('closing'); $('#sheet').innerHTML = '<div class="grab"></div>' + html; w.classList.add('on'); $('#sheet').scrollTop = 0; }
-function closeSheet() { if (typeof sheetCleanup === 'function') { try { sheetCleanup(); } catch {} sheetCleanup = null; } const w = $('#sheetwrap'); if (!w.classList.contains('on')) return; w.classList.add('closing'); setTimeout(() => { w.classList.remove('on', 'closing'); if (!w.classList.contains('on')) $('#sheet').innerHTML = ''; }, 190); }
-$('#sheetwrap').addEventListener('click', e => { if (e.target.id === 'sheetwrap') closeSheet(); });
+let closeTimer = 0, sheetHist = false, popClosing = false, pendingPush = false;
+function runCleanup() { if (typeof sheetCleanup === 'function') { try { sheetCleanup(); } catch {} sheetCleanup = null; } }
+function openSheet(html) {
+  runCleanup(); clearTimeout(closeTimer);
+  const w = $('#sheetwrap'), sh = $('#sheet'), wasOpen = w.classList.contains('on') && !w.classList.contains('closing');
+  w.classList.remove('closing'); sh.style.transform = ''; sh.style.transition = '';
+  sh.innerHTML = '<div class="sheethead"><div class="grab" aria-hidden="true"></div><button class="sheetx" type="button" aria-label="Close">×</button></div>' + html;
+  w.classList.add('on'); sh.scrollTop = 0;
+  if (!wasOpen && !sheetHist) { sheetHist = true; if (popClosing) pendingPush = true; else { try { history.pushState({sheet: 1, v: view}, ''); } catch {} } }
+}
+function closeSheet(fromPop) {
+  runCleanup();
+  const w = $('#sheetwrap'), sh = $('#sheet');
+  if (!w.classList.contains('on') || w.classList.contains('closing')) return;
+  w.classList.add('closing'); clearTimeout(closeTimer);
+  closeTimer = setTimeout(() => { w.classList.remove('on', 'closing'); sh.innerHTML = ''; sh.style.transform = ''; sh.style.transition = ''; }, 200);
+  if (sheetHist) { sheetHist = false; if (fromPop !== true) { popClosing = true; try { history.back(); } catch { popClosing = false; } } }
+}
+$('#sheetwrap').addEventListener('click', e => { if (e.target.id === 'sheetwrap' || e.target.closest('.sheetx')) closeSheet(); });
+/* swipe the sheet down to close */
+(() => {
+  const sh = $('#sheet'); let y0 = 0, dy = 0, t0 = 0, drag = false, armed = false;
+  sh.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return;
+    const onHead = e.target.closest('.sheethead');
+    armed = onHead || sh.scrollTop <= 0; drag = false; dy = 0; y0 = e.touches[0].clientY; t0 = Date.now();
+  }, {passive: true});
+  sh.addEventListener('touchmove', e => {
+    if (!armed) return;
+    const d = e.touches[0].clientY - y0;
+    if (!drag) { if (d > 8 && (sh.scrollTop <= 0 || e.target.closest('.sheethead'))) { drag = true; sh.style.transition = 'none'; } else if (d < -4) { armed = false; return; } else return; }
+    dy = Math.max(0, d - 8); sh.style.transform = 'translateY(' + dy + 'px)';
+    $('#sheetwrap').style.background = 'rgba(20,10,14,' + Math.max(.12, .5 - dy / 900) + ')';
+    if (e.cancelable) e.preventDefault();
+  }, {passive: false});
+  const end = () => {
+    if (!drag) { armed = false; return; }
+    const v = dy / Math.max(1, Date.now() - t0);
+    sh.style.transition = 'transform .22s cubic-bezier(.2,.8,.2,1)'; $('#sheetwrap').style.background = '';
+    if (dy > 120 || v > .6) { sh.style.transform = 'translateY(100%)'; closeSheet(); }
+    else sh.style.transform = '';
+    drag = armed = false; dy = 0;
+  };
+  sh.addEventListener('touchend', end); sh.addEventListener('touchcancel', end);
+})();
 function ask(msg, okText = 'Yes', danger = false) {
   return new Promise(res => {
     openSheet('<h2>Please confirm</h2><p>' + esc(msg) + '</p><div class="btns"><button class="btn" id="ask-no">Cancel</button><button class="btn ' + (danger ? 'danger' : 'p') + '" id="ask-yes">' + esc(okText) + '</button></div>');
@@ -1147,12 +1196,26 @@ function setFab() {
   else f.style.display = 'none';
 }
 $('#fab').onclick = () => { stockTab === 'p' ? productForm(null) : purchaseForm(null); };
-function go(v) {
+function go(v, fromPop) {
+  const prev = view;
   view = v; document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
   if (v === 'bill') setTimeout(() => $('#pq').focus(), 50);
   setFab(); window.scrollTo(0, 0);
+  if (fromPop === true || v === prev) return;
+  try {
+    if (prev === 'home' && v !== 'home') history.pushState({v}, '');        // Home -> tab: back returns Home
+    else if (v === 'home' && history.state && history.state.v && history.state.v !== 'home') { popClosing = true; history.back(); } // tab -> Home: drop the tab entry
+    else history.replaceState({v}, '');                                       // tab -> tab: back still returns Home
+  } catch {}
 }
+addEventListener('popstate', e => {
+  if (popClosing) { popClosing = false; if (pendingPush) { pendingPush = false; try { history.pushState({sheet: 1, v: view}, ''); } catch {} } return; }
+  if ($('#sheetwrap').classList.contains('on') && !$('#sheetwrap').classList.contains('closing')) { sheetHist = false; closeSheet(true); return; }
+  const st = e.state || {};
+  go(st.v || 'home', true);
+});
+try { if (!history.state) history.replaceState({v: 'home'}, ''); } catch {}
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(b.dataset.v); });
 $('#sg-p').onclick = () => { stockTab = 'p'; $('#sg-p').classList.add('on'); $('#sg-i').classList.remove('on'); $('#stock-p').style.display = ''; $('#stock-i').style.display = 'none'; setFab(); };
 $('#sg-i').onclick = () => { stockTab = 'i'; $('#sg-i').classList.add('on'); $('#sg-p').classList.remove('on'); $('#stock-i').style.display = ''; $('#stock-p').style.display = 'none'; setFab(); };
