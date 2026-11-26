@@ -94,6 +94,15 @@ If you set up the sheet before sheet editing was supported, update the script on
 
 In the app, **Settings → Sync details** should then show *Sheet script: version 4 ✓*.
 
+## Script updated for WhatsApp bills (version 5)
+
+Version 5 lets **WhatsApp to customer** open the customer's own chat with the bill PDF link already in the message. To get it:
+
+1. Open the sheet, then **Extensions → Apps Script**, and replace all the code with the new `Code.gs`. Click **Save**.
+2. Click **Deploy → Manage deployments**, then the pencil (Edit), set **Version** to **New version**, and click **Deploy**. The web app address stays the same.
+
+Bill PDFs are saved in a Drive folder called **YAAL Bills**. Each one can be opened by anyone who has its link, so only the customer you send it to can see it. If your Google account is a work account that blocks link sharing, the app tells you, and you can use **Share PDF…** instead.
+
 ## Updating the script later
 
 If you paste a newer `Code.gs`, go to **Deploy → Manage deployments → ✏️ Edit**. Set **Version** to **New version**, then click **Deploy**. The Web app URL stays the same, so phones don't need to reconnect.

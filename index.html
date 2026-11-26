@@ -205,6 +205,9 @@ main[data-dir] .view.on>*{animation:none}
 .bdrow{display:flex;gap:8px}.bdrow input{flex:1}.bdrow .dtog{height:46px;min-width:52px}
 .cartline .disc input{width:74px}
 #ssize:empty{display:none}
+
+.waphone{margin-top:10px;padding:10px 12px;border-radius:12px;background:#F7EFD9;border:1px solid var(--line)}
+.waphone label{margin-top:0}
 /* ---------- premium layer ---------- */
 :root{--sh1:0 1px 1px rgba(8,30,17,.10),0 2px 6px -1px rgba(8,30,17,.16);--sh2:0 1px 2px rgba(8,30,17,.12),0 10px 28px -10px rgba(8,30,17,.45);--ease:cubic-bezier(.2,.8,.2,1);--hair:rgba(192,138,30,.30)}
 h2,h3{font-family:Marcellus,Georgia,serif;font-weight:400;letter-spacing:.03em}
@@ -836,8 +839,10 @@ function showBill(b) {
     '<tr class="sum gt"><td></td><td colspan="3">Total</td><td class="n">' + R0(b.total) + '</td></tr>' +
     (billSaved(b) > 0 ? '<tr><td></td><td colspan="4" style="color:#1F7A45;font-weight:600">You saved ' + amt0(billSaved(b)) + '</td></tr>' : '') + '</table>' +
     (S.footer ? '<p style="text-align:center;font-style:italic;color:#6B7266;margin:10px 0 0">' + esc(S.footer) + '</p>' : '') + '<div class="mbc"><svg id="memo-bc"></svg><span>' + esc(b.invoice) + '</span></div></div>' +
-    '<div class="btns" style="margin-top:14px"><button class="btn gold" id="sharepdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>Send PDF on WhatsApp</button><button class="btn" id="dlpdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Download PDF</button></div>' +
-    '<div class="btns" style="margin-top:8px"><a class="btn" href="' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp text</a><button class="btn" id="copybill">Copy text</button></div>' +
+    '<div class="btns" style="margin-top:14px"><button class="btn gold" id="wadirect"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12a8 8 0 01-11.6 7.1L4 20l1-4.2A8 8 0 1120 12z"/><path d="M9 9.5c.3 1.6 1.9 3.4 3.6 4.1l1.1-1 1.8.8-.4 1.5c-3 .2-6.4-3.2-6.2-6.2l1.5-.4.8 1.8z"/></svg>WhatsApp to customer</button><button class="btn" id="dlpdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Download PDF</button></div>' +
+    '<div class="waphone" id="waphone" hidden><label for="waph">Customer WhatsApp number</label><div class="bdrow"><input id="waph" inputmode="tel" placeholder="10-digit mobile number" autocomplete="off"><button class="btn gold" id="waphgo" type="button">Send</button></div></div>' +
+    '<p class="small mute" id="wanote" style="margin:6px 2px 0"></p>' +
+    '<div class="btns" style="margin-top:8px"><button class="btn" id="sharepdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>Share PDF…</button><button class="btn" id="copybill">Copy text</button></div>' +
     '<div class="btns" style="margin-top:8px"><button class="btn danger" id="delbill">Delete bill</button><button class="btn p" id="closebill">Done</button></div>');
   getJsBarcode().then(J => { const el = $('#memo-bc'); if (el) J(el, b.invoice, {format: 'CODE128', height: 34, width: 1.4, displayValue: false, margin: 0, background: 'transparent', lineColor: '#1C2A20'}); }).catch(() => {});
   const canvasP = billCanvas(b);
@@ -860,6 +865,37 @@ function showBill(b) {
     await saveBlob(blob, fname);
     window.open(wa, '_blank', 'noopener');
     toast('PDF downloaded. Attach it in the WhatsApp chat that opened.');
+  };
+  const cloudOn = !!(db && db.info().cloud);
+  $('#wanote').textContent = cloudOn ? 'Opens the customer\'s WhatsApp chat with the bill and a link to the PDF. Just tap Send.' : 'Opens the customer\'s chat with the bill as text. Connect the Google Sheet to include a PDF link.';
+  const normPhone = v => { let d = String(v || '').replace(/\D/g, ''); if (d.length === 11 && d[0] === '0') d = d.slice(1); if (d.length === 10) d = '91' + d; return d.length >= 11 && d.length <= 13 ? d : ''; };
+  const blobB64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+  const saveOnBill = async fields => { const cur = sales.find(x => x.invoice === b.invoice); if (!cur) return; const d = Object.assign({}, cur, fields); delete d.id; try { await db.doc('sales/' + safeId(b.invoice)).set(d); } catch {} };
+  const sendTo = async ph => {
+    const btn = $('#wadirect'); btn.disabled = true; const old = btn.innerHTML;
+    let link = b.pdfLink || '';
+    try {
+      if (!link && cloudOn) {
+        btn.textContent = 'Preparing PDF…';
+        try {
+          const res = await db.cloudCall({action: 'billPdf', name: fname, data: await blobB64(await pdfP)});
+          link = res.url; b.pdfLink = link; saveOnBill({pdfLink: link});
+        } catch (e) {
+          toast(e && e.server === 'bad_action' ? 'Update the sheet script (version 5) to send PDF links. Sending the bill as text.' : e && e.server === 'sharing_blocked' ? 'Your Google account does not allow share links. Sending the bill as text.' : 'Could not upload the PDF. Sending the bill as text.');
+        }
+      }
+      const url = 'https://wa.me/' + ph + '?text=' + encodeURIComponent(billText(b) + (link ? '\n\nYour bill (PDF): ' + link : ''));
+      const w = window.open(url, '_blank'); if (w) { try { w.opener = null; } catch {} } else location.href = url;
+    } finally { btn.disabled = false; btn.innerHTML = old; }
+  };
+  $('#wadirect').onclick = () => {
+    const ph = normPhone(b.phone);
+    if (ph) return sendTo(ph);
+    $('#waphone').hidden = false; $('#waph').focus(); toast('Enter the customer\'s WhatsApp number');
+  };
+  $('#waphgo').onclick = () => {
+    const ph = normPhone($('#waph').value); if (!ph) { toast('Enter a 10-digit mobile number'); return; }
+    b.phone = $('#waph').value.trim(); saveOnBill({phone: b.phone}); $('#waphone').hidden = true; sendTo(ph);
   };
   $('#closebill').onclick = closeSheet;
   $('#copybill').onclick = async () => { try { await navigator.clipboard.writeText(billText(b)); toast('Copied'); } catch { toast('Copy not allowed here'); } };
@@ -1817,7 +1853,7 @@ function renderSyncDetails() {
   const i = db.info(); if (!i.cloud) { el.innerHTML = ''; return; }
   const when = i.lastSync ? new Date(i.lastSync).toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : 'not yet';
   let ver = 'checking…';
-  if (serverInfo) ver = serverInfo.error ? (serverInfo.error === 'bad_action' ? 'older version - please update Code.gs' : 'not reachable (' + esc(serverInfo.error) + ')') : 'version ' + esc(serverInfo.version) + (serverInfo.version < 4 ? ' - please update Code.gs' : ' ✓');
+  if (serverInfo) ver = serverInfo.error ? (serverInfo.error === 'bad_action' ? 'older version - please update Code.gs' : 'not reachable (' + esc(serverInfo.error) + ')') : 'version ' + esc(serverInfo.version) + (serverInfo.version < 5 ? ' - please update Code.gs' : ' ✓');
   const rows = [['Last synced', esc(when)], ['Changes waiting on this phone', String(i.pending)], ['Sheet script', ver]];
   if (i.lastErr) rows.push(['Last problem', esc(i.lastErr)]);
   let html = '<h3 style="margin-top:16px">Sync details</h3><div class="sdgrid">' + rows.map(([a, b]) => '<span>' + a + '</span><b>' + b + '</b>').join('') + '</div>';

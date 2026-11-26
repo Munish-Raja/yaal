@@ -69,7 +69,7 @@ var DELETED_TAB = '_deleted';
 /* ------------------------------------------------------------------ web app */
 function doGet() { return out({ok: true, app: 'boutique-stock'}); }
 
-var SCRIPT_VERSION = 4;
+var SCRIPT_VERSION = 5;
 
 function doPost(e) {
   try { return handle(e); }
@@ -85,6 +85,7 @@ function handle(e) {
   if (req.action === 'ping') return out({ok: true, version: SCRIPT_VERSION, rev: Number(props.getProperty('REV')) || 0});
   if (req.action === 'load') return out(load(Number(req.since) || 0));
   if (req.action === 'photo') return out(savePhoto(req));
+  if (req.action === 'billPdf') return out(saveBillPdf(req));
   if (req.action === 'getPhoto') return out(getPhoto(req));
   if (req.action === 'deletePhoto') return out(deletePhoto(req));
   var lock = LockService.getScriptLock();
@@ -389,4 +390,25 @@ function onSheetChange(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/* ------------------------------------------------------------------ bill PDFs for WhatsApp links */
+function billFolder() {
+  var props = PropertiesService.getScriptProperties(), id = props.getProperty('BILL_FOLDER');
+  if (id) { try { var f = DriveApp.getFolderById(id); if (!f.isTrashed()) return f; } catch (e) {} }
+  var folder = DriveApp.createFolder('YAAL Bills');
+  props.setProperty('BILL_FOLDER', folder.getId());
+  return folder;
+}
+
+// Saves the bill PDF and makes a view-only link the customer can open from WhatsApp.
+function saveBillPdf(req) {
+  if (!req.data) return {ok: false, error: 'no_file'};
+  var bytes = Utilities.base64Decode(req.data);
+  if (bytes.length > 8 * 1024 * 1024) return {ok: false, error: 'file_too_large'};
+  var name = String(req.name || 'bill.pdf').replace(/[^A-Za-z0-9_.-]/g, '_');
+  var file = billFolder().createFile(Utilities.newBlob(bytes, 'application/pdf', name));
+  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); }
+  catch (e) { file.setTrashed(true); return {ok: false, error: 'sharing_blocked'}; }
+  return {ok: true, id: file.getId(), url: 'https://drive.google.com/file/d/' + file.getId() + '/view'};
 }
