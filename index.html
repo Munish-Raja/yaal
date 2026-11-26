@@ -468,8 +468,19 @@ nav.tabs button{font-size:11px;letter-spacing:-.01em}
 .leftover.ok{background:var(--oksoft);color:var(--ok)}.leftover.bad{background:var(--badsoft);color:var(--bad)}
 .settlehd{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:6px}
 #v-exp{padding-bottom:84px}
+.editbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-4px 0 12px;padding:8px 8px 8px 14px;border-radius:14px;background:linear-gradient(135deg,#FFF7E2,#F1DFB0);color:#5C4510;border:1px solid #E2C985;box-shadow:var(--sh1);font-size:14px}
+.editbar b{color:var(--maroon)}
+.editbar[hidden]{display:none}
 .settlehd .arrow{font-size:24px;color:var(--gold)}
 textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--line);resize:vertical}
+.racts{display:flex;gap:4px;margin-left:2px;flex:none}
+.ract{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:#FFFBF1;color:var(--maroon2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.ract .icon{width:16px;height:16px}
+.ract.del{color:var(--bad);border-color:#F0C9C4;background:#FFF6F4}
+.ract:active{transform:scale(.92)}
+.erow{cursor:pointer}
+.editnote{display:flex;align-items:center;gap:8px;margin-top:12px;padding:8px 12px;border-radius:12px;background:var(--goldsoft);color:#7A5C14;font-size:13px;font-weight:600}
+.editnote .icon{width:16px;height:16px}
 </style>
 </head>
 <body>
@@ -508,7 +519,8 @@ textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:1px
 
   <!-- NEW BILL -->
   <section class="view" id="v-bill">
-    <h2>New bill</h2>
+    <h2 id="billh">New bill</h2>
+    <div class="editbar" id="editbar" hidden><span>✎ Editing bill <b id="editinv"></b></span><button class="btn slim" id="editcancel" type="button">Cancel edit</button></div>
     <div class="search scanrow"><input id="pq" type="search" placeholder="Search, or scan a barcode…" autocomplete="off" enterkeyhint="go"><button class="btn gold scanbtn" id="scanbtn" aria-label="Scan barcode with camera"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a1 1 0 011-1h2M17 4h2a1 1 0 011 1v2M20 17v2a1 1 0 01-1 1h-2M7 20H5a1 1 0 01-1-1v-2"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8"/></svg>Scan</button></div>
     <div class="list" id="presults" style="margin-bottom:12px"></div>
     <div class="list" id="cart"></div>
@@ -841,9 +853,10 @@ function countUp(el, to) {
   const step = t => { const p = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - p, 3); el.textContent = R0(from + (to - from) * e); if (p < 1) heroRaf = requestAnimationFrame(step); };
   heroRaf = requestAnimationFrame(step);
 }
-function renderBillPickers() {
-  const pay = $('#bpay').value, ch = $('#bchan').value;
-  $('#bpay').innerHTML = opts(S.pays, pay || S.pays[0]); $('#bchan').innerHTML = opts(S.chans, ch || S.chans[0]);
+function renderBillPickers(forcePay, forceCh) {
+  const pay = forcePay || $('#bpay').value, ch = forceCh || $('#bchan').value;
+  const withCur = (list, v) => (v && !list.includes(v) ? [...list, v] : list);
+  $('#bpay').innerHTML = opts(withCur(S.pays, pay), pay || S.pays[0]); $('#bchan').innerHTML = opts(withCur(S.chans, ch), ch || S.chans[0]);
   if (!$('#bdate').value) $('#bdate').value = todayStr();
   renderPicker();
 }
@@ -861,9 +874,10 @@ function addToCart(sku) {
   $('#pq').value = ''; renderPicker(); renderCart(); toast('Added to bill');
 }
 let billDisc = {mode: '₹', val: ''};
+const prodFor = c => (c.snap ? Object.assign({}, products.get(c.sku) || {}, c.snap) : products.get(c.sku));
 const lineCalc = (p, c) => itemCalc(p, c.qty, c.mode === '₹' ? 0 : c.disc, c.mode === '₹' ? (c.discRs || 0) : null);
 function cartItems() {
-  const base = cart.map(c => { const p = products.get(c.sku); return p ? {p, it: lineCalc(p, c)} : null; }).filter(Boolean);
+  const base = cart.map(c => { const p = prodFor(c); return p ? {p, it: lineCalc(p, c)} : null; }).filter(Boolean);
   const sub = base.reduce((a, x) => a + x.it.net, 0);
   let bd = billDisc.mode === '%' ? sub * Math.min(100, Math.max(0, num(billDisc.val))) / 100 : Math.min(sub, Math.max(0, num(billDisc.val)));
   bd = r2(bd);
@@ -877,8 +891,8 @@ function cartItems() {
 function renderCart() {
   if (!cart.length) { $('#cart').innerHTML = '<div class="empty">Search above and tap a product to add it to the bill.</div>'; }
   else $('#cart').innerHTML = cart.map((c, i) => {
-    const p = products.get(c.sku); if (!p) return '';
-    const it = lineCalc(p, c), avail = stock.get(c.sku) || 0, rs = c.mode === '₹';
+    const p = prodFor(c); if (!p) return '';
+    const it = lineCalc(p, c), avail = availFor(c.sku), rs = c.mode === '₹';
     return '<div class="cartline"><div class="top2"><div class="grow"><div class="t" style="font-weight:600">' + esc(p.name) + '</div><div class="s small mute">' + esc(p.sku) + ' · ' + esc(p.size || '') + ' · ' + R0(it.price) + ' each</div>' +
       (c.qty > avail ? '<div class="warnline">Only ' + avail + ' in stock</div>' : '') + '</div><b style="white-space:nowrap">' + R2(it.net) + '</b></div>' +
       '<div class="ctrl"><div class="qty"><button data-dec="' + i + '" aria-label="Less">−</button><input data-q="' + i + '" inputmode="numeric" value="' + c.qty + '" aria-label="Quantity"><button data-inc="' + i + '" aria-label="More">+</button></div>' +
@@ -919,12 +933,54 @@ $('#cart').addEventListener('change', e => {
 function resetBillDisc() { billDisc = {mode: '₹', val: ''}; $('#bdisc').value = ''; $('#bdtog').textContent = '₹'; }
 $('#bdisc').addEventListener('input', () => { billDisc.val = $('#bdisc').value; renderTotals(); });
 $('#bdtog').onclick = () => { billDisc.mode = billDisc.mode === '₹' ? '%' : '₹'; $('#bdtog').textContent = billDisc.mode; renderTotals(); $('#bdisc').focus(); };
-$('#bclear').onclick = async () => { if (!cart.length || await ask('Clear this bill?', 'Clear')) { cart = []; $('#bcust').value = ''; $('#bphone').value = ''; resetBillDisc(); renderCart(); } };
+$('#bclear').onclick = async () => { if (editing) return cancelEdit(); if (!cart.length || await ask('Clear this bill?', 'Clear')) { cart = []; $('#bcust').value = ''; $('#bphone').value = ''; resetBillDisc(); renderCart(); } };
+
+/* ---------- edit a saved bill ---------- */
+let editing = null;
+// stock available to this bill: while editing, its own pieces count as available
+function availFor(sku) { let a = stock.get(sku) || 0; if (editing) for (const it of editing.items || []) if (it.sku === sku) a += num(it.qty); return a; }
+function setEditUI() {
+  const on = !!editing;
+  $('#editbar').hidden = !on; $('#billh').textContent = on ? 'Edit bill' : 'New bill';
+  if (on) $('#editinv').textContent = editing.invoice;
+  $('#bsave').textContent = on ? 'Update bill' : 'Save bill'; $('#bclear').textContent = on ? 'Cancel' : 'Clear';
+}
+function clearBillForm() { cart = []; $('#bcust').value = ''; $('#bphone').value = ''; $('#bdate').value = todayStr(); resetBillDisc(); renderCart(); }
+async function startEdit(b) {
+  if (!needDb()) return;
+  if (cart.length && !editing && !(await ask('You have an unsaved bill with ' + cart.length + ' item(s). Replace it with bill ' + b.invoice + ' to edit?', 'Replace'))) return;
+  editing = JSON.parse(JSON.stringify(b));
+  cart = (b.items || []).map(it => {
+    const snap = {sku: it.sku, name: it.name, category: it.category, size: it.size, price: num(it.price), cost: num(it.cost)};
+    const share = num(it.billShare), lineDisc = r2(num(it.discAmt) - share), lbl = it.line ? String(it.line.label || '') : '';
+    const pm = it.line ? /^([\d.]+)% off$/.exec(lbl) : null;
+    let mode = '%', disc = 0, discRs = 0;
+    if (it.line) { if (pm) disc = num(pm[1]); else if (lineDisc > 0) { mode = '₹'; discRs = lineDisc; } }
+    else if (it.discRs != null) { mode = '₹'; discRs = num(it.discRs); }
+    else disc = num(it.disc);
+    return {sku: it.sku, qty: num(it.qty), mode, disc, discRs, snap};
+  });
+  const bd = billDiscOf(b); billDisc = {mode: '₹', val: bd > 0 ? String(bd) : ''}; $('#bdisc').value = billDisc.val; $('#bdtog').textContent = '₹';
+  $('#bcust').value = b.customer || ''; $('#bphone').value = b.phone || ''; $('#bdate').value = b.date || todayStr();
+  renderBillPickers(b.pay || S.pays[0], b.channel || S.chans[0]);
+  setEditUI(); renderCart(); closeSheet(); go('bill'); toast('Editing ' + b.invoice + ' - make changes, then tap Update bill');
+}
+function cancelEdit() { editing = null; clearBillForm(); setEditUI(); toast('Edit cancelled'); }
+$('#editcancel').onclick = cancelEdit;
 $('#bsave').onclick = async () => {
   if (!cart.length || !needDb()) return;
-  const items = cartItems(), short = cart.filter(c => c.qty > (stock.get(c.sku) || 0));
+  const items = cartItems(), short = cart.filter(c => c.qty > availFor(c.sku));
   if (short.length && !(await ask(short.length + ' item(s) have more quantity than stock shows. Save the bill anyway?', 'Save anyway'))) return;
   const t = totalsOf(items), gen = nextInvoice();
+  if (editing) {
+    const bill = Object.assign({}, editing, {date: $('#bdate').value || editing.date || todayStr(), customer: $('#bcust').value.trim(), phone: $('#bphone').value.trim(),
+      pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, discount: r2(t.disc), taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, editedAt: Date.now()});
+    const id = bill.id || safeId(bill.invoice); delete bill.id; delete bill.pdfLink; delete bill._op;   // the old PDF link shows the old bill
+    $('#bsave').disabled = true;
+    try { await db.doc('sales/' + id).set(bill); editing = null; setEditUI(); clearBillForm(); showBill(Object.assign({id}, bill)); toast('Bill ' + bill.invoice + ' updated'); }
+    catch (e) { dbFail(e); } finally { $('#bsave').disabled = !cart.length; }
+    return;
+  }
   const bill = {_op: Date.now().toString(36) + Math.random().toString(36).slice(2, 10), invoice: '', date: $('#bdate').value || todayStr(), customer: $('#bcust').value.trim(), phone: $('#bphone').value.trim(),
     pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, discount: r2(t.disc), taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, createdAt: Date.now()};
   $('#bsave').disabled = true;
@@ -964,7 +1020,8 @@ function showBill(b) {
     '<div class="waphone" id="waphone" hidden><label for="waph">Customer WhatsApp number</label><div class="bdrow"><input id="waph" inputmode="tel" placeholder="10-digit mobile number" autocomplete="off"><button class="btn gold" id="waphgo" type="button">Send</button></div></div>' +
     '<p class="small mute" id="wanote" style="margin:6px 2px 0"></p>' +
     '<div class="btns" style="margin-top:8px"><button class="btn" id="sharepdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>Share PDF…</button><button class="btn" id="copybill">Copy text</button></div>' +
-    '<div class="btns" style="margin-top:8px"><button class="btn danger" id="delbill">Delete bill</button><button class="btn p" id="closebill">Done</button></div>');
+    '<div class="btns" style="margin-top:8px"><button class="btn" id="editbill"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>Edit bill</button><button class="btn danger" id="delbill">Delete bill</button></div>' +
+    '<button class="btn p block" id="closebill" style="margin-top:8px">Done</button>' + (b.editedAt ? '<p class="small mute" style="text-align:center;margin:8px 0 0">Edited ' + new Date(b.editedAt).toLocaleString('en-IN', {dateStyle: 'medium', timeStyle: 'short'}) + '</p>' : ''));
   getJsBarcode().then(J => { const el = $('#memo-bc'); if (el) J(el, b.invoice, {format: 'CODE128', height: 34, width: 1.4, displayValue: false, margin: 0, background: 'transparent', lineColor: '#1C2A20'}); }).catch(() => {});
   const canvasP = billCanvas(b);
   const pdfP = canvasP.then(c => billPdf(b, c)); pdfP.catch(() => {});
@@ -1033,11 +1090,12 @@ function showBill(b) {
     b.phone = $('#waph').value.trim(); saveOnBill({phone: b.phone}); $('#waphone').hidden = true; sendTo(ph);
   };
   $('#closebill').onclick = closeSheet;
+  $('#editbill').onclick = () => { const cur = sales.find(x => x.invoice === b.invoice) || b; startEdit(cur); };
   $('#copybill').onclick = async () => { try { await navigator.clipboard.writeText(billText(b)); toast('Copied'); } catch { toast('Copy not allowed here'); } };
   $('#delbill').onclick = async () => {
     if (!needDb()) return;
     if (await ask('Delete bill ' + b.invoice + '? Its items go back into stock.', 'Delete', true)) {
-      try { await db.doc('sales/' + safeId(b.invoice)).delete(); toast('Bill deleted'); } catch (e) { dbFail(e); }
+      try { await db.doc('sales/' + safeId(b.invoice)).delete(); if (editing && editing.invoice === b.invoice) { editing = null; clearBillForm(); setEditUI(); } toast('Bill deleted'); } catch (e) { dbFail(e); }
     }
   };
 }
@@ -1201,13 +1259,17 @@ function renderSales() {
   let last = '', html = '';
   for (const b of list) {
     if (b.date !== last) { html += '<div class="row" style="background:var(--bg);cursor:default;padding:6px 14px"><b class="small">' + nice(b.date) + '</b></div>'; last = b.date; }
-    html += '<button class="row" data-bill="' + esc(b.id) + '"><div class="grow"><div class="t">' + esc(b.customer || 'Walk-in customer') + '</div><div class="s">' + esc(b.invoice) + ' · ' + num(b.qty) + ' pcs · ' + esc(b.pay || '') + '</div></div><div class="r"><b>' + R0(num(b.total)) + '</b></div></button>';
+    html += '<div class="row erow" role="button" tabindex="0" data-bill="' + esc(b.id) + '"><div class="grow"><div class="t">' + esc(b.customer || 'Walk-in customer') + '</div><div class="s">' + esc(b.invoice) + ' · ' + num(b.qty) + ' pcs · ' + esc(b.pay || '') + (b.editedAt ? ' · edited' : '') + '</div></div><div class="r"><b>' + R0(num(b.total)) + '</b></div><span class="racts"><button type="button" class="ract" data-bedit="' + esc(b.id) + '" aria-label="Edit bill ' + esc(b.invoice) + '"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button></span></div>';
   }
   $('#slist').innerHTML = html || '<div class="empty">No bills for this month.</div>';
 }
 $('#smonth').addEventListener('change', renderSales);
 $('#sfind').addEventListener('input', renderSales);
-$('#slist').addEventListener('click', e => { const b = e.target.closest('[data-bill]'); if (b) { const bill = sales.find(x => x.id === b.dataset.bill); if (bill) showBill(bill); } });
+$('#slist').addEventListener('click', e => {
+  const ed = e.target.closest('[data-bedit]'); if (ed) { const bill = sales.find(x => x.id === ed.dataset.bedit); if (bill) startEdit(bill); return; }
+  const b = e.target.closest('[data-bill]'); if (b) { const bill = sales.find(x => x.id === b.dataset.bill); if (bill) showBill(bill); }
+});
+$('#slist').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.erow')) { e.preventDefault(); e.target.click(); } });
 $('#lowlist').addEventListener('click', e => { const b = e.target.closest('[data-instock]'); if (b) purchaseForm(b.dataset.instock); });
 
 /* ---------- settings ---------- */
@@ -2002,8 +2064,14 @@ function renderExpenses() {
 }
 function expRow(e, em) {
   const c = em.get(e.category) || OTHER_C, sp = e.split && e.split.shares ? e.split.shares.length : 0;
-  return '<button class="row" data-exp="' + esc(e.id) + '"><span class="eic" style="background:' + c + '">' + esc(initials(e.category)) + '</span><div class="grow"><div class="t">' + esc(e.note || e.category || 'Expense') + '</div><div class="s">' + esc([e.note ? e.category : '', e.vendor, e.paidBy ? 'paid by ' + e.paidBy : '', e.pay].filter(Boolean).join(' · ')) + '</div>' +
-    (sp ? '<span class="badge b-split">Split ' + sp + ' way' + (sp === 1 ? '' : 's') + '</span>' : '') + '</div><div class="r"><b>' + R0(num(e.amount)) + '</b></div></button>';
+  return '<div class="row erow" role="button" tabindex="0" data-exp="' + esc(e.id) + '"><span class="eic" style="background:' + c + '">' + esc(initials(e.category)) + '</span><div class="grow"><div class="t">' + esc(e.note || e.category || 'Expense') + '</div><div class="s">' + esc([e.note ? e.category : '', e.vendor, e.paidBy ? 'paid by ' + e.paidBy : '', e.pay].filter(Boolean).join(' · ')) + '</div>' +
+    (sp ? '<span class="badge b-split">Split ' + sp + ' way' + (sp === 1 ? '' : 's') + '</span>' : '') + '</div><div class="r"><b>' + R0(num(e.amount)) + '</b></div>' + rowActs(e.id) + '</div>';
+}
+const rowActs = id => '<span class="racts"><button type="button" class="ract" data-eedit="' + esc(id) + '" aria-label="Edit"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button><button type="button" class="ract del" data-edel="' + esc(id) + '" aria-label="Delete"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></span>';
+async function deleteExpense(x) {
+  const what = x.type === 'settle' ? 'the settlement ' + x.paidBy + ' → ' + x.to + ' (' + R0(num(x.amount)) + ')' : (x.note || x.category || 'this expense') + ' (' + R0(num(x.amount)) + ')' + (x.split && x.split.shares ? '. Its split will be removed from everyone\'s balance' : '');
+  if (!(await ask('Delete ' + what + '?', 'Delete', true))) return;
+  try { await db.doc('expenses/' + x.id).delete(); toast(x.type === 'settle' ? 'Settlement deleted' : 'Expense deleted'); } catch (er) { dbFail(er); }
 }
 function renderSplit() {
   const {net, moves} = splitBalances(), mem = S.members || [];
@@ -2015,13 +2083,19 @@ function renderSplit() {
   $('#settlelist').onclick = e => { const b = e.target.closest('[data-settle]'); if (b) settleForm(null, moves[+b.dataset.settle]); };
   const em = expColorMap(), hist = expenses.filter(e => e.type === 'settle' || (e.split && e.split.shares)).sort((a, b) => (b.date || '').localeCompare(a.date || '') || num(b.createdAt) - num(a.createdAt)).slice(0, 60);
   $('#splitlist').shtml = hist.length ? hist.map(e => e.type === 'settle'
-    ? '<button class="row" data-exp="' + esc(e.id) + '"><span class="eic" style="background:#1F7A45">✓</span><div class="grow"><div class="t">' + esc(e.paidBy) + ' paid ' + esc(e.to) + '</div><div class="s">' + nice(e.date) + ' · settlement' + (e.pay ? ' · ' + esc(e.pay) : '') + '</div></div><div class="r"><b>' + R0(num(e.amount)) + '</b></div></button>'
+    ? '<div class="row erow" role="button" tabindex="0" data-exp="' + esc(e.id) + '"><span class="eic" style="background:#1F7A45">✓</span><div class="grow"><div class="t">' + esc(e.paidBy) + ' paid ' + esc(e.to) + '</div><div class="s">' + nice(e.date) + ' · settlement' + (e.pay ? ' · ' + esc(e.pay) : '') + '</div></div><div class="r"><b>' + R0(num(e.amount)) + '</b></div>' + rowActs(e.id) + '</div>'
     : expRow(e, em).replace('<div class="s">', '<div class="s">' + nice(e.date) + ' · ')).join('') : '<div class="empty">No split expenses yet.</div>';
 }
 $('#emonth').addEventListener('change', renderExpenses);
 $('#efind').addEventListener('input', renderExpenses);
 $('#echips').addEventListener('click', e => { const b = e.target.closest('[data-ec]'); if (b) { expCat = b.dataset.ec; renderExpenses(); } });
-$('#v-exp').addEventListener('click', e => { if (e.target.closest('[data-tip]')) return; const b = e.target.closest('[data-exp]'); if (!b) return; const x = expenses.find(y => y.id === b.dataset.exp); if (x) (x.type === 'settle' ? settleForm(x) : expenseForm(x)); });
+$('#v-exp').addEventListener('click', e => {
+  if (e.target.closest('[data-tip]')) return;
+  const d = e.target.closest('[data-edel]'); if (d) { const x = expenses.find(y => y.id === d.dataset.edel); if (x) deleteExpense(x); return; }
+  const b = e.target.closest('[data-eedit], [data-exp]'); if (!b) return;
+  const x = expenses.find(y => y.id === (b.dataset.eedit || b.dataset.exp)); if (x) (x.type === 'settle' ? settleForm(x) : expenseForm(x));
+});
+$('#v-exp').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.erow')) { e.preventDefault(); e.target.click(); } });
 $('#eg-l').onclick = () => { expTab = 'l'; $('#eg-l').classList.add('on'); $('#eg-s').classList.remove('on'); $('#exp-l').style.display = ''; $('#exp-s').style.display = 'none'; setFab(); };
 $('#eg-s').onclick = () => { expTab = 's'; $('#eg-s').classList.add('on'); $('#eg-l').classList.remove('on'); $('#exp-s').style.display = ''; $('#exp-l').style.display = 'none'; setFab(); };
 
@@ -2050,7 +2124,7 @@ function expenseForm(e, opt = {}) {
     '<div><label for="x-pay">Payment mode</label><select id="x-pay">' + opts(pays, e ? e.pay : pays[0]) + '</select></div></div>' +
     '<div class="splitbox"><label class="switch"><input type="checkbox" id="x-split"' + (sp.on ? ' checked' : '') + '><span class="sw" aria-hidden="true"></span><span><b>Split this expense</b><small class="mute">Share the cost between people, like a split in GPay</small></span></label>' +
     '<div id="x-splitbody"' + (sp.on ? '' : ' hidden') + '></div></div>' +
-    '<div class="btns" style="margin-top:16px">' + (e ? '<button class="btn danger" id="x-del">Delete</button>' : '<button class="btn" id="x-cancel">Cancel</button>') + '<button class="btn p" id="x-save">Save expense</button></div>');
+    (e ? '<div class="editnote">' + '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>' + 'Editing an expense added on ' + nice(e.date) + '</div>' : '') + '<div class="btns" style="margin-top:16px">' + (e ? '<button class="btn danger" id="x-del"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Delete</button>' : '<button class="btn" id="x-cancel">Cancel</button>') + '<button class="btn p" id="x-save">' + (e ? 'Update expense' : 'Save expense') + '</button></div>');
   const amt = () => r2(num($('#x-amt').value));
   const shares = () => {
     const on = sp.people.filter(p => p.on), A = amt();
@@ -2093,7 +2167,7 @@ function expenseForm(e, opt = {}) {
   if (sp.on) drawSplit();
   if (!e) setTimeout(() => $('#x-amt').focus(), 300);
   const cancel = $('#x-cancel'); if (cancel) cancel.onclick = closeSheet;
-  const del = $('#x-del'); if (del) del.onclick = async () => { if (await ask('Delete this expense of ' + R0(num(e.amount)) + '?', 'Delete', true)) { try { await db.doc('expenses/' + e.id).delete(); toast('Expense deleted'); } catch (er) { dbFail(er); } } };
+  const del = $('#x-del'); if (del) del.onclick = () => deleteExpense(e);
   $('#x-save').onclick = async () => {
     const A = amt();
     if (!(A > 0)) { toast('Enter the amount'); $('#x-amt').focus(); return; }
@@ -2111,7 +2185,7 @@ function expenseForm(e, opt = {}) {
       paidBy, pay: $('#x-pay').value, split, createdAt: e ? num(e.createdAt) || Date.now() : Date.now(), updatedAt: Date.now()};
     try { localStorage.setItem(LS_PAYER, paidBy); } catch {}
     $('#x-save').disabled = true;
-    try { if (e) await db.doc('expenses/' + e.id).set(doc); else await db.collection('expenses').add(doc); closeSheet(); toast(split ? 'Expense saved and split ' + split.shares.length + ' ways' : 'Expense saved'); }
+    try { if (e) await db.doc('expenses/' + e.id).set(doc); else await db.collection('expenses').add(doc); closeSheet(); toast((e ? 'Expense updated' : 'Expense saved') + (split ? ', split ' + split.shares.length + ' ways' : '')); }
     catch (er) { dbFail(er); $('#x-save').disabled = false; }
   };
 }
@@ -2126,7 +2200,7 @@ function settleForm(e, mv) {
     '<p class="small mute">A settlement only moves money between people. It is not counted as a business expense.</p>' +
     '<div class="btns">' + (e ? '<button class="btn danger" id="s-del">Delete</button>' : '<button class="btn" id="s-cancel">Cancel</button>') + '<button class="btn p" id="s-save">' + (e ? 'Save' : 'Mark as paid') + '</button></div>');
   const c = $('#s-cancel'); if (c) c.onclick = closeSheet;
-  const d = $('#s-del'); if (d) d.onclick = async () => { if (await ask('Delete this settlement?', 'Delete', true)) { try { await db.doc('expenses/' + e.id).delete(); toast('Settlement deleted'); } catch (er) { dbFail(er); } } };
+  const d = $('#s-del'); if (d) d.onclick = () => deleteExpense(e);
   $('#s-save').onclick = async () => {
     const A = r2(num($('#s-amt').value)); if (!(A > 0)) { toast('Enter the amount'); return; }
     const doc = {type: 'settle', category: 'Settlement', date: $('#s-date').value || todayStr(), amount: A, paidBy: from, to, pay: $('#s-pay').value, note: $('#s-note').value.trim(), createdAt: e ? num(e.createdAt) || Date.now() : Date.now(), updatedAt: Date.now()};
