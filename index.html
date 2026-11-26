@@ -2444,12 +2444,18 @@ function decideLock() {
   if (!users.size) { const want = canMakeOwner() ? 'setup' : 'wait'; if (lockMode !== want) showLock(want); return; }
   if (lockMode === 'login' || lockMode === 'unlock') return;
   const sess = lsGet(LS_SESSION, null), u = sess && users.get(sess.u);
-  if (u && isActive(u)) { if (lockOn(u.username) && bioFor(u.username)) showLock('unlock', {user: u.username, auto: true}); else if (lockOn(u.username)) showLock('login', {user: u.username}); else enter(u, 'session'); }
+  // a reload or a quick reopen keeps you logged in; the lock only asks again after 5 minutes away
+  const away = sess ? Date.now() - num(sess.t) : Infinity;
+  if (u && isActive(u)) { if (!lockOn(u.username) || away < LOCK_AFTER) enter(u, 'session'); else if (bioFor(u.username)) showLock('unlock', {user: u.username, auto: true}); else showLock('login', {user: u.username}); }
   else showLock('login');
 }
+const LOCK_AFTER = 5 * 60000;
+const touchSession = () => { if (me) lsSet(LS_SESSION, {u: me.username, t: Date.now()}); };   // "last seen" time, kept across reloads
+setInterval(() => { if (document.visibilityState === 'visible') touchSession(); }, 20000);
+addEventListener('pagehide', touchSession);
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') hiddenAt = Date.now();
-  else if (me && hiddenAt && Date.now() - hiddenAt > 5 * 60000 && lockOn(me.username)) lockNow();
+  if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); touchSession(); }
+  else if (me && hiddenAt && Date.now() - hiddenAt > LOCK_AFTER && lockOn(me.username)) lockNow();
 });
 
 /* ---------- header avatar + profile ---------- */
