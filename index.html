@@ -562,6 +562,18 @@ a.btn.slim{text-decoration:none}
 .ptsbig span{display:block;font-size:12.5px;font-weight:700;color:#7A5C14}.ptsbig b{display:block;font:400 30px Marcellus,Georgia,serif;color:var(--maroon)}.ptsbig small{font-size:12px;color:#6B5A2E}
 .tierbar{margin-top:10px}.tierbar .pbar{background:#E9DFC6;height:7px}.tierbar .pbar i{background:linear-gradient(90deg,#D9A63A,#B9801A);border:0}
 .tierrow{grid-template-columns:minmax(0,1fr) 92px 64px 40px}
+.offerbox{margin-top:10px;padding:10px 12px;border-radius:16px;background:var(--card);border:1px dashed var(--gold);box-shadow:var(--sh2)}
+.ofhead{font-weight:700;color:var(--maroon);display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.ofrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:14px}
+.ofrow small{display:block;font-size:11.5px}
+.ofrow .oftag{width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.ofrow .gets{color:var(--ok);font-variant-numeric:tabular-nums}
+.ofhint{font-size:13px;color:#7A5200;background:#FFF4D6;border-radius:10px;padding:6px 10px;margin-top:6px}
+.ofhint.mute{background:none;color:var(--mute);padding:4px 0}
+.ofman{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ofman .chip{border-color:var(--gold);min-height:32px;font-size:13px}
+.oftagline{font-size:12.5px;font-weight:600;color:#9A6B00;margin-top:2px}
+.comprow{grid-template-columns:minmax(0,1fr) 60px 40px}
 </style>
 </head>
 <body class="locked">
@@ -606,6 +618,7 @@ a.btn.slim{text-decoration:none}
     <div class="search scanrow"><input id="pq" type="search" placeholder="Search, or scan a barcode…" autocomplete="off" enterkeyhint="go"><button class="btn gold scanbtn" id="scanbtn" aria-label="Scan barcode with camera"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a1 1 0 011-1h2M17 4h2a1 1 0 011 1v2M20 17v2a1 1 0 01-1 1h-2M7 20H5a1 1 0 01-1-1v-2"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8"/></svg>Scan</button></div>
     <div class="list" id="presults" style="margin-bottom:12px"></div>
     <div class="list" id="cart"></div>
+    <div class="offerbox" id="offerbox" hidden></div>
     <div class="card" style="margin-top:12px">
       <div class="grid2">
         <div><label for="bcust">Customer name</label><input id="bcust" autocomplete="off"></div>
@@ -690,6 +703,9 @@ a.btn.slim{text-decoration:none}
     <div class="adminonly"><h2>Team</h2>
     <div class="card"><p class="small mute" style="margin-top:0">Everyone who uses the app logs in with their own username and password. Bills, stock entries and expenses record who created them.</p>
       <div class="list" id="teamlist"></div><button class="btn gold block" id="adduser">+ Add user</button></div></div>
+    <div class="adminonly"><h2>Offers &amp; combos</h2>
+    <div class="card"><p class="small mute" style="margin-top:0">Offers are applied on the bill page automatically (or by staff with one tap) and printed on the bill.</p>
+      <div class="list" id="offerlist"></div><button class="btn gold block" id="addoffer" style="margin-top:12px">+ New offer</button></div></div>
     <h2 class="adminonly">Shop settings</h2>
     <div class="card adminonly">
       <label for="st-name">Business name</label><input id="st-name">
@@ -929,7 +945,7 @@ const itemAmt = it => (it.line ? it.line.net : it.net);
 const itemLabel = it => (it.line ? it.line.label : discLabel(it));
 function billDiscOf(b) { return r2((b.items || []).reduce((a, it) => a + num(it.billShare), 0)); }
 function billSaved(b) { return r2((b.items || []).reduce((a, it) => a + num(it.discAmt), 0)); }
-function discLabel(it) { return num(it.discAmt) > 0 ? (it.discRs != null ? amt0(it.discAmt) + ' off' : it.disc + '% off') : ''; }
+function discLabel(it) { if (it.offer) return '🏷️ ' + it.offer + ' · ' + amt0(num(it.offerAmt != null ? it.offerAmt : it.discAmt)) + ' off'; return num(it.discAmt) > 0 ? (it.discRs != null ? amt0(it.discAmt) + ' off' : it.disc + '% off') : ''; }
 function recompute() {
   soldQty = new Map(); inQty = new Map(); stock = new Map();
   for (const b of sales) for (const it of (b.items || [])) soldQty.set(it.sku, (soldQty.get(it.sku) || 0) + num(it.qty));
@@ -959,7 +975,7 @@ function makeSku(category) {
 }
 
 /* ---------- render: header + home ---------- */
-function renderAll() { recompute(); $('#brand').textContent = S.name || 'YAAL'; renderHome(); renderBillPickers(); renderCart(); renderProducts(); renderPurchases(); renderSales(); renderExpenses(); renderTeam(); renderMeCard(); if (salesTab === 'c') renderCustomers(); if (!settingsDirty) fillSettings(); setFab(); }
+function renderAll() { recompute(); $('#brand').textContent = S.name || 'YAAL'; renderHome(); renderBillPickers(); renderCart(); renderProducts(); renderPurchases(); renderSales(); renderExpenses(); renderTeam(); renderMeCard(); renderOffersList(); if (salesTab === 'c') renderCustomers(); if (!settingsDirty) fillSettings(); setFab(); }
 
 let heroShown = null, heroRaf = 0;
 function countUp(el, to) {
@@ -994,33 +1010,44 @@ let billDisc = {mode: '₹', val: ''};
 const prodFor = c => (c.snap ? Object.assign({}, products.get(c.sku) || {}, c.snap) : products.get(c.sku));
 const lineCalc = (p, c) => itemCalc(p, c.qty, c.mode === '₹' ? 0 : c.disc, c.mode === '₹' ? (c.discRs || 0) : null);
 function cartItemsRaw() {
-  const base = cart.map(c => { const p = prodFor(c); return p ? {p, it: lineCalc(p, c)} : null; }).filter(Boolean);
+  const OF = typeof computeOffers === 'function' ? computeOffers($('#bdate').value || todayStr()) : {lines: new Map(), applied: [], hints: [], manual: [], billCands: []};
+  const base = cart.map((c, i) => {
+    const p = prodFor(c); if (!p) return null;
+    let it = lineCalc(p, c); const od = OF.lines.get(i);
+    if (od && od.amt > 0 && !hasManual(c)) { it = itemCalc(p, c.qty, null, Math.min(od.amt, num(p.price) * c.qty)); delete it.discRs; it.offer = od.names.join(' + '); it.offerAmt = it.discAmt; }
+    return {p, it, i};
+  }).filter(Boolean);
   const sub = base.reduce((a, x) => a + x.it.net, 0);
   let bd = billDisc.mode === '%' ? sub * Math.min(100, Math.max(0, num(billDisc.val))) / 100 : Math.min(sub, Math.max(0, num(billDisc.val)));
-  return {base, sub, bd: r2(bd)};
+  bd = r2(bd);
+  const bo = typeof bestBillOffer === 'function' ? bestBillOffer(OF.billCands, r2(sub - bd)) : {o: null, amt: 0, next: null};
+  return {base, sub, bd, ob: bo.amt, obO: bo.o, obNext: bo.next, OF};
 }
 function cartItems() {
-  const {base, sub, bd} = cartItemsRaw();
-  const pv = typeof ptsRedeem !== 'undefined' && ptsRedeem.on ? r2(Math.min(Math.max(0, sub - bd), ptsRedeem.rs)) : 0;   // loyalty points used as discount
-  if ((!bd && !pv) || !sub) return base.map(x => x.it);
-  let left = bd, leftP = pv;
+  const {base, sub, bd, ob} = cartItemsRaw();
+  const pv = typeof ptsRedeem !== 'undefined' && ptsRedeem.on ? r2(Math.min(Math.max(0, sub - bd - ob), ptsRedeem.rs)) : 0;   // loyalty points used as discount
+  if ((!bd && !pv && !ob) || !sub) return base.map(x => x.it);
+  let left = bd, leftP = pv, leftO = ob;
   return base.map((x, i) => {
     const last = i === base.length - 1;
     const share = last ? left : r2(bd * x.it.net / sub); left = r2(left - share);
+    const os = last ? leftO : r2(ob * x.it.net / sub); leftO = r2(leftO - os);
     const ps = last ? leftP : r2(pv * x.it.net / sub); leftP = r2(leftP - ps);
-    const it = itemCalc(x.p, x.it.qty, null, x.it.discAmt + share + ps); it.billShare = share; if (ps) it.ptsShare = ps; it.line = {net: x.it.net, label: discLabel(x.it)}; return it;
+    const it = itemCalc(x.p, x.it.qty, null, x.it.discAmt + share + os + ps); it.billShare = share; if (os) it.offShare = os; if (ps) it.ptsShare = ps; it.line = {net: x.it.net, label: discLabel(x.it)};
+    if (x.it.offer) { it.offer = x.it.offer; it.offerAmt = x.it.offerAmt; }
+    return it;
   });
 }
 function renderCart() {
   if (!cart.length) { $('#cart').innerHTML = '<div class="empty">Search above and tap a product to add it to the bill.</div>'; }
-  else $('#cart').innerHTML = cart.map((c, i) => {
+  else { const RAW = cartItemsRaw(), byI = new Map(RAW.base.map(x => [x.i, x.it])); $('#cart').innerHTML = cart.map((c, i) => {
     const p = prodFor(c); if (!p) return '';
-    const it = lineCalc(p, c), avail = availFor(c.sku), rs = c.mode === '₹';
+    const it = byI.get(i) || lineCalc(p, c), avail = availFor(c.sku), rs = c.mode === '₹';
     return '<div class="cartline"><div class="top2"><div class="grow"><div class="t" style="font-weight:600">' + esc(p.name) + '</div><div class="s small mute">' + esc(p.sku) + ' · ' + esc(p.size || '') + ' · ' + R0(it.price) + ' each</div>' +
-      (c.qty > avail ? '<div class="warnline">Only ' + avail + ' in stock</div>' : '') + '</div><b style="white-space:nowrap">' + R2(it.net) + '</b></div>' +
+      (c.qty > avail ? '<div class="warnline">Only ' + avail + ' in stock</div>' : '') + (it.offer ? '<div class="oftagline">🏷️ ' + esc(it.offer) + ' · − ' + R2(it.offerAmt) + '</div>' : '') + '</div><b style="white-space:nowrap">' + R2(it.net) + '</b></div>' +
       '<div class="ctrl"><div class="qty"><button data-dec="' + i + '" aria-label="Less">−</button><input data-q="' + i + '" inputmode="numeric" value="' + c.qty + '" aria-label="Quantity"><button data-inc="' + i + '" aria-label="More">+</button></div>' +
       '<div class="disc">Discount<input data-d="' + i + '" inputmode="decimal" value="' + ((rs ? c.discRs : c.disc) || '') + '" placeholder="0" aria-label="Discount ' + (rs ? 'in rupees' : 'percent') + '"><button class="dtog" type="button" data-dt="' + i + '" aria-label="Switch between percent and rupees">' + (rs ? '₹' : '%') + '</button></div><button class="x" data-rm="' + i + '" aria-label="Remove" style="margin-left:auto">×</button></div></div>';
-  }).join('');
+  }).join(''); }
   renderTotals();
 }
 function totalsOf(items) {
@@ -1031,12 +1058,12 @@ function totalsOf(items) {
 function renderTotals() {
   const t = totalsOf(cartItems());
   $('#btotals').innerHTML = '<div><span>Items</span><span>' + t.qty + '</span></div><div><span>Amount</span><span>' + R2(t.gross) + '</span></div>' +
-    (t.disc ? '<div><span>Discount' + (num(billDisc.val) > 0 ? ' (incl. bill ' + (billDisc.mode === '%' ? num(billDisc.val) + '%' : amt0(num(billDisc.val))) + ')' : '') + (ptsRedeem.on && ptsRedeem.pts ? ' (incl. ★ ' + fmtPts(ptsRedeem.pts) + ')' : '') + '</span><span>− ' + R2(t.disc) + '</span></div>' : '') +
+    (t.disc ? '<div><span>Discount' + (num(billDisc.val) > 0 ? ' (incl. bill ' + (billDisc.mode === '%' ? num(billDisc.val) + '%' : amt0(num(billDisc.val))) + ')' : '') + (cart.length && (cartItemsRaw().OF.applied.length || cartItemsRaw().ob) ? ' (incl. offers)' : '') + (ptsRedeem.on && ptsRedeem.pts ? ' (incl. ★ ' + fmtPts(ptsRedeem.pts) + ')' : '') + '</span><span>− ' + R2(t.disc) + '</span></div>' : '') +
     (S.gstReg === 'Yes' ? '<div><span>Taxable value</span><span>' + R2(t.taxable) + '</span></div><div><span>GST' + (S.inclGst === 'Yes' ? ' (included)' : '') + '</span><span>' + R2(t.gst) + '</span></div>' : '') +
     (t.round ? '<div><span>Round off</span><span>' + R2(t.round) + '</span></div>' : '') +
     '<div class="grand"><span>Total</span><span>' + R0(t.grand) + '</span></div>';
   $('#bsave').disabled = !cart.length;
-  renderPtsBox();
+  renderPtsBox(); renderOfferBox(cartItemsRaw());
 }
 $('#pq').addEventListener('input', renderPicker);
 $('#scanbtn').onclick = openScanner;
@@ -1054,7 +1081,7 @@ $('#cart').addEventListener('change', e => {
   if (t.dataset.q) { cart[+t.dataset.q].qty = Math.max(1, Math.round(num(t.value)) || 1); renderCart(); }
   if (t.dataset.d) { const c = cart[+t.dataset.d]; if (c.mode === '₹') c.discRs = Math.max(0, num(t.value)); else c.disc = Math.min(100, Math.max(0, num(t.value))); renderCart(); }
 });
-function resetBillDisc() { if (typeof resetPts === 'function') resetPts(); const pb = $('#ptsbox'); if (pb) pb.dataset.named = ''; billDisc = {mode: '₹', val: ''}; $('#bdisc').value = ''; $('#bdtog').textContent = '₹'; }
+function resetBillDisc() { if (typeof offerPick !== 'undefined') offerPick = {on: [], off: []}; if (typeof resetPts === 'function') resetPts(); const pb = $('#ptsbox'); if (pb) pb.dataset.named = ''; billDisc = {mode: '₹', val: ''}; $('#bdisc').value = ''; $('#bdtog').textContent = '₹'; }
 $('#bdisc').addEventListener('input', () => { billDisc.val = $('#bdisc').value; renderTotals(); });
 $('#bdtog').onclick = () => { billDisc.mode = billDisc.mode === '₹' ? '%' : '₹'; $('#bdtog').textContent = billDisc.mode; renderTotals(); $('#bdisc').focus(); };
 $('#bclear').onclick = async () => { if (editing) return cancelEdit(); if (!cart.length || await ask('Clear this bill?', 'Clear')) { cart = []; $('#bcust').value = ''; $('#bphone').value = ''; resetBillDisc(); renderCart(); } };
@@ -1076,15 +1103,17 @@ async function startEdit(b) {
   editing = JSON.parse(JSON.stringify(b));
   cart = (b.items || []).map(it => {
     const snap = {sku: it.sku, name: it.name, category: it.category, size: it.size, price: num(it.price), cost: num(it.cost)};
-    const share = num(it.billShare) + num(it.ptsShare), lineDisc = r2(num(it.discAmt) - share), lbl = it.line ? String(it.line.label || '') : '';
+    const share = num(it.billShare) + num(it.ptsShare) + num(it.offShare) + num(it.offerAmt), lineDisc = r2(num(it.discAmt) - share), lbl = it.line ? String(it.line.label || '') : '';
     const pm = it.line ? /^([\d.]+)% off$/.exec(lbl) : null;
     let mode = '%', disc = 0, discRs = 0;
-    if (it.line) { if (pm) disc = num(pm[1]); else if (lineDisc > 0) { mode = '₹'; discRs = lineDisc; } }
+    if (it.offer) { /* offer discount is worked out again */ }
+    else if (it.line) { if (pm) disc = num(pm[1]); else if (lineDisc > 0) { mode = '₹'; discRs = lineDisc; } }
     else if (it.discRs != null) { mode = '₹'; discRs = num(it.discRs); }
     else disc = num(it.disc);
     return {sku: it.sku, qty: num(it.qty), mode, disc, discRs, snap};
   });
   const bd = billDiscOf(b); billDisc = {mode: '₹', val: bd > 0 ? String(bd) : ''}; $('#bdisc').value = billDisc.val; $('#bdtog').textContent = '₹';
+  offerPick = b.offerPick ? JSON.parse(JSON.stringify(b.offerPick)) : {on: [], off: []};
   ptsRedeem = num(b.pointsRedeemed) ? {on: true, pts: num(b.pointsRedeemed), rs: num(b.pointsValue)} : {on: false, pts: 0, rs: 0}; $('#ptsbox').dataset.named = '1';
   $('#bcust').value = b.customer || ''; $('#bphone').value = b.phone || ''; $('#bdate').value = b.date || todayStr();
   renderBillPickers(b.pay || S.pays[0], b.channel || S.chans[0]);
@@ -1105,6 +1134,8 @@ $('#bsave').onclick = async () => {
     const e = earnFor(t.grand, pkey, exclude);
     pts = {custKey: pkey, pointsRedeemed: used, pointsValue: used ? r2(items.reduce((a, it) => a + num(it.ptsShare), 0)) : 0, pointsEarned: e.pts, tier: e.tier};
   } else if (ptsRedeem.on) { toast('Add the customer\'s phone number to use points'); return; }
+  const RAWS = cartItemsRaw();
+  Object.assign(pts, {offerBill: RAWS.ob && RAWS.obO ? {id: RAWS.obO.id, name: RAWS.obO.name, amt: RAWS.ob} : null, offers: RAWS.OF.applied.map(a => ({id: a.id, name: a.name, amt: a.amt})).concat(RAWS.ob && RAWS.obO ? [{id: RAWS.obO.id, name: RAWS.obO.name, amt: RAWS.ob}] : []), offerPick: JSON.parse(JSON.stringify(offerPick))});
   if (editing) {
     const bill = Object.assign({}, editing, {date: $('#bdate').value || editing.date || todayStr(), customer: $('#bcust').value.trim(), phone: $('#bphone').value.trim(),
       pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, discount: r2(t.disc), taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, editedAt: Date.now()}, pts);
@@ -1133,7 +1164,7 @@ function billText(b) {
   const L = [S.name, (S.gstReg === 'Yes' ? 'Tax Invoice ' : 'Bill ') + b.invoice + ' · ' + nice(b.date), ''];
   for (const it of b.items) L.push(it.name + (it.size ? ' (' + it.size + ')' : '') + ' x' + it.qty + ' = ' + R2(itemAmt(it)) + (itemLabel(it) ? ' (' + itemLabel(it) + ')' : ''));
   if (billDiscOf(b) > 0) L.push('Bill discount: - ' + R2(billDiscOf(b)));
-  for (const r of billPtsRows(b)) L.push(r[0] + ': ' + r[1]);
+  for (const r of billOfferRows(b).concat(billPtsRows(b))) L.push(r[0] + ': ' + r[1]);
   if (billSaved(b) > 0) L.push('You saved ' + amt0(billSaved(b)));
   L.push('', 'Total: ' + R0(b.total) + ' (' + b.pay + ')'); if (billPtsNote(b)) L.push('★ ' + billPtsNote(b)); if (S.footer) L.push(S.footer); return L.join('\n');
 }
@@ -1146,7 +1177,7 @@ function showBill(b) {
     '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px"><span><b>' + esc(b.invoice) + '</b><br>' + esc(b.customer || 'Walk-in customer') + (b.phone ? '<br>' + esc(b.phone) : '') + '</span><span style="text-align:right">' + nice(b.date) + '<br>' + esc(b.pay) + '</span></div>' +
     '<table style="margin-top:8px"><tr><th>#</th><th>Item</th><th class="n">Qty</th><th class="n">Rate</th><th class="n">Amount</th></tr>' + rows +
     (billDiscOf(b) > 0 ? '<tr class="sum"><td></td><td colspan="3">Bill discount</td><td class="n">− ' + R2(billDiscOf(b)) + '</td></tr>' : '') +
-    billPtsRows(b).map(r => '<tr class="sum"><td></td><td colspan="3">' + esc(r[0]) + '</td><td class="n">' + r[1] + '</td></tr>').join('') +
+    billOfferRows(b).concat(billPtsRows(b)).map(r => '<tr class="sum"><td></td><td colspan="3">' + esc(r[0]) + '</td><td class="n">' + r[1] + '</td></tr>').join('') +
     (gstOn ? '<tr class="sum"><td></td><td colspan="3">Taxable value</td><td class="n">' + R2(b.taxable) + '</td></tr><tr><td></td><td colspan="3">CGST</td><td class="n">' + R2(b.gst / 2) + '</td></tr><tr><td></td><td colspan="3">SGST</td><td class="n">' + R2(b.gst / 2) + '</td></tr>' : '') +
     (num(b.round) ? '<tr><td></td><td colspan="3">Round off</td><td class="n">' + R2(b.round) + '</td></tr>' : '') +
     '<tr class="sum gt"><td></td><td colspan="3">Total</td><td class="n">' + R0(b.total) + '</td></tr>' +
@@ -1463,7 +1494,7 @@ $('#exportx').onclick = async () => {
     const sl = []; for (const b of [...sales].sort((a, b) => (a.date || '').localeCompare(b.date || ''))) for (const it of b.items || [])
       sl.push({'Invoice No': b.invoice, Date: b.date, SKU: it.sku, Product: it.name, Category: it.category, Size: it.size, Qty: it.qty, 'Unit Price': it.price, 'Discount %': it.disc / 100, 'Discount Rs': num(it.discAmt),
         'Net Amount': it.net, 'GST %': it.rate / 100, 'Taxable Value': it.taxable, 'GST Amount': it.gst, 'Line Total': it.total, 'Payment Mode': b.pay, Channel: b.channel, Customer: b.customer, Phone: b.phone,
-        Profit: r2(it.taxable - it.qty * it.cost), 'Created By': b.createdByName || ''});
+        Profit: r2(it.taxable - it.qty * it.cost), Offer: it.offer || '', 'Offer Discount': num(it.offerAmt) + num(it.offShare), 'Points Used Rs': num(it.ptsShare), 'Created By': b.createdByName || ''});
     const pu = [...purchases].sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(p => ({Date: p.date, 'Bill / Ref No': p.ref, Supplier: p.supplier, SKU: p.sku, Product: p.name, Qty: num(p.qty), 'Unit Cost': num(p.cost), 'Total Cost': num(p.qty) * num(p.cost), 'Payment Status': p.status, Notes: p.notes, 'Created By': p.createdByName || ''}));
     X.utils.book_append_sheet(wb, X.utils.json_to_sheet(inv.length ? inv : [{SKU: ''}]), 'Inventory');
     X.utils.book_append_sheet(wb, X.utils.json_to_sheet(sl.length ? sl : [{'Invoice No': ''}]), 'Sales');
@@ -1722,7 +1753,7 @@ async function billCanvas(b) {
   const gstOn = S.gstReg === 'Yes' || num(b.gst) > 0;
   const rows = [];
   if (billDiscOf(b) > 0) rows.push(['Bill discount', '− ' + R2(billDiscOf(b))]);
-  rows.push(...billPtsRows(b));
+  rows.push(...billOfferRows(b), ...billPtsRows(b));
   if (gstOn) rows.push(['Taxable value', R2(b.taxable)], ['CGST', R2(b.gst / 2)], ['SGST', R2(b.gst / 2)]);
   if (num(b.round)) rows.push(['Round off', R2(b.round)]);
   rows.forEach((r, n) => { if (n === 0) hline(y); font(13); text(r[0], cItem, y + rowPad + lh13 / 2, INK); text(r[1], cAmt, y + rowPad + lh13 / 2, INK, 'right'); y += lh13 + 2 * rowPad; });
@@ -2772,7 +2803,12 @@ function custInfo(key, excludeBill) {
   const L = LOY(), bills = sales.filter(b => phoneKey(b.phone) === key && b.id !== excludeBill).sort((a, b) => (a.date || '').localeCompare(b.date || '') || num(a.createdAt) - num(b.createdAt));
   const cash = expenses.filter(e => e.custKey === key && num(e.points) > 0);
   const ev = [];
-  for (const b of bills) { if (num(b.pointsEarned)) ev.push({date: b.date, t: num(b.createdAt), kind: 'earn', pts: num(b.pointsEarned), ref: b.invoice, bill: b}); if (num(b.pointsRedeemed)) ev.push({date: b.date, t: num(b.createdAt) - 1, kind: 'disc', pts: num(b.pointsRedeemed), ref: b.invoice, bill: b}); }
+  let run = 0; const earnedBy = {};
+  for (let b of bills) {
+    let ep = b.pointsEarned;
+    if (ep == null || ep === '') ep = loyOn() && num(b.total) >= num(L.minBill) && num(L.earnPer) > 0 ? Math.floor(num(b.total) / num(L.earnPer) * (num(tierFor(run + num(b.total)).cur.mult) || 1)) : 0;   // bills made before points existed
+    run += num(b.total); earnedBy[b.invoice] = num(ep); b = Object.assign({}, b, {pointsEarned: num(ep)});
+    if (num(b.pointsEarned)) ev.push({date: b.date, t: num(b.createdAt), kind: 'earn', pts: num(b.pointsEarned), ref: b.invoice, bill: b}); if (num(b.pointsRedeemed)) ev.push({date: b.date, t: num(b.createdAt) - 1, kind: 'disc', pts: num(b.pointsRedeemed), ref: b.invoice, bill: b}); }
   for (const e of cash) ev.push({date: e.date, t: num(e.createdAt), kind: 'cash', pts: num(e.points), ref: e.pay || '', exp: e});
   ev.sort((a, b) => (a.date || '').localeCompare(b.date || '') || a.t - b.t);
   const lots = [], hist = []; let expired = 0;
@@ -2788,7 +2824,7 @@ function custInfo(key, excludeBill) {
   const spend = bills.reduce((a, b) => a + num(b.total), 0), last = bills[bills.length - 1];
   const named = [...bills].reverse().find(b => b.customer);
   const soon = num(L.expiry) ? lots.filter(l => l.left > 0 && addMonths(l.date, num(L.expiry)) <= addMonths(todayStr(), 1)).reduce((a, l) => a + l.left, 0) : 0;
-  return {key, name: named ? named.customer : '', phone: last ? last.phone : key, bills, spend, balance, expired: Math.round(expired), soon: Math.round(soon), hist: hist.map((h, i) => Object.assign(h, {n: i})).sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.n - a.n), tier: tierFor(spend), lastDate: last ? last.date : ''};
+  return {earnedBy, key, name: named ? named.customer : '', phone: last ? last.phone : key, bills, spend, balance, expired: Math.round(expired), soon: Math.round(soon), hist: hist.map((h, i) => Object.assign(h, {n: i})).sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.n - a.n), tier: tierFor(spend), lastDate: last ? last.date : ''};
 }
 function earnFor(amount, key, excludeBill) {
   const L = LOY(); if (!loyOn() || !key || amount < num(L.minBill) || num(L.earnPer) <= 0) return {pts: 0, tier: ''};
@@ -2811,7 +2847,7 @@ function renderPtsBox() {
   if (!key) { if (ptsRedeem.on) { resetPts(); renderTotals(); } box.shtml = '<div class="ptsline mute">★ Add the customer\'s phone number to give loyalty points.</div>'; return; }
   const exclude = editing ? (editing.id || safeId(editing.invoice)) : null, info = custInfo(key, exclude);
   if (!$('#bcust').value.trim() && info.name && !box.dataset.named) { $('#bcust').value = info.name; box.dataset.named = '1'; }
-  const base = cartItemsRaw(), max = ptsMaxFor(info, base.sub - base.bd);
+  const base = cartItemsRaw(), max = ptsMaxFor(info, base.sub - base.bd - base.ob);
   if (ptsRedeem.on && ptsRedeem.pts > max) { ptsRedeem.pts = max; ptsRedeem.rs = ptsRs(max); }
   const t = totalsOf(cartItems()), earn = earnFor(t.grand, key, exclude);
   const L = LOY(), why = info.balance < num(L.minRedeem) ? 'Redeem from ' + fmtPts(L.minRedeem) : !canDisc() ? 'Points are paid out as cashback' : '';
@@ -2822,13 +2858,13 @@ function renderPtsBox() {
 }
 $('#ptsbox').addEventListener('change', e => {
   if (e.target.id !== 'ptson') return;
-  const key = phoneKey($('#bphone').value), info = custInfo(key, editing ? (editing.id || safeId(editing.invoice)) : null), base = cartItemsRaw(), max = ptsMaxFor(info, base.sub - base.bd);
+  const key = phoneKey($('#bphone').value), info = custInfo(key, editing ? (editing.id || safeId(editing.invoice)) : null), base = cartItemsRaw(), max = ptsMaxFor(info, base.sub - base.bd - base.ob);
   ptsRedeem = e.target.checked ? {on: true, pts: max, rs: ptsRs(max)} : {on: false, pts: 0, rs: 0};
   renderTotals();
 });
 $('#ptsbox').addEventListener('input', e => {
   if (e.target.id !== 'ptsval') return;
-  const key = phoneKey($('#bphone').value), info = custInfo(key, editing ? (editing.id || safeId(editing.invoice)) : null), base = cartItemsRaw(), max = ptsMaxFor(info, base.sub - base.bd);
+  const key = phoneKey($('#bphone').value), info = custInfo(key, editing ? (editing.id || safeId(editing.invoice)) : null), base = cartItemsRaw(), max = ptsMaxFor(info, base.sub - base.bd - base.ob);
   const p = Math.max(0, Math.min(max, Math.floor(num(e.target.value))));
   ptsRedeem.pts = p; ptsRedeem.rs = ptsRs(p);
   const rs = $('#ptsbox .ptsrs'); if (rs) rs.textContent = '= ' + R2(ptsRedeem.rs) + ' off';
@@ -2838,9 +2874,10 @@ $('#bphone').addEventListener('input', () => { $('#ptsbox').dataset.named = ''; 
 /* points shown on the bill itself */
 function billPtsRows(b) { return num(b.pointsRedeemed) ? [['Points redeemed (' + fmtPts(b.pointsRedeemed) + ')', '− ' + R2(b.pointsValue)]] : []; }
 function billPtsNote(b) {
-  if (!num(b.pointsEarned) && !num(b.pointsRedeemed)) return '';
-  const key = phoneKey(b.phone), bal = key ? custInfo(key).balance : 0;
-  return (num(b.pointsEarned) ? 'You earned ' + fmtPts(b.pointsEarned) : '') + (num(b.pointsEarned) && key ? ' · ' : '') + (key ? 'Balance ' + fmtPts(bal) + ' (' + R0(ptsRs(bal)) + ')' : '');
+  const key = phoneKey(b.phone); if (!key || !loyOn()) return '';
+  const info = custInfo(key), earned = num(info.earnedBy[b.invoice] != null ? info.earnedBy[b.invoice] : b.pointsEarned);
+  if (!earned && !num(b.pointsRedeemed)) return '';
+  return (earned ? 'You earned ' + fmtPts(earned) + ' · ' : '') + 'Balance ' + fmtPts(info.balance) + ' (' + R0(ptsRs(info.balance)) + ')';
 }
 
 /* ---------- customers ---------- */
@@ -2922,6 +2959,194 @@ $('#addtier').onclick = () => { tierDraft.push({name: '', from: 0, mult: 1}); se
 const readLoyalty = () => ({on: $('#ly-on').value, earnPer: Math.max(1, num($('#ly-earn').value)), ptValue: Math.max(0, num($('#ly-val').value)), minBill: Math.max(0, num($('#ly-min').value)),
   minRedeem: Math.max(0, Math.round(num($('#ly-minr').value))), maxPct: Math.min(100, Math.max(0, num($('#ly-max').value))), expiry: Math.max(0, Math.round(num($('#ly-exp').value))), redeem: $('#ly-red').value,
   tiers: tierDraft.filter(t => String(t.name).trim()).map(t => ({name: String(t.name).trim(), from: Math.max(0, num(t.from)), mult: num(t.mult) > 0 ? num(t.mult) : 1})).sort((a, b) => a.from - b.from)});
+
+/* ---------- offers & combos ---------- */
+const OFFER_TYPES = {pct: '% off items', flat: '₹ off each item', bxgy: 'Buy X get Y', combo: 'Combo / bundle price', bill: 'Bill discount (spend ₹X)'};
+let offerPick = {on: [], off: []};   // this bill only: manual offers switched on, auto offers switched off
+const offersAll = () => (S.offers || []).filter(o => o && o.name);
+const offerLive = (o, date) => o.active !== false && (!o.from || date >= o.from) && (!o.to || date <= o.to);
+const inScope = (o, p) => o.scope === 'cats' ? (o.cats || []).includes(p.category) : o.scope === 'skus' ? (o.skus || []).includes(p.sku) : true;
+const compMatch = (c, p) => c.kind === 'cat' ? p.category === c.val : p.sku === c.val;
+const hasManual = c => num(c.disc) > 0 || num(c.discRs) > 0;
+function offerSummary(o) {
+  const sc = o.scope === 'cats' ? (o.cats || []).join(', ') : o.scope === 'skus' ? (o.skus || []).length + ' product' + ((o.skus || []).length === 1 ? '' : 's') : 'all products';
+  if (o.type === 'pct') return num(o.pct) + '% off ' + sc + (num(o.minQty) > 1 ? ' (min ' + o.minQty + ' pcs)' : '');
+  if (o.type === 'flat') return R0(num(o.amt)) + ' off each · ' + sc;
+  if (o.type === 'bxgy') return 'Buy ' + o.buy + ' get ' + o.get + (num(o.getPct || 100) >= 100 ? ' free' : ' at ' + o.getPct + '% off') + ' · ' + sc;
+  if (o.type === 'combo') return (o.comps || []).map(c => c.qty + ' × ' + (c.kind === 'cat' ? 'any ' + c.val : (products.get(c.val) || {}).name || c.val)).join(' + ') + ' for ' + R0(num(o.price));
+  if (o.type === 'bill') return 'Spend ' + R0(num(o.minBill)) + '+ get ' + (o.billMode === '%' ? num(o.billVal) + '% off' : R0(num(o.billVal)) + ' off') + (num(o.max) ? ' (max ' + R0(num(o.max)) + ')' : '');
+  return '';
+}
+/* works out every offer for the cart: per-line ₹ discounts, a bill offer, and hints */
+function computeOffers(date) {
+  const res = {lines: new Map(), applied: [], hints: [], manual: [], billCands: []};
+  if (!cart.length) return res;
+  const live = offersAll().filter(o => offerLive(o, date));
+  const use = live.filter(o => (o.auto !== 'No' ? !offerPick.off.includes(o.id) : offerPick.on.includes(o.id)));
+  res.manual = live.filter(o => o.auto === 'No' && !offerPick.on.includes(o.id));
+  res.off = live.filter(o => o.auto !== 'No' && offerPick.off.includes(o.id));
+  const units = [];
+  cart.forEach((c, i) => { const p = prodFor(c); if (!p || hasManual(c)) return; for (let q = 0; q < c.qty; q++) units.push({i, p, price: num(p.price), used: false}); });
+  const give = (u, amt, o) => { if (amt <= 0) return; const L = res.lines.get(u.i) || {amt: 0, names: []}; L.amt = r2(L.amt + amt); if (!L.names.includes(o.name)) L.names.push(o.name); res.lines.set(u.i, L); };
+  const tally = (o, amt) => { const a = res.applied.find(x => x.id === o.id); if (a) a.amt = r2(a.amt + amt); else res.applied.push({id: o.id, name: o.name, amt: r2(amt), auto: o.auto !== 'No'}); };
+  const free = () => units.filter(u => !u.used);
+  // 1. combos
+  for (const o of use.filter(x => x.type === 'combo' && (x.comps || []).length)) {
+    for (let guard = 0; guard < 50; guard++) {
+      const pick = [], pool = free().sort((a, b) => b.price - a.price);
+      let ok = true;
+      for (const c of o.comps) { const got = pool.filter(u => !pick.includes(u) && compMatch(c, u.p)).slice(0, Math.max(1, num(c.qty))); if (got.length < Math.max(1, num(c.qty))) { ok = false; break; } pick.push(...got); }
+      if (!ok) { if (!guard) { const have = o.comps.filter(c => pool.some(u => compMatch(c, u.p))).length; if (have) res.hints.push('Add ' + o.comps.filter(c => pool.filter(u => compMatch(c, u.p)).length < Math.max(1, num(c.qty))).map(c => (c.kind === 'cat' ? c.val : (products.get(c.val) || {}).name || c.val)).join(' + ') + ' to get "' + o.name + '" for ' + R0(num(o.price))); } break; }
+      const full = pick.reduce((a, u) => a + u.price, 0), save = full - num(o.price);
+      if (save <= 0) break;
+      let left = r2(save); pick.forEach((u, n) => { const a = n === pick.length - 1 ? left : r2(save * u.price / full); left = r2(left - a); u.used = true; give(u, a, o); });
+      tally(o, save);
+    }
+  }
+  // 2. buy X get Y
+  for (const o of use.filter(x => x.type === 'bxgy' && num(x.buy) > 0 && num(x.get) > 0)) {
+    const el = free().filter(u => inScope(o, u.p)).sort((a, b) => b.price - a.price), n = num(o.buy) + num(o.get), pct = Math.min(100, num(o.getPct) || 100);
+    const groups = Math.floor(el.length / n);
+    for (let g = 0; g < groups; g++) { const grp = el.slice(g * n, g * n + n); grp.forEach(u => { u.used = true; }); grp.slice(-num(o.get)).forEach(u => { const a = r2(u.price * pct / 100); give(u, a, o); tally(o, a); }); }
+    const rest = el.length - groups * n;
+    if (rest >= num(o.buy) && rest < n) res.hints.push('Add ' + (n - rest) + ' more to get ' + (pct >= 100 ? 'it free' : pct + '% off') + ' with "' + o.name + '"');
+    else if (rest > 0 && rest < num(o.buy)) res.hints.push('Add ' + (n - rest) + ' more for "' + o.name + '"');
+  }
+  // 3. % off and ₹ off: best one per piece
+  const per = use.filter(x => x.type === 'pct' || x.type === 'flat');
+  for (const u of free()) {
+    let best = null, bv = 0;
+    for (const o of per) {
+      if (!inScope(o, u.p)) continue;
+      if (num(o.minQty) > 1 && units.filter(x => inScope(o, x.p)).length < num(o.minQty)) continue;
+      const v = o.type === 'pct' ? u.price * Math.min(100, num(o.pct)) / 100 : Math.min(u.price, num(o.amt));
+      if (v > bv) { bv = v; best = o; }
+    }
+    if (best) { u.used = true; give(u, r2(bv), best); tally(best, r2(bv)); }
+  }
+  for (const o of per) if (num(o.minQty) > 1) { const k = units.filter(x => inScope(o, x.p)).length; if (k > 0 && k < num(o.minQty)) res.hints.push('Add ' + (num(o.minQty) - k) + ' more for "' + o.name + '"'); }
+  // % caps across a bill
+  for (const o of per.filter(x => num(x.max) > 0)) {
+    const a = res.applied.find(x => x.id === o.id); if (!a || a.amt <= num(o.max)) continue;
+    const f = num(o.max) / a.amt; for (const L of res.lines.values()) if (L.names.includes(o.name)) L.amt = r2(L.amt * f); a.amt = num(o.max);
+  }
+  res.billCands = use.filter(x => x.type === 'bill');
+  res.unused = use.filter(o => o.type !== 'bill' && !res.applied.some(a => a.id === o.id) && (o.auto === 'No' || o.type === 'pct' || o.type === 'flat') && units.some(u => o.type === 'combo' ? (o.comps || []).some(c => compMatch(c, u.p)) : inScope(o, u.p)));
+  return res;
+}
+function bestBillOffer(cands, sub) {
+  let best = null, amt = 0;
+  for (const o of cands) {
+    if (sub < num(o.minBill)) continue;
+    let a = o.billMode === '%' ? sub * num(o.billVal) / 100 : num(o.billVal);
+    if (num(o.max)) a = Math.min(a, num(o.max));
+    a = r2(Math.min(a, sub)); if (a > amt) { amt = a; best = o; }
+  }
+  const next = cands.filter(o => sub < num(o.minBill)).sort((a, b) => num(a.minBill) - num(b.minBill))[0];
+  return {o: best, amt, next};
+}
+/* bill page: offers box */
+function renderOfferBox(raw) {
+  const box = $('#offerbox'); if (!box) return;
+  const any = offersAll().some(o => offerLive(o, $('#bdate').value || todayStr()));
+  if (!cart.length || !any) { box.hidden = true; return; }
+  box.hidden = false;
+  const R = raw.OF, rows = [];
+  for (const a of R.applied) rows.push('<div class="ofrow on"><span class="oftag">✓</span><div class="grow"><b>' + esc(a.name) + '</b></div><b class="gets">− ' + R2(a.amt) + '</b><button class="x" data-ofoff="' + esc(a.id) + '" aria-label="Remove offer">×</button></div>');
+  if (raw.ob && raw.obO) rows.push('<div class="ofrow on"><span class="oftag">✓</span><div class="grow"><b>' + esc(raw.obO.name) + '</b><small class="mute">on the bill total</small></div><b class="gets">− ' + R2(raw.ob) + '</b><button class="x" data-ofoff="' + esc(raw.obO.id) + '" aria-label="Remove offer">×</button></div>');
+  for (const o of R.unused || []) if (o.auto === 'No') rows.push('<div class="ofrow"><span class="oftag" style="background:#A8A291">–</span><div class="grow"><b>' + esc(o.name) + '</b><small class="mute">Not used: these items already have a better or other offer</small></div><button class="x" data-ofoff="' + esc(o.id) + '" aria-label="Remove offer">×</button></div>');
+  const hints = R.hints.slice(0, 3); if (raw.obNext) hints.push('Spend ' + R0(num(raw.obNext.minBill) - raw.sub) + ' more to get "' + raw.obNext.name + '"');
+  const man = R.manual.concat(R.off || []);
+  box.shtml = '<div class="ofhead">🏷️ Offers' + (R.applied.length || raw.ob ? ' <span class="badge b-ok">saving ' + R0(R.applied.reduce((a, x) => a + x.amt, 0) + raw.ob) + '</span>' : '') + '</div>' + rows.join('') +
+    hints.map(h => '<div class="ofhint">💡 ' + esc(h) + '</div>').join('') +
+    (man.length ? '<div class="ofman">' + man.map(o => '<button type="button" class="chip" data-ofon="' + esc(o.id) + '">+ ' + esc(o.name) + '</button>').join('') + '</div>' : '') +
+    (cart.some(hasManual) && (R.applied.length || hints.length) ? '<div class="ofhint mute">Items with a typed discount don\'t get offers.</div>' : '');
+}
+$('#offerbox').addEventListener('click', e => {
+  const off = e.target.closest('[data-ofoff]'), on = e.target.closest('[data-ofon]');
+  if (off) { const id = off.dataset.ofoff, o = offersAll().find(x => x.id === id); if (o && o.auto === 'No') offerPick.on = offerPick.on.filter(x => x !== id); else offerPick.off.push(id); renderCart(); }
+  if (on) { const id = on.dataset.ofon; offerPick.off = offerPick.off.filter(x => x !== id); if (!offerPick.on.includes(id)) offerPick.on.push(id); renderCart(); }
+});
+function billOfferRows(b) { return b.offerBill && num(b.offerBill.amt) ? [['Offer: ' + b.offerBill.name, '− ' + R2(b.offerBill.amt)]] : []; }
+
+/* ---------- settings: offers list + form ---------- */
+function renderOffersList() {
+  const el = $('#offerlist'); if (!el) return;
+  const t = todayStr(), list = offersAll();
+  el.shtml = list.length ? list.map(o => { const live = offerLive(o, t), state = o.active === false ? ['Off', 'b-bad'] : o.to && t > o.to ? ['Ended', 'b-bad'] : o.from && t < o.from ? ['Starts ' + nice(o.from).slice(0, 6), 'b-warn'] : ['Live', 'b-ok'];
+    return '<button class="row" data-offer="' + esc(o.id) + '"><span class="eic" style="background:' + (live ? '#C08A1E' : '#A8A291') + '">%</span><div class="grow"><div class="t">' + esc(o.name) + '</div><div class="s">' + esc(OFFER_TYPES[o.type] || '') + ' · ' + esc(offerSummary(o)) + (o.auto === 'No' ? ' · staff applies' : '') + (o.to ? ' · till ' + nice(o.to) : '') + '</div></div><span class="badge ' + state[1] + '">' + state[0] + '</span></button>'; }).join('')
+    : '<div class="empty">No offers yet. Add a festival discount, buy 2 get 1, or a combo.</div>';
+}
+async function saveOffers(list) { await db.doc('config/settings').set(Object.assign({}, S, {offers: list})); }
+function offerForm(o) {
+  if (!isAdmin()) { toast('Only the owner can change offers'); return; }
+  const d = o ? JSON.parse(JSON.stringify(o)) : {id: 'of' + Date.now().toString(36), name: '', type: 'pct', scope: 'all', cats: [], skus: [], pct: 10, amt: 100, buy: 2, get: 1, getPct: 100, comps: [], price: 999, minBill: 3000, billMode: '₹', billVal: 300, max: '', minQty: '', from: '', to: '', auto: 'Yes', active: true};
+  const prods = [...products.values()].sort((a, b) => a.name.localeCompare(b.name));
+  const catNames = S.categories.map(c => c.name);
+  const draw = () => {
+    const T = d.type;
+    $('#of-body').innerHTML =
+      (T !== 'combo' && T !== 'bill' ? '<label>Applies to</label><div class="seg light" id="of-scope">' + [['all', 'All products'], ['cats', 'Categories'], ['skus', 'Products']].map(([k, l]) => '<button type="button" data-sc="' + k + '"' + (d.scope === k ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' +
+        (d.scope === 'cats' ? '<div class="catpick" id="of-cats">' + catNames.map(c => '<button type="button" class="chip' + (d.cats.includes(c) ? ' on' : '') + '" data-oc="' + esc(c) + '">' + esc(c) + '</button>').join('') + '</div>' : '') +
+        (d.scope === 'skus' ? '<div class="catpick" id="of-skus">' + d.skus.map(k => '<button type="button" class="chip on" data-osx="' + esc(k) + '">' + esc((products.get(k) || {}).name || k) + ' ' + esc((products.get(k) || {}).size || '') + ' ×</button>').join('') + '</div><input id="of-find" type="search" placeholder="Search products to add…" autocomplete="off"><div class="list" id="of-res" style="margin-top:6px"></div>' : '') : '') +
+      (T === 'pct' ? '<div class="grid2"><div><label for="of-pct">Discount %</label><input id="of-pct" inputmode="decimal" value="' + esc(d.pct) + '"></div><div><label for="of-minq">Minimum pieces (optional)</label><input id="of-minq" inputmode="numeric" value="' + esc(d.minQty) + '" placeholder="e.g. 2"></div><div><label for="of-max">Max discount per bill ₹ (optional)</label><input id="of-max" inputmode="decimal" value="' + esc(d.max) + '"></div></div>' : '') +
+      (T === 'flat' ? '<div class="grid2"><div><label for="of-amt">₹ off each piece</label><input id="of-amt" inputmode="decimal" value="' + esc(d.amt) + '"></div><div><label for="of-minq">Minimum pieces (optional)</label><input id="of-minq" inputmode="numeric" value="' + esc(d.minQty) + '"></div></div>' : '') +
+      (T === 'bxgy' ? '<div class="grid2"><div><label for="of-buy">Buy (pieces)</label><input id="of-buy" inputmode="numeric" value="' + esc(d.buy) + '"></div><div><label for="of-get">Get (pieces)</label><input id="of-get" inputmode="numeric" value="' + esc(d.get) + '"></div><div><label for="of-getp">Discount on the "get" pieces %</label><input id="of-getp" inputmode="decimal" value="' + esc(d.getPct) + '"></div></div><p class="small mute">100% = free. The cheapest pieces in each group get the discount.</p>' : '') +
+      (T === 'combo' ? '<label>Items in the combo</label><div id="of-comps">' + d.comps.map((c, i) => '<div class="catrow comprow"><select data-cv="' + i + '"><optgroup label="Any piece from a category">' + catNames.map(n => '<option value="cat|' + esc(n) + '"' + (c.kind === 'cat' && c.val === n ? ' selected' : '') + '>Any ' + esc(n) + '</option>').join('') + '</optgroup><optgroup label="A specific product">' + prods.map(p => '<option value="sku|' + esc(p.sku) + '"' + (c.kind === 'sku' && c.val === p.sku ? ' selected' : '') + '>' + esc(p.name + ' · ' + (p.size || '') + ' · ' + p.sku) + '</option>').join('') + '</optgroup></select><input data-cq="' + i + '" inputmode="numeric" value="' + esc(c.qty) + '" aria-label="Quantity"><button class="x" type="button" data-cx="' + i + '" aria-label="Remove">×</button></div>').join('') + '</div><button class="btn slim" type="button" id="of-addc">+ Add item</button>' +
+        '<label for="of-price">Combo price ₹</label><input id="of-price" inputmode="decimal" value="' + esc(d.price) + '"><p class="small mute">Every full set in the bill is charged this price. Example: 1 Kurti + 1 Leggings for ₹799.</p>' : '') +
+      (T === 'bill' ? '<div class="grid2"><div><label for="of-minb">When the bill is at least ₹</label><input id="of-minb" inputmode="decimal" value="' + esc(d.minBill) + '"></div><div><label for="of-bv">Discount</label><div class="bdrow"><input id="of-bv" inputmode="decimal" value="' + esc(d.billVal) + '"><button class="dtog" type="button" id="of-bm">' + esc(d.billMode) + '</button></div></div><div><label for="of-max">Max discount ₹ (optional)</label><input id="of-max" inputmode="decimal" value="' + esc(d.max) + '"></div></div>' : '');
+    wire();
+  };
+  const read = () => {
+    const v = id => { const el = $('#' + id); return el ? el.value : undefined; };
+    d.name = $('#of-name').value.trim(); d.type = $('#of-type').value; d.auto = $('#of-auto').value; d.active = $('#of-act').value === 'Yes'; d.from = $('#of-from').value; d.to = $('#of-to').value;
+    if (v('of-pct') !== undefined) d.pct = num(v('of-pct')); if (v('of-amt') !== undefined) d.amt = num(v('of-amt')); if (v('of-minq') !== undefined) d.minQty = v('of-minq') === '' ? '' : Math.round(num(v('of-minq')));
+    if (v('of-max') !== undefined) d.max = v('of-max') === '' ? '' : num(v('of-max')); if (v('of-buy') !== undefined) d.buy = Math.round(num(v('of-buy'))); if (v('of-get') !== undefined) d.get = Math.round(num(v('of-get')));
+    if (v('of-getp') !== undefined) d.getPct = num(v('of-getp')); if (v('of-price') !== undefined) d.price = num(v('of-price')); if (v('of-minb') !== undefined) d.minBill = num(v('of-minb')); if (v('of-bv') !== undefined) d.billVal = num(v('of-bv'));
+  };
+  const wire = () => {
+    const sc = $('#of-scope'); if (sc) sc.onclick = e => { const b = e.target.closest('[data-sc]'); if (b) { read(); d.scope = b.dataset.sc; draw(); } };
+    const cs = $('#of-cats'); if (cs) cs.onclick = e => { const b = e.target.closest('[data-oc]'); if (!b) return; const c = b.dataset.oc; d.cats = d.cats.includes(c) ? d.cats.filter(x => x !== c) : [...d.cats, c]; b.classList.toggle('on'); };
+    const sk = $('#of-skus'); if (sk) sk.onclick = e => { const b = e.target.closest('[data-osx]'); if (b) { read(); d.skus = d.skus.filter(x => x !== b.dataset.osx); draw(); } };
+    const f = $('#of-find'); if (f) {
+      f.oninput = () => { const q = f.value.trim().toLowerCase(); $('#of-res').innerHTML = q ? prods.filter(p => !d.skus.includes(p.sku) && (p.name + ' ' + p.sku + ' ' + (p.colour || '')).toLowerCase().includes(q)).slice(0, 8).map(p => '<button type="button" class="row" data-osa="' + esc(p.sku) + '"><div class="grow"><div class="t">' + esc(p.name) + '</div><div class="s">' + esc(p.sku + ' · ' + (p.size || '') + ' · ' + R0(num(p.price))) + '</div></div><b>+</b></button>').join('') : ''; };
+      $('#of-res').onclick = e => { const b = e.target.closest('[data-osa]'); if (b) { read(); d.skus.push(b.dataset.osa); draw(); setTimeout(() => $('#of-find') && $('#of-find').focus(), 50); } };
+    }
+    const cp = $('#of-comps'); if (cp) { cp.onchange = e => { const i = e.target.dataset.cv; if (i != null) { const [k, ...rest] = e.target.value.split('|'); d.comps[+i].kind = k; d.comps[+i].val = rest.join('|'); } }; cp.oninput = e => { const i = e.target.dataset.cq; if (i != null) d.comps[+i].qty = Math.max(1, Math.round(num(e.target.value))); }; cp.onclick = e => { const i = e.target.dataset.cx; if (i != null) { read(); d.comps.splice(+i, 1); draw(); } }; }
+    const ac = $('#of-addc'); if (ac) ac.onclick = () => { read(); d.comps.push({kind: 'cat', val: catNames[0] || 'Other', qty: 1}); draw(); };
+    const bm = $('#of-bm'); if (bm) bm.onclick = () => { d.billMode = d.billMode === '%' ? '₹' : '%'; bm.textContent = d.billMode; };
+  };
+  openSheet('<h2>' + (o ? 'Edit offer' : 'New offer') + '</h2>' +
+    '<label for="of-name">Offer name (printed on the bill)</label><input id="of-name" value="' + esc(d.name) + '" placeholder="e.g. Diwali Kurti 20% off" autocomplete="off">' +
+    '<label for="of-type">Type of offer</label><select id="of-type">' + Object.entries(OFFER_TYPES).map(([k, l]) => '<option value="' + k + '"' + (d.type === k ? ' selected' : '') + '>' + l + '</option>').join('') + '</select>' +
+    '<div id="of-body"></div>' +
+    '<div class="grid2"><div><label for="of-from">Starts (optional)</label><input id="of-from" type="date" value="' + esc(d.from) + '"></div><div><label for="of-to">Ends (optional)</label><input id="of-to" type="date" value="' + esc(d.to) + '"></div>' +
+    '<div><label for="of-auto">How it applies</label><select id="of-auto"><option value="Yes"' + (d.auto !== 'No' ? ' selected' : '') + '>Automatically</option><option value="No"' + (d.auto === 'No' ? ' selected' : '') + '>Staff taps to apply</option></select></div>' +
+    '<div><label for="of-act">Status</label><select id="of-act"><option value="Yes"' + (d.active !== false ? ' selected' : '') + '>On</option><option value="No"' + (d.active === false ? ' selected' : '') + '>Off</option></select></div></div>' +
+    '<p class="small mute">On a bill, combos are applied first, then Buy X get Y, then the best % or ₹ offer for each remaining piece, then a bill discount. A piece gets only one item offer, and pieces with a typed discount are skipped.</p>' +
+    '<div class="btns" style="margin-top:12px">' + (o ? '<button class="btn danger" id="of-del">Delete</button>' : '<button class="btn" id="of-cancel">Cancel</button>') + '<button class="btn p" id="of-save">Save offer</button></div>');
+  $('#of-type').onchange = () => { read(); if (d.type === 'combo' && !d.comps.length) d.comps = [{kind: 'cat', val: catNames[0] || 'Other', qty: 1}, {kind: 'cat', val: catNames[1] || catNames[0] || 'Other', qty: 1}]; draw(); };
+  draw();
+  const c = $('#of-cancel'); if (c) c.onclick = closeSheet;
+  const del = $('#of-del'); if (del) del.onclick = async () => { if (!(await ask('Delete the offer "' + o.name + '"? Bills already made keep their discount.', 'Delete', true))) return; try { await saveOffers(offersAll().filter(x => x.id !== o.id)); toast('Offer deleted'); } catch (e) { dbFail(e); } };
+  $('#of-save').onclick = async () => {
+    read();
+    if (!d.name) { toast('Give the offer a name'); return; }
+    if (d.scope === 'cats' && !d.cats.length && ['pct', 'flat', 'bxgy'].includes(d.type)) { toast('Pick at least one category'); return; }
+    if (d.scope === 'skus' && !d.skus.length && ['pct', 'flat', 'bxgy'].includes(d.type)) { toast('Add at least one product'); return; }
+    if (d.type === 'pct' && !(d.pct > 0 && d.pct <= 100)) { toast('Enter a discount between 1 and 100%'); return; }
+    if (d.type === 'flat' && !(d.amt > 0)) { toast('Enter the ₹ off'); return; }
+    if (d.type === 'bxgy' && !(d.buy > 0 && d.get > 0)) { toast('Enter how many to buy and get'); return; }
+    if (d.type === 'combo' && (!d.comps.length || !(d.price > 0))) { toast('Add the combo items and price'); return; }
+    if (d.type === 'bill' && !(d.billVal > 0)) { toast('Enter the bill discount'); return; }
+    if (d.from && d.to && d.to < d.from) { toast('The end date is before the start date'); return; }
+    stamp(d, o);
+    const list = offersAll().filter(x => x.id !== d.id); list.push(d);
+    try { await saveOffers(list); closeSheet(); toast('Offer saved'); } catch (e) { dbFail(e); }
+  };
+}
+$('#offerlist').addEventListener('click', e => { const b = e.target.closest('[data-offer]'); if (b) offerForm(offersAll().find(o => o.id === b.dataset.offer)); });
+$('#addoffer').onclick = () => offerForm(null);
 
 /* ---------- navigation ---------- */
 function setFab() {
