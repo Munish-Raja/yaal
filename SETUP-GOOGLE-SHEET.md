@@ -96,7 +96,7 @@ In the app, **Settings → Sync details** should then show *Sheet script: versio
 
 ## Script updated for WhatsApp bills (version 5)
 
-Version 5 lets **WhatsApp to customer** open the customer's own chat with the bill PDF link already in the message. To get it:
+Version 5 lets **WhatsApp** open the customer's own chat with the bill PDF link already in the message. To get it:
 
 1. Open the sheet, then **Extensions → Apps Script**, and replace all the code with the new `Code.gs`. Click **Save**.
 2. Click **Deploy → Manage deployments**, then the pencil (Edit), set **Version** to **New version**, and click **Deploy**. The web app address stays the same.

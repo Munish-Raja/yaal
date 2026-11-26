@@ -100,7 +100,7 @@ To get an actual `.apk` / Play Store package, paste your GitHub Pages link into 
 - For a label printer, set the paper size in the printer settings to match the label (50×25 or 38×25 mm).
 - The camera needs the app to be opened from its `https://` link (GitHub Pages is fine). Allow camera access when Chrome asks.
 - Each scan adds one piece. To add a second piece of the same item, move the camera away and scan again, or tap **+** on the bill.
-- **WhatsApp to customer** opens the customer's own chat (from the phone number on the bill) with the bill and a link to its PDF, saved in the Drive folder *YAAL Bills*. You only tap Send. It needs the cloud connected and script version 5. **Share PDF…** still sends the PDF file itself through the phone's share menu, where you pick the chat.
+- **WhatsApp** opens the customer's own chat (from the phone number on the bill) with the bill and a link to its PDF, saved in the Drive folder *YAAL Bills*. You only tap Send. It needs the cloud connected and script version 5. **Share PDF…** still sends the PDF file itself through the phone's share menu, where you pick the chat.
 
 ## Your data
 
