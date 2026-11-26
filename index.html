@@ -189,7 +189,7 @@ a{color:var(--maroon2)}
 main{touch-action:pan-y;min-height:calc(100dvh - var(--hh,70px));display:flex;flex-direction:column}
 main>.banner{flex:none}
 #v-sales.on{flex:1;display:flex;flex-direction:column}
-#v-sales.on>#slist{flex:1;margin-bottom:0}
+#v-sales.on>#sales-b{flex:1;display:flex;flex-direction:column}#sales-b>#slist{flex:1;margin-bottom:0}
 body{touch-action:pan-y}
 main[data-dir=next] .view.on{animation:slideNext .36s var(--ease) both}
 main[data-dir=prev] .view.on{animation:slidePrev .36s var(--ease) both}
@@ -549,6 +549,19 @@ a.btn.slim{text-decoration:none}
 .pfpic label.btn.gold{color:#1C1606}
 .pfedit{position:relative;border:0;background:none;padding:0;cursor:pointer;border-radius:50%}
 .pfedit i{position:absolute;right:-2px;bottom:-2px;width:24px;height:24px;border-radius:50%;background:var(--gold);color:#fff;font-style:normal;font-size:13px;line-height:24px;text-align:center;box-shadow:0 0 0 2px var(--card)}
+.ptsbox{margin-top:10px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#FFF8E6,#F7E9C4);border:1px solid #E6CF92}
+.ptshead{display:flex;align-items:center;gap:10px}
+.ptshead .star{width:34px;height:34px;border-radius:50%;background:linear-gradient(180deg,#D9A63A,#B9801A);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;flex:none;box-shadow:0 3px 8px -3px rgba(150,100,10,.7)}
+.ptsbal{text-align:right}.ptsbal b{display:block;color:#7A5200;font-size:16px;font-variant-numeric:tabular-nums}.ptsbal small{font-size:11.5px;color:var(--mute)}
+.ptsline{font-size:13px;margin-top:8px;color:var(--ink)}
+.ptsuse{margin-top:10px;font-size:14px}
+.ptsin{margin-top:8px}.ptsin input{max-width:120px}.ptsrs{align-self:center;font-weight:700;color:var(--ok)}
+.tier{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;color:#fff;background:var(--tc);vertical-align:middle;letter-spacing:.02em}
+.ptsv{color:#9A6B00}
+.ptsbig{margin-top:12px;padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,#FFF7E2,#EBD397);border:1px solid #E2C985;box-shadow:inset 0 -3px 0 var(--gold)}
+.ptsbig span{display:block;font-size:12.5px;font-weight:700;color:#7A5C14}.ptsbig b{display:block;font:400 30px Marcellus,Georgia,serif;color:var(--maroon)}.ptsbig small{font-size:12px;color:#6B5A2E}
+.tierbar{margin-top:10px}.tierbar .pbar{background:#E9DFC6;height:7px}.tierbar .pbar i{background:linear-gradient(90deg,#D9A63A,#B9801A);border:0}
+.tierrow{grid-template-columns:minmax(0,1fr) 92px 64px 40px}
 </style>
 </head>
 <body class="locked">
@@ -600,6 +613,7 @@ a.btn.slim{text-decoration:none}
         <div><label for="bpay">Payment</label><select id="bpay"></select></div>
         <div><label for="bchan">Channel</label><select id="bchan"></select></div>
       </div>
+      <div class="ptsbox" id="ptsbox" hidden></div>
       <label for="bdate">Bill date</label><input id="bdate" type="date">
       <label for="bdisc">Discount on the whole bill</label><div class="bdrow"><input id="bdisc" inputmode="decimal" placeholder="0" autocomplete="off"><button class="dtog" id="bdtog" type="button" aria-label="Switch between rupees and percent">₹</button></div>
       <div class="hr"></div>
@@ -630,11 +644,19 @@ a.btn.slim{text-decoration:none}
 
   <!-- BILLS -->
   <section class="view" id="v-sales">
-    <h2>Bills</h2>
+    <div class="seg"><button id="sg-b" class="on">Bills</button><button id="sg-c">Customers &amp; points</button></div>
+    <div id="sales-b">
     <div class="grid2"><div><label for="smonth">Month</label><input id="smonth" type="month"></div>
     <div><label for="sfind">Find</label><input id="sfind" type="search" placeholder="Name, phone, invoice"></div></div>
     <div class="kpis" id="skpis" style="margin:12px 0"></div>
     <div class="list" id="slist"></div>
+    </div>
+    <div id="sales-c" style="display:none">
+      <div class="banner" id="cnote">Loyalty points are switched off. The owner can turn them on in Settings → Loyalty points.</div>
+      <label for="cfind">Find a customer</label><input id="cfind" type="search" placeholder="Name, phone or tier">
+      <div class="kpis" id="ckpis" style="margin:12px 0"></div>
+      <div class="list" id="clist"></div>
+    </div>
   </section>
 
   <!-- EXPENSES -->
@@ -701,6 +723,23 @@ a.btn.slim{text-decoration:none}
       <label for="st-members">Other people who share costs (no app login)</label><input id="st-members" placeholder="e.g. Ravi (partner)">
       <label for="st-epays">Expense payment modes</label><input id="st-epays">
       <p class="small mute">Everyone in Team is listed automatically, with you shown as "Me". Add names here only for people who share costs but don't use the app. Only expenses paid by a person can be split.</p>
+      <h3>Loyalty points</h3>
+      <p class="small mute" style="margin-top:0">Customers are recognised by the phone number on the bill. Points are earned on what they pay and can be used as a discount on a later bill or paid out as cashback.</p>
+      <div class="grid2">
+        <div><label for="ly-on">Points programme</label><select id="ly-on"><option value="Yes">On</option><option value="No">Off</option></select></div>
+        <div><label for="ly-red">Customers can redeem as</label><select id="ly-red"><option value="Both">Discount or cashback</option><option value="Discount">Discount only</option><option value="Cashback">Cashback only</option></select></div>
+        <div><label for="ly-earn">Spend (₹) to earn 1 point</label><input id="ly-earn" inputmode="decimal"></div>
+        <div><label for="ly-val">Value of 1 point (₹)</label><input id="ly-val" inputmode="decimal"></div>
+        <div><label for="ly-min">Minimum bill to earn (₹)</label><input id="ly-min" inputmode="decimal"></div>
+        <div><label for="ly-minr">Points needed before redeeming</label><input id="ly-minr" inputmode="numeric"></div>
+        <div><label for="ly-max">Max % of a bill paid by points</label><input id="ly-max" inputmode="decimal"></div>
+        <div><label for="ly-exp">Points expire after (months, 0 = never)</label><input id="ly-exp" inputmode="numeric"></div>
+      </div>
+      <p class="small" id="ly-ex" style="color:var(--maroon2);font-weight:600"></p>
+      <label>Tiers by lifetime spend</label>
+      <div class="small mute" style="margin-bottom:6px">Name · from ₹ (total spent) · points multiplier</div>
+      <div id="tieredit"></div>
+      <button class="btn" id="addtier" type="button">+ Add tier</button>
       <div style="margin-top:16px"><button class="btn p block" id="savesettings">Save settings</button></div>
     </div>
     <h3>Cloud storage (Google Sheet)</h3>
@@ -920,7 +959,7 @@ function makeSku(category) {
 }
 
 /* ---------- render: header + home ---------- */
-function renderAll() { recompute(); $('#brand').textContent = S.name || 'YAAL'; renderHome(); renderBillPickers(); renderCart(); renderProducts(); renderPurchases(); renderSales(); renderExpenses(); renderTeam(); renderMeCard(); if (!settingsDirty) fillSettings(); setFab(); }
+function renderAll() { recompute(); $('#brand').textContent = S.name || 'YAAL'; renderHome(); renderBillPickers(); renderCart(); renderProducts(); renderPurchases(); renderSales(); renderExpenses(); renderTeam(); renderMeCard(); if (salesTab === 'c') renderCustomers(); if (!settingsDirty) fillSettings(); setFab(); }
 
 let heroShown = null, heroRaf = 0;
 function countUp(el, to) {
@@ -954,16 +993,22 @@ function addToCart(sku) {
 let billDisc = {mode: '₹', val: ''};
 const prodFor = c => (c.snap ? Object.assign({}, products.get(c.sku) || {}, c.snap) : products.get(c.sku));
 const lineCalc = (p, c) => itemCalc(p, c.qty, c.mode === '₹' ? 0 : c.disc, c.mode === '₹' ? (c.discRs || 0) : null);
-function cartItems() {
+function cartItemsRaw() {
   const base = cart.map(c => { const p = prodFor(c); return p ? {p, it: lineCalc(p, c)} : null; }).filter(Boolean);
   const sub = base.reduce((a, x) => a + x.it.net, 0);
   let bd = billDisc.mode === '%' ? sub * Math.min(100, Math.max(0, num(billDisc.val))) / 100 : Math.min(sub, Math.max(0, num(billDisc.val)));
-  bd = r2(bd);
-  if (!bd || !sub) return base.map(x => x.it);
-  let left = bd;
+  return {base, sub, bd: r2(bd)};
+}
+function cartItems() {
+  const {base, sub, bd} = cartItemsRaw();
+  const pv = typeof ptsRedeem !== 'undefined' && ptsRedeem.on ? r2(Math.min(Math.max(0, sub - bd), ptsRedeem.rs)) : 0;   // loyalty points used as discount
+  if ((!bd && !pv) || !sub) return base.map(x => x.it);
+  let left = bd, leftP = pv;
   return base.map((x, i) => {
-    const share = i === base.length - 1 ? left : r2(bd * x.it.net / sub); left = r2(left - share);
-    const it = itemCalc(x.p, x.it.qty, null, x.it.discAmt + share); it.billShare = share; it.line = {net: x.it.net, label: discLabel(x.it)}; return it;
+    const last = i === base.length - 1;
+    const share = last ? left : r2(bd * x.it.net / sub); left = r2(left - share);
+    const ps = last ? leftP : r2(pv * x.it.net / sub); leftP = r2(leftP - ps);
+    const it = itemCalc(x.p, x.it.qty, null, x.it.discAmt + share + ps); it.billShare = share; if (ps) it.ptsShare = ps; it.line = {net: x.it.net, label: discLabel(x.it)}; return it;
   });
 }
 function renderCart() {
@@ -986,11 +1031,12 @@ function totalsOf(items) {
 function renderTotals() {
   const t = totalsOf(cartItems());
   $('#btotals').innerHTML = '<div><span>Items</span><span>' + t.qty + '</span></div><div><span>Amount</span><span>' + R2(t.gross) + '</span></div>' +
-    (t.disc ? '<div><span>Discount' + (num(billDisc.val) > 0 ? ' (incl. bill ' + (billDisc.mode === '%' ? num(billDisc.val) + '%' : amt0(num(billDisc.val))) + ')' : '') + '</span><span>− ' + R2(t.disc) + '</span></div>' : '') +
+    (t.disc ? '<div><span>Discount' + (num(billDisc.val) > 0 ? ' (incl. bill ' + (billDisc.mode === '%' ? num(billDisc.val) + '%' : amt0(num(billDisc.val))) + ')' : '') + (ptsRedeem.on && ptsRedeem.pts ? ' (incl. ★ ' + fmtPts(ptsRedeem.pts) + ')' : '') + '</span><span>− ' + R2(t.disc) + '</span></div>' : '') +
     (S.gstReg === 'Yes' ? '<div><span>Taxable value</span><span>' + R2(t.taxable) + '</span></div><div><span>GST' + (S.inclGst === 'Yes' ? ' (included)' : '') + '</span><span>' + R2(t.gst) + '</span></div>' : '') +
     (t.round ? '<div><span>Round off</span><span>' + R2(t.round) + '</span></div>' : '') +
     '<div class="grand"><span>Total</span><span>' + R0(t.grand) + '</span></div>';
   $('#bsave').disabled = !cart.length;
+  renderPtsBox();
 }
 $('#pq').addEventListener('input', renderPicker);
 $('#scanbtn').onclick = openScanner;
@@ -1008,7 +1054,7 @@ $('#cart').addEventListener('change', e => {
   if (t.dataset.q) { cart[+t.dataset.q].qty = Math.max(1, Math.round(num(t.value)) || 1); renderCart(); }
   if (t.dataset.d) { const c = cart[+t.dataset.d]; if (c.mode === '₹') c.discRs = Math.max(0, num(t.value)); else c.disc = Math.min(100, Math.max(0, num(t.value))); renderCart(); }
 });
-function resetBillDisc() { billDisc = {mode: '₹', val: ''}; $('#bdisc').value = ''; $('#bdtog').textContent = '₹'; }
+function resetBillDisc() { if (typeof resetPts === 'function') resetPts(); const pb = $('#ptsbox'); if (pb) pb.dataset.named = ''; billDisc = {mode: '₹', val: ''}; $('#bdisc').value = ''; $('#bdtog').textContent = '₹'; }
 $('#bdisc').addEventListener('input', () => { billDisc.val = $('#bdisc').value; renderTotals(); });
 $('#bdtog').onclick = () => { billDisc.mode = billDisc.mode === '₹' ? '%' : '₹'; $('#bdtog').textContent = billDisc.mode; renderTotals(); $('#bdisc').focus(); };
 $('#bclear').onclick = async () => { if (editing) return cancelEdit(); if (!cart.length || await ask('Clear this bill?', 'Clear')) { cart = []; $('#bcust').value = ''; $('#bphone').value = ''; resetBillDisc(); renderCart(); } };
@@ -1030,7 +1076,7 @@ async function startEdit(b) {
   editing = JSON.parse(JSON.stringify(b));
   cart = (b.items || []).map(it => {
     const snap = {sku: it.sku, name: it.name, category: it.category, size: it.size, price: num(it.price), cost: num(it.cost)};
-    const share = num(it.billShare), lineDisc = r2(num(it.discAmt) - share), lbl = it.line ? String(it.line.label || '') : '';
+    const share = num(it.billShare) + num(it.ptsShare), lineDisc = r2(num(it.discAmt) - share), lbl = it.line ? String(it.line.label || '') : '';
     const pm = it.line ? /^([\d.]+)% off$/.exec(lbl) : null;
     let mode = '%', disc = 0, discRs = 0;
     if (it.line) { if (pm) disc = num(pm[1]); else if (lineDisc > 0) { mode = '₹'; discRs = lineDisc; } }
@@ -1039,6 +1085,7 @@ async function startEdit(b) {
     return {sku: it.sku, qty: num(it.qty), mode, disc, discRs, snap};
   });
   const bd = billDiscOf(b); billDisc = {mode: '₹', val: bd > 0 ? String(bd) : ''}; $('#bdisc').value = billDisc.val; $('#bdtog').textContent = '₹';
+  ptsRedeem = num(b.pointsRedeemed) ? {on: true, pts: num(b.pointsRedeemed), rs: num(b.pointsValue)} : {on: false, pts: 0, rs: 0}; $('#ptsbox').dataset.named = '1';
   $('#bcust').value = b.customer || ''; $('#bphone').value = b.phone || ''; $('#bdate').value = b.date || todayStr();
   renderBillPickers(b.pay || S.pays[0], b.channel || S.chans[0]);
   setEditUI(); renderCart(); closeSheet(); go('bill'); toast('Editing ' + b.invoice + ' - make changes, then tap Update bill');
@@ -1050,9 +1097,17 @@ $('#bsave').onclick = async () => {
   const items = cartItems(), short = cart.filter(c => c.qty > availFor(c.sku));
   if (short.length && !(await ask(short.length + ' item(s) have more quantity than stock shows. Save the bill anyway?', 'Save anyway'))) return;
   const t = totalsOf(items), gen = nextInvoice();
+  const pkey = phoneKey($('#bphone').value), exclude = editing ? (editing.id || safeId(editing.invoice)) : null;
+  let pts = {custKey: pkey, pointsRedeemed: 0, pointsValue: 0, pointsEarned: 0, tier: ''};
+  if (loyOn() && pkey) {
+    const used = ptsRedeem.on ? Math.round(ptsRedeem.pts) : 0, bal = custInfo(pkey, exclude).balance;
+    if (used > bal) { toast('Only ' + fmtPts(bal) + ' available for this customer'); return; }
+    const e = earnFor(t.grand, pkey, exclude);
+    pts = {custKey: pkey, pointsRedeemed: used, pointsValue: used ? r2(items.reduce((a, it) => a + num(it.ptsShare), 0)) : 0, pointsEarned: e.pts, tier: e.tier};
+  } else if (ptsRedeem.on) { toast('Add the customer\'s phone number to use points'); return; }
   if (editing) {
     const bill = Object.assign({}, editing, {date: $('#bdate').value || editing.date || todayStr(), customer: $('#bcust').value.trim(), phone: $('#bphone').value.trim(),
-      pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, discount: r2(t.disc), taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, editedAt: Date.now()});
+      pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, discount: r2(t.disc), taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, editedAt: Date.now()}, pts);
     const id = bill.id || safeId(bill.invoice); delete bill.id; delete bill.pdfLink; delete bill._op; stamp(bill, editing);   // the old PDF link shows the old bill
     $('#bsave').disabled = true;
     try { await db.doc('sales/' + id).set(bill); editing = null; setEditUI(); clearBillForm(); showBill(Object.assign({id}, bill)); toast('Bill ' + bill.invoice + ' updated'); }
@@ -1061,7 +1116,7 @@ $('#bsave').onclick = async () => {
   }
   const bill = {_op: Date.now().toString(36) + Math.random().toString(36).slice(2, 10), invoice: '', date: $('#bdate').value || todayStr(), customer: $('#bcust').value.trim(), phone: $('#bphone').value.trim(),
     pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, discount: r2(t.disc), taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, createdAt: Date.now()};
-  stamp(bill, null);
+  Object.assign(bill, pts); stamp(bill, null);
   $('#bsave').disabled = true;
   try {
     for (let n = 1; n < 20; n++) {
@@ -1070,7 +1125,7 @@ $('#bsave').onclick = async () => {
     }
     if (!bill.invoice) throw {code: 'unavailable'};
     cart = []; $('#bcust').value = ''; $('#bphone').value = ''; resetBillDisc(); renderCart();
-    showBill(bill); toast('Bill ' + bill.invoice + ' saved');
+    showBill(bill); toast('Bill ' + bill.invoice + ' saved' + (bill.pointsEarned ? ' · +' + fmtPts(bill.pointsEarned) : ''));
   } catch (e) { dbFail(e); } finally { $('#bsave').disabled = !cart.length; }
 };
 
@@ -1078,8 +1133,9 @@ function billText(b) {
   const L = [S.name, (S.gstReg === 'Yes' ? 'Tax Invoice ' : 'Bill ') + b.invoice + ' · ' + nice(b.date), ''];
   for (const it of b.items) L.push(it.name + (it.size ? ' (' + it.size + ')' : '') + ' x' + it.qty + ' = ' + R2(itemAmt(it)) + (itemLabel(it) ? ' (' + itemLabel(it) + ')' : ''));
   if (billDiscOf(b) > 0) L.push('Bill discount: - ' + R2(billDiscOf(b)));
+  for (const r of billPtsRows(b)) L.push(r[0] + ': ' + r[1]);
   if (billSaved(b) > 0) L.push('You saved ' + amt0(billSaved(b)));
-  L.push('', 'Total: ' + R0(b.total) + ' (' + b.pay + ')'); if (S.footer) L.push(S.footer); return L.join('\n');
+  L.push('', 'Total: ' + R0(b.total) + ' (' + b.pay + ')'); if (billPtsNote(b)) L.push('★ ' + billPtsNote(b)); if (S.footer) L.push(S.footer); return L.join('\n');
 }
 function showBill(b) {
   const gstOn = S.gstReg === 'Yes' || num(b.gst) > 0;
@@ -1090,10 +1146,12 @@ function showBill(b) {
     '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px"><span><b>' + esc(b.invoice) + '</b><br>' + esc(b.customer || 'Walk-in customer') + (b.phone ? '<br>' + esc(b.phone) : '') + '</span><span style="text-align:right">' + nice(b.date) + '<br>' + esc(b.pay) + '</span></div>' +
     '<table style="margin-top:8px"><tr><th>#</th><th>Item</th><th class="n">Qty</th><th class="n">Rate</th><th class="n">Amount</th></tr>' + rows +
     (billDiscOf(b) > 0 ? '<tr class="sum"><td></td><td colspan="3">Bill discount</td><td class="n">− ' + R2(billDiscOf(b)) + '</td></tr>' : '') +
+    billPtsRows(b).map(r => '<tr class="sum"><td></td><td colspan="3">' + esc(r[0]) + '</td><td class="n">' + r[1] + '</td></tr>').join('') +
     (gstOn ? '<tr class="sum"><td></td><td colspan="3">Taxable value</td><td class="n">' + R2(b.taxable) + '</td></tr><tr><td></td><td colspan="3">CGST</td><td class="n">' + R2(b.gst / 2) + '</td></tr><tr><td></td><td colspan="3">SGST</td><td class="n">' + R2(b.gst / 2) + '</td></tr>' : '') +
     (num(b.round) ? '<tr><td></td><td colspan="3">Round off</td><td class="n">' + R2(b.round) + '</td></tr>' : '') +
     '<tr class="sum gt"><td></td><td colspan="3">Total</td><td class="n">' + R0(b.total) + '</td></tr>' +
-    (billSaved(b) > 0 ? '<tr><td></td><td colspan="4" style="color:#1F7A45;font-weight:600">You saved ' + amt0(billSaved(b)) + '</td></tr>' : '') + '</table>' +
+    (billSaved(b) > 0 ? '<tr><td></td><td colspan="4" style="color:#1F7A45;font-weight:600">You saved ' + amt0(billSaved(b)) + '</td></tr>' : '') +
+    (billPtsNote(b) ? '<tr><td></td><td colspan="4" style="color:#9A6B00;font-weight:600">★ ' + esc(billPtsNote(b)) + '</td></tr>' : '') + '</table>' +
     (S.footer ? '<p style="text-align:center;font-style:italic;color:#6B7266;margin:10px 0 0">' + esc(S.footer) + '</p>' : '') + '<div class="mbc"><svg id="memo-bc"></svg><span>' + esc(b.invoice) + '</span></div></div>' +
     '<div class="btns" style="margin-top:14px"><button class="btn gold" id="wadirect"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12a8 8 0 01-11.6 7.1L4 20l1-4.2A8 8 0 1120 12z"/><path d="M9 9.5c.3 1.6 1.9 3.4 3.6 4.1l1.1-1 1.8.8-.4 1.5c-3 .2-6.4-3.2-6.2-6.2l1.5-.4.8 1.8z"/></svg>WhatsApp</button><button class="btn" id="dlpdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Download PDF</button></div>' +
     '<div class="waphone" id="waphone" hidden><label for="waph">Customer WhatsApp number</label><div class="bdrow"><input id="waph" inputmode="tel" placeholder="10-digit mobile number" autocomplete="off"><button class="btn gold" id="waphgo" type="button">Send</button></div></div>' +
@@ -1364,6 +1422,7 @@ function fillSettings() {
   v('#st-sizes', S.sizes.join(', ')); v('#st-pays', S.pays.join(', ')); v('#st-chans', S.chans.join(', '));
   v('#st-ecats', (S.expCats || []).join(', ')); v('#st-members', (S.members || []).join(', ')); v('#st-epays', (S.expPays || []).join(', '));
   catDraft = structuredClone(S.categories); renderCatEdit();
+  if (typeof fillLoyalty === 'function') fillLoyalty();
 }
 function renderCatEdit() {
   $('#catedit').innerHTML = catDraft.map((c, i) => '<div class="catrow"><input data-cn="' + i + '" value="' + esc(c.name) + '" aria-label="Category name"><input data-cc="' + i + '" value="' + esc(c.code) + '" maxlength="5" aria-label="SKU code"><select data-cr="' + i + '" aria-label="GST rule">' + opts(['Slab', 'Flat'], c.rule) + '</select><button class="x" data-cx="' + i + '" aria-label="Remove">×</button></div>').join('');
@@ -1383,7 +1442,7 @@ $('#savesettings').onclick = async () => {
     gstReg: $('#st-reg').value, inclGst: $('#st-incl').value, threshold: num($('#st-thr').value), low: num($('#st-low').value), high: num($('#st-high').value), flat: num($('#st-flat').value),
     categories: catDraft.filter(c => c.name.trim()).map(c => ({name: c.name.trim(), code: (c.code || c.name.slice(0, 3)).toUpperCase().replace(/[^A-Z0-9]/g, ''), rule: c.rule})),
     sizes: splitList($('#st-sizes').value), pays: splitList($('#st-pays').value), chans: splitList($('#st-chans').value),
-    expCats: [...new Set(splitList($('#st-ecats').value))], members: [...new Set(splitList($('#st-members').value))], expPays: splitList($('#st-epays').value)};
+    expCats: [...new Set(splitList($('#st-ecats').value))], members: [...new Set(splitList($('#st-members').value))], expPays: splitList($('#st-epays').value), loyalty: readLoyalty()};
   if (n.gstReg === 'Yes' && !n.gstin && !(await ask('GST is on but GSTIN is blank. Save anyway?', 'Save'))) return;
   try { await db.doc('config/settings').set(n); settingsDirty = false; toast('Settings saved'); } catch (e) { dbFail(e); }
 };
@@ -1412,6 +1471,8 @@ $('#exportx').onclick = async () => {
     const ex = [...expenses].sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(e => ({Date: e.date, Type: e.type === 'settle' ? 'Settlement' : 'Expense', Category: e.category, Description: e.note, 'Paid To': e.type === 'settle' ? (e.toName || fullName(e.to)) : e.vendor,
       Amount: num(e.amount), 'Paid By': e.paidByName || fullName(e.paidBy), 'Payment Mode': e.pay, Split: e.split && e.split.shares ? e.split.shares.map(x => (x.label || fullName(x.name)) + ' ' + x.amt).join(', ') : '', 'Created By': e.createdByName || ''}));
     X.utils.book_append_sheet(wb, X.utils.json_to_sheet(ex.length ? ex : [{Date: ''}]), 'Expenses');
+    const cu = customerList().sort((a, b) => b.spend - a.spend).map(c => ({Customer: c.name, Phone: c.phone, Tier: c.tier.cur.name, Bills: c.bills.length, 'Total Spent': r2(c.spend), 'Points Balance': c.balance, 'Points Value': ptsRs(c.balance), 'Points Expired': c.expired, 'Last Visit': c.lastDate}));
+    X.utils.book_append_sheet(wb, X.utils.json_to_sheet(cu.length ? cu : [{Customer: ''}]), 'Customers & Points');
     const r = perRange('fy'), mrows = [];
     for (let d = new Date(+r.from.slice(0, 4), 3, 1); ymd(d) <= r.to && ymd(d) <= todayStr(); d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
       const t = totalsFor({from: ymd(d), to: ymd(new Date(d.getFullYear(), d.getMonth() + 1, 0))});
@@ -1661,6 +1722,7 @@ async function billCanvas(b) {
   const gstOn = S.gstReg === 'Yes' || num(b.gst) > 0;
   const rows = [];
   if (billDiscOf(b) > 0) rows.push(['Bill discount', '− ' + R2(billDiscOf(b))]);
+  rows.push(...billPtsRows(b));
   if (gstOn) rows.push(['Taxable value', R2(b.taxable)], ['CGST', R2(b.gst / 2)], ['SGST', R2(b.gst / 2)]);
   if (num(b.round)) rows.push(['Round off', R2(b.round)]);
   rows.forEach((r, n) => { if (n === 0) hline(y); font(13); text(r[0], cItem, y + rowPad + lh13 / 2, INK); text(r[1], cAmt, y + rowPad + lh13 / 2, INK, 'right'); y += lh13 + 2 * rowPad; });
@@ -1669,6 +1731,7 @@ async function billCanvas(b) {
   text('Total', cItem, y + rowPad + lh17 / 2, INK); text(R0(b.total), cAmt, y + rowPad + lh17 / 2, INK, 'right');
   y += lh17 + 2 * rowPad;
   if (billSaved(b) > 0) { font(13, 600); text('You saved ' + amt0(billSaved(b)), cItem, y + lh13 / 2, '#1F7A45'); y += lh13 + rowPad; }
+  if (billPtsNote(b)) { font(13, 600); text('★ ' + billPtsNote(b), cItem, y + lh13 / 2, '#9A6B00'); y += lh13 + rowPad; }
   // footer note: italic, muted, centered, margin-top 10
   if (S.footer) { y += 10 * k; font(14, 400, 'Hind, sans-serif', 'italic'); wrapText(x, S.footer, W - 2 * PX).forEach(l => { text(l, W / 2, y + 10.15 * k, MUTE, 'center'); y += 20.3 * k; }); }
   // invoice barcode (also shown on screen)
@@ -2688,6 +2751,177 @@ $('#adduser').onclick = () => userForm(null);
 
 function renderMeCard() { const c = $('#mecard'); if (!c) return; c.hidden = !me; if (!me) return; c.shtml = avatar(me.username) + '<div class="grow"><div class="t" style="font-weight:700">' + esc(me.name || me.username) + '</div><div class="s small mute">@' + esc(me.username) + ' · ' + esc(ROLE[me.role] || me.role) + ' · My profile</div></div><span aria-hidden="true" style="color:var(--gold);font-size:20px">›</span>'; }
 $('#mecard').onclick = () => { if (me) showProfile(me.username); };
+
+/* ---------- loyalty points ---------- */
+const LOY_DEF = {on: 'Yes', earnPer: 100, ptValue: 1, minBill: 0, minRedeem: 100, maxPct: 20, expiry: 12, redeem: 'Both',
+  tiers: [{name: 'Silver', from: 0, mult: 1}, {name: 'Gold', from: 25000, mult: 1.5}, {name: 'Platinum', from: 75000, mult: 2}]};
+const LOY = () => Object.assign({}, LOY_DEF, S.loyalty || {});
+const loyOn = () => LOY().on === 'Yes';
+const canDisc = () => ['Both', 'Discount'].includes(LOY().redeem), canCash = () => ['Both', 'Cashback'].includes(LOY().redeem);
+const CASHBACK = 'Customer cashback';
+const phoneKey = v => { const d = String(v || '').replace(/\D/g, ''); return d.length >= 10 ? d.slice(-10) : ''; };
+const ptsRs = p => r2(num(p) * num(LOY().ptValue));
+const fmtPts = p => Math.round(num(p)).toLocaleString('en-IN') + ' pt' + (Math.round(num(p)) === 1 ? '' : 's');
+function tierFor(spend) { const t = [...LOY().tiers].filter(x => x && x.name).sort((a, b) => num(a.from) - num(b.from)); let cur = t[0] || {name: 'Member', from: 0, mult: 1}; for (const x of t) if (spend >= num(x.from)) cur = x; const next = t.find(x => num(x.from) > spend); return {cur, next}; }
+const TIER_C = ['#8A8F98', '#C08A1E', '#5B4B8A', '#1E9A8E'];
+const tierChip = name => { const i = Math.max(0, LOY().tiers.findIndex(t => t.name === name)); return '<span class="tier" style="--tc:' + TIER_C[i % TIER_C.length] + '">' + esc(name) + '</span>'; };
+const addMonths = (d, m) => { const x = new Date(d + 'T00:00:00'); x.setMonth(x.getMonth() + m); return ymd(x); };
+
+/* everything about one customer, worked out from their bills and cashback entries */
+function custInfo(key, excludeBill) {
+  const L = LOY(), bills = sales.filter(b => phoneKey(b.phone) === key && b.id !== excludeBill).sort((a, b) => (a.date || '').localeCompare(b.date || '') || num(a.createdAt) - num(b.createdAt));
+  const cash = expenses.filter(e => e.custKey === key && num(e.points) > 0);
+  const ev = [];
+  for (const b of bills) { if (num(b.pointsEarned)) ev.push({date: b.date, t: num(b.createdAt), kind: 'earn', pts: num(b.pointsEarned), ref: b.invoice, bill: b}); if (num(b.pointsRedeemed)) ev.push({date: b.date, t: num(b.createdAt) - 1, kind: 'disc', pts: num(b.pointsRedeemed), ref: b.invoice, bill: b}); }
+  for (const e of cash) ev.push({date: e.date, t: num(e.createdAt), kind: 'cash', pts: num(e.points), ref: e.pay || '', exp: e});
+  ev.sort((a, b) => (a.date || '').localeCompare(b.date || '') || a.t - b.t);
+  const lots = [], hist = []; let expired = 0;
+  const expire = asOf => { if (!num(L.expiry)) return; const cut = addMonths(asOf, -num(L.expiry)); for (const l of lots) if (l.left > 0 && l.date < cut) { expired += l.left; hist.push({date: addMonths(l.date, num(L.expiry)), kind: 'expired', pts: l.left, ref: 'earned ' + nice(l.date)}); l.left = 0; } };
+  for (const e of ev) {
+    expire(e.date);
+    if (e.kind === 'earn') lots.push({date: e.date, left: e.pts});
+    else { let need = e.pts; for (const l of lots) { if (need <= 0) break; const u = Math.min(l.left, need); l.left -= u; need -= u; } }
+    hist.push(e);
+  }
+  expire(todayStr());
+  const balance = Math.max(0, Math.round(lots.reduce((a, l) => a + l.left, 0)));
+  const spend = bills.reduce((a, b) => a + num(b.total), 0), last = bills[bills.length - 1];
+  const named = [...bills].reverse().find(b => b.customer);
+  const soon = num(L.expiry) ? lots.filter(l => l.left > 0 && addMonths(l.date, num(L.expiry)) <= addMonths(todayStr(), 1)).reduce((a, l) => a + l.left, 0) : 0;
+  return {key, name: named ? named.customer : '', phone: last ? last.phone : key, bills, spend, balance, expired: Math.round(expired), soon: Math.round(soon), hist: hist.map((h, i) => Object.assign(h, {n: i})).sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.n - a.n), tier: tierFor(spend), lastDate: last ? last.date : ''};
+}
+function earnFor(amount, key, excludeBill) {
+  const L = LOY(); if (!loyOn() || !key || amount < num(L.minBill) || num(L.earnPer) <= 0) return {pts: 0, tier: ''};
+  const info = custInfo(key, excludeBill), t = tierFor(info.spend + amount).cur;   // this bill counts towards the tier
+  return {pts: Math.floor(amount / num(L.earnPer) * (num(t.mult) || 1)), tier: t.name};
+}
+
+/* bill page: points box */
+let ptsRedeem = {on: false, pts: 0, rs: 0};
+function resetPts() { ptsRedeem = {on: false, pts: 0, rs: 0}; }
+function ptsMaxFor(info, subtotal) {
+  const L = LOY(); if (!info || info.balance < num(L.minRedeem) || num(L.ptValue) <= 0) return 0;
+  return Math.max(0, Math.floor(Math.min(info.balance, subtotal * num(L.maxPct) / 100 / num(L.ptValue))));
+}
+function renderPtsBox() {
+  const box = $('#ptsbox'); if (!box) return;
+  if (!loyOn()) { box.hidden = true; resetPts(); return; }
+  box.hidden = false;
+  const key = phoneKey($('#bphone').value);
+  if (!key) { if (ptsRedeem.on) { resetPts(); renderTotals(); } box.shtml = '<div class="ptsline mute">★ Add the customer\'s phone number to give loyalty points.</div>'; return; }
+  const exclude = editing ? (editing.id || safeId(editing.invoice)) : null, info = custInfo(key, exclude);
+  if (!$('#bcust').value.trim() && info.name && !box.dataset.named) { $('#bcust').value = info.name; box.dataset.named = '1'; }
+  const base = cartItemsRaw(), max = ptsMaxFor(info, base.sub - base.bd);
+  if (ptsRedeem.on && ptsRedeem.pts > max) { ptsRedeem.pts = max; ptsRedeem.rs = ptsRs(max); }
+  const t = totalsOf(cartItems()), earn = earnFor(t.grand, key, exclude);
+  const L = LOY(), why = info.balance < num(L.minRedeem) ? 'Redeem from ' + fmtPts(L.minRedeem) : !canDisc() ? 'Points are paid out as cashback' : '';
+  box.shtml = '<div class="ptshead"><span class="star">★</span><div class="grow"><b>' + esc(info.name || 'New customer') + '</b> ' + tierChip(info.tier.cur.name) + '<div class="small mute">' + (info.bills.length ? info.bills.length + ' bill' + (info.bills.length === 1 ? '' : 's') + ' · ' + R0(info.spend) + ' spent' : 'First bill with this number') + '</div></div><div class="ptsbal"><b>' + fmtPts(info.balance) + '</b><small>worth ' + R0(ptsRs(info.balance)) + '</small></div></div>' +
+    (cart.length ? '<div class="ptsline">This bill earns <b>' + fmtPts(earn.pts) + '</b>' + (num(earn.tier && tierFor(info.spend + t.grand).cur.mult) > 1 ? ' (' + esc(earn.tier) + ' ' + tierFor(info.spend + t.grand).cur.mult + '×)' : '') + (info.tier.next ? ' · ' + R0(num(info.tier.next.from) - info.spend) + ' more to ' + esc(info.tier.next.name) : '') + '</div>' : '') +
+    (canDisc() && max > 0 ? '<label class="switch ptsuse"><input type="checkbox" id="ptson"' + (ptsRedeem.on ? ' checked' : '') + '><span class="sw"></span><span><b>Use points as discount</b><small class="mute">Up to ' + fmtPts(max) + ' (' + R0(ptsRs(max)) + ') on this bill</small></span></label>' +
+      (ptsRedeem.on ? '<div class="bdrow ptsin"><input id="ptsval" inputmode="numeric" value="' + ptsRedeem.pts + '" aria-label="Points to use"><span class="ptsrs">= ' + R2(ptsRedeem.rs) + ' off</span></div>' : '') : why && info.balance ? '<div class="ptsline mute small">' + why + '</div>' : '');
+}
+$('#ptsbox').addEventListener('change', e => {
+  if (e.target.id !== 'ptson') return;
+  const key = phoneKey($('#bphone').value), info = custInfo(key, editing ? (editing.id || safeId(editing.invoice)) : null), base = cartItemsRaw(), max = ptsMaxFor(info, base.sub - base.bd);
+  ptsRedeem = e.target.checked ? {on: true, pts: max, rs: ptsRs(max)} : {on: false, pts: 0, rs: 0};
+  renderTotals();
+});
+$('#ptsbox').addEventListener('input', e => {
+  if (e.target.id !== 'ptsval') return;
+  const key = phoneKey($('#bphone').value), info = custInfo(key, editing ? (editing.id || safeId(editing.invoice)) : null), base = cartItemsRaw(), max = ptsMaxFor(info, base.sub - base.bd);
+  const p = Math.max(0, Math.min(max, Math.floor(num(e.target.value))));
+  ptsRedeem.pts = p; ptsRedeem.rs = ptsRs(p);
+  const rs = $('#ptsbox .ptsrs'); if (rs) rs.textContent = '= ' + R2(ptsRedeem.rs) + ' off';
+  clearTimeout(e.target._t); e.target._t = setTimeout(() => { const pos = e.target.selectionStart; renderTotals(); const i = $('#ptsval'); if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch {} } }, 400);
+});
+$('#bphone').addEventListener('input', () => { $('#ptsbox').dataset.named = ''; resetPts(); renderTotals(); });
+/* points shown on the bill itself */
+function billPtsRows(b) { return num(b.pointsRedeemed) ? [['Points redeemed (' + fmtPts(b.pointsRedeemed) + ')', '− ' + R2(b.pointsValue)]] : []; }
+function billPtsNote(b) {
+  if (!num(b.pointsEarned) && !num(b.pointsRedeemed)) return '';
+  const key = phoneKey(b.phone), bal = key ? custInfo(key).balance : 0;
+  return (num(b.pointsEarned) ? 'You earned ' + fmtPts(b.pointsEarned) : '') + (num(b.pointsEarned) && key ? ' · ' : '') + (key ? 'Balance ' + fmtPts(bal) + ' (' + R0(ptsRs(bal)) + ')' : '');
+}
+
+/* ---------- customers ---------- */
+let salesTab = 'b';
+function customerList() {
+  const keys = new Set(); for (const b of sales) { const k = phoneKey(b.phone); if (k) keys.add(k); }
+  for (const e of expenses) if (e.custKey) keys.add(e.custKey);
+  return [...keys].map(k => custInfo(k));
+}
+function renderCustomers() {
+  const el = $('#clist'); if (!el) return;
+  const q = $('#cfind').value.trim().toLowerCase(), all = customerList();
+  const list = all.filter(c => !q || (c.name + ' ' + c.phone + ' ' + c.tier.cur.name).toLowerCase().includes(q)).sort((a, b) => b.balance - a.balance || b.spend - a.spend);
+  const out = all.reduce((a, c) => a + c.balance, 0), m = monthStr(todayStr());
+  const usedM = sales.filter(b => monthStr(b.date || '') === m).reduce((a, b) => a + num(b.pointsRedeemed), 0) + expenses.filter(e => e.custKey && monthStr(e.date || '') === m).reduce((a, e) => a + num(e.points), 0);
+  $('#ckpis').shtml = '<div class="kpi"><span>Customers</span><b>' + all.length + '</b><small>with a phone number</small></div><div class="kpi"><span>Points held</span><b>' + fmtPts(out) + '</b><small>worth ' + R0(ptsRs(out)) + '</small></div><div class="kpi"><span>Redeemed this month</span><b>' + fmtPts(usedM) + '</b><small>' + R0(ptsRs(usedM)) + '</small></div>';
+  $('#cnote').style.display = loyOn() ? 'none' : 'block';
+  el.shtml = list.length ? list.slice(0, 300).map(c => '<button class="row" data-cust="' + esc(c.key) + '"><span class="av" style="background:' + personColor(c.key) + '">' + esc(initials(c.name || '#')) + '</span><div class="grow"><div class="t">' + esc(c.name || 'Customer') + ' ' + tierChip(c.tier.cur.name) + '</div><div class="s">' + esc(c.phone) + ' · ' + c.bills.length + ' bill' + (c.bills.length === 1 ? '' : 's') + ' · ' + R0(c.spend) + '</div></div><div class="r"><b class="ptsv">★ ' + Math.round(c.balance).toLocaleString('en-IN') + '</b><br><span class="small mute">' + R0(ptsRs(c.balance)) + '</span></div></button>').join('')
+    : '<div class="empty">' + (all.length ? 'Nothing matches.' : 'Customers appear here once a bill has their phone number.') + '</div>';
+}
+function showCustomer(key) {
+  const c = custInfo(key), L = LOY(), canCb = canCash() && c.balance >= num(L.minRedeem) && c.balance > 0;
+  const label = {earn: 'Earned', disc: 'Used as discount', cash: 'Cashback paid', expired: 'Expired'};
+  openSheet('<div class="profhd"><span class="av xl" style="background:' + personColor(key) + '">' + esc(initials(c.name || '#')) + '</span><div><h2>' + esc(c.name || 'Customer') + '</h2><div class="small mute">' + esc(c.phone) + '</div>' + tierChip(c.tier.cur.name) + '</div></div>' +
+    '<div class="ptsbig"><span>★ Points balance</span><b>' + fmtPts(c.balance) + '</b><small>worth ' + R0(ptsRs(c.balance)) + (c.soon ? ' · ' + fmtPts(c.soon) + ' expire within a month' : '') + '</small></div>' +
+    '<div class="profstats"><div><b>' + c.bills.length + '</b><span>bills</span></div><div><b>' + R0(c.spend) + '</b><span>spent</span></div><div><b>' + (c.lastDate ? nice(c.lastDate).slice(0, 6) : '–') + '</b><span>last visit</span></div></div>' +
+    (c.tier.next ? '<div class="tierbar"><div class="small"><b>' + R0(num(c.tier.next.from) - c.spend) + '</b> more to reach ' + tierChip(c.tier.next.name) + ' (' + c.tier.next.mult + '× points)</div><div class="pbar"><i style="width:' + Math.min(100, (c.spend - num(c.tier.cur.from)) / Math.max(1, num(c.tier.next.from) - num(c.tier.cur.from)) * 100).toFixed(1) + '%"></i></div></div>' : '') +
+    '<div class="btns" style="margin-top:12px"><button class="btn p" id="cu-bill">New bill</button>' + (canCb ? '<button class="btn gold" id="cu-cash">Give cashback</button>' : '') + '</div>' +
+    (normPhone10(c.phone) ? '<button class="btn block" id="cu-wa" style="margin-top:8px">Send points balance on WhatsApp</button>' : '') +
+    '<h3>Points history</h3><div class="list">' + (c.hist.length ? c.hist.slice(0, 80).map(h => '<div class="row"><div class="grow"><div class="t">' + label[h.kind] + '</div><div class="s">' + nice(h.date) + (h.ref ? ' · ' + esc(h.ref) : '') + (h.exp && h.exp.createdByName ? ' · ' + esc(byLine(h.exp)) : h.bill && h.bill.createdByName ? ' · ' + esc(byLine(h.bill)) : '') + '</div></div><b class="' + (h.kind === 'earn' ? 'gets' : 'owes') + ' amt">' + (h.kind === 'earn' ? '+' : '−') + Math.round(h.pts).toLocaleString('en-IN') + '</b></div>').join('') : '<div class="empty">No points yet.</div>') + '</div>');
+  $('#cu-bill').onclick = () => { closeSheet(); go('bill'); $('#bphone').value = c.phone; $('#bcust').value = c.name; $('#ptsbox').dataset.named = '1'; resetPts(); renderTotals(); };
+  const cb = $('#cu-cash'); if (cb) cb.onclick = () => cashbackForm(c);
+  const wa = $('#cu-wa'); if (wa) wa.onclick = () => { const txt = 'Hi ' + (c.name || '').split(' ')[0] + ', you have ' + fmtPts(c.balance) + ' (worth ' + R0(ptsRs(c.balance)) + ') with ' + (S.name || 'us') + '. Your tier: ' + c.tier.cur.name + '.' + (c.soon ? ' ' + fmtPts(c.soon) + ' expire within a month.' : '') + ' Use them on your next purchase!'; const url = 'https://wa.me/' + normPhone10(c.phone) + '?text=' + encodeURIComponent(txt); const w = window.open(url, '_blank'); if (w) { try { w.opener = null; } catch {} } else location.href = url; };
+}
+function cashbackForm(c) {
+  const L = LOY(), pays = (S.expPays && S.expPays.length ? S.expPays : DEFAULTS.expPays);
+  openSheet('<h2>Cashback for ' + esc((c.name || 'customer').split(' ')[0]) + '</h2><p class="small mute">Pay the customer money for their points. It is recorded as a "' + CASHBACK + '" expense, so profit stays correct.</p>' +
+    '<label for="cb-pts">Points to redeem (balance ' + fmtPts(c.balance) + ')</label><input id="cb-pts" inputmode="numeric" value="' + c.balance + '">' +
+    '<div class="ptsbig" style="margin-top:10px"><span>Cashback amount</span><b id="cb-rs">' + R2(ptsRs(c.balance)) + '</b></div>' +
+    '<label for="cb-pay">Paid using</label><select id="cb-pay">' + opts(pays, pays.includes('UPI') ? 'UPI' : pays[0]) + '</select>' +
+    '<div class="btns" style="margin-top:14px"><button class="btn" id="cb-cancel">Cancel</button><button class="btn p" id="cb-save">Record cashback</button></div>');
+  const upd = () => { $('#cb-rs').textContent = R2(ptsRs(Math.floor(num($('#cb-pts').value)))); };
+  $('#cb-pts').addEventListener('input', upd);
+  $('#cb-cancel').onclick = () => showCustomer(c.key);
+  $('#cb-save').onclick = async () => {
+    const p = Math.floor(num($('#cb-pts').value)), fresh = custInfo(c.key);
+    if (p <= 0) { toast('Enter the points to redeem'); return; }
+    if (p > fresh.balance) { toast('Only ' + fmtPts(fresh.balance) + ' available'); return; }
+    if (fresh.balance < num(L.minRedeem)) { toast('Customers need ' + fmtPts(L.minRedeem) + ' before redeeming'); return; }
+    const doc = {type: 'expense', date: todayStr(), category: CASHBACK, amount: ptsRs(p), note: 'Cashback to ' + (c.name || c.phone) + ' (' + fmtPts(p) + ')', vendor: c.name || c.phone,
+      paidBy: BIZ, paidByName: BIZ, pay: $('#cb-pay').value, split: null, custKey: c.key, custName: c.name, points: p, createdAt: Date.now(), updatedAt: Date.now()};
+    stamp(doc, null);
+    try { await db.collection('expenses').add(doc); toast('Cashback of ' + R0(doc.amount) + ' recorded'); showCustomer(c.key); } catch (e) { dbFail(e); }
+  };
+}
+$('#cfind').addEventListener('input', renderCustomers);
+$('#clist').addEventListener('click', e => { const b = e.target.closest('[data-cust]'); if (b) showCustomer(b.dataset.cust); });
+$('#sg-b').onclick = () => { salesTab = 'b'; $('#sg-b').classList.add('on'); $('#sg-c').classList.remove('on'); $('#sales-b').style.display = ''; $('#sales-c').style.display = 'none'; };
+$('#sg-c').onclick = () => { salesTab = 'c'; $('#sg-c').classList.add('on'); $('#sg-b').classList.remove('on'); $('#sales-c').style.display = ''; $('#sales-b').style.display = 'none'; renderCustomers(); };
+
+/* ---------- settings: loyalty ---------- */
+let tierDraft = [];
+function fillLoyalty() {
+  const L = LOY(), v = (id, x) => { const el = $(id); if (el) el.value = x ?? ''; };
+  v('#ly-on', L.on); v('#ly-earn', L.earnPer); v('#ly-val', L.ptValue); v('#ly-min', L.minBill); v('#ly-minr', L.minRedeem); v('#ly-max', L.maxPct); v('#ly-exp', L.expiry); v('#ly-red', L.redeem);
+  tierDraft = structuredClone(L.tiers); renderTierEdit(); lyExample();
+}
+function renderTierEdit() {
+  $('#tieredit').innerHTML = tierDraft.map((t, i) => '<div class="catrow tierrow"><input data-tn="' + i + '" value="' + esc(t.name) + '" aria-label="Tier name" placeholder="Name"><input data-tf="' + i + '" value="' + esc(t.from) + '" inputmode="numeric" aria-label="Lifetime spend from" placeholder="₹ from"><input data-tm="' + i + '" value="' + esc(t.mult) + '" inputmode="decimal" aria-label="Points multiplier" placeholder="×"><button class="x" data-tx="' + i + '" aria-label="Remove tier">×</button></div>').join('');
+}
+function lyExample() {
+  const e = num($('#ly-earn').value) || 100, val = num($('#ly-val').value) || 0, b = 2500, p = Math.floor(b / e);
+  $('#ly-ex').textContent = 'Example: a ' + R0(b) + ' bill earns ' + p + ' points (worth ' + R2(p * val) + ', about ' + (b ? (p * val / b * 100).toFixed(1) : 0) + '% back). Higher tiers multiply this.';
+}
+$('#tieredit').addEventListener('input', e => { const d = e.target.dataset; if (d.tn) tierDraft[+d.tn].name = e.target.value; if (d.tf) tierDraft[+d.tf].from = num(e.target.value); if (d.tm) tierDraft[+d.tm].mult = num(e.target.value); settingsDirty = true; });
+$('#tieredit').addEventListener('click', e => { const d = e.target.dataset; if (d.tx) { tierDraft.splice(+d.tx, 1); settingsDirty = true; renderTierEdit(); } });
+$('#addtier').onclick = () => { tierDraft.push({name: '', from: 0, mult: 1}); settingsDirty = true; renderTierEdit(); };
+['#ly-earn', '#ly-val'].forEach(id => $(id).addEventListener('input', lyExample));
+const readLoyalty = () => ({on: $('#ly-on').value, earnPer: Math.max(1, num($('#ly-earn').value)), ptValue: Math.max(0, num($('#ly-val').value)), minBill: Math.max(0, num($('#ly-min').value)),
+  minRedeem: Math.max(0, Math.round(num($('#ly-minr').value))), maxPct: Math.min(100, Math.max(0, num($('#ly-max').value))), expiry: Math.max(0, Math.round(num($('#ly-exp').value))), redeem: $('#ly-red').value,
+  tiers: tierDraft.filter(t => String(t.name).trim()).map(t => ({name: String(t.name).trim(), from: Math.max(0, num(t.from)), mult: num(t.mult) > 0 ? num(t.mult) : 1})).sort((a, b) => a.from - b.from)});
 
 /* ---------- navigation ---------- */
 function setFab() {
