@@ -199,6 +199,12 @@ main[data-dir] .view.on>*{animation:none}
 
 .sdgrid{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
 .sdgrid span{color:var(--mute)}.sdgrid b{font-weight:600;text-align:right}
+
+.dtog{min-width:40px;height:38px;border-radius:10px;border:1px solid var(--gold);background:var(--goldsoft);color:#6E4A08;font-weight:700;font-size:15px;cursor:pointer;flex:none}
+.dtog:active{transform:scale(.94)}
+.bdrow{display:flex;gap:8px}.bdrow input{flex:1}.bdrow .dtog{height:46px;min-width:52px}
+.cartline .disc input{width:74px}
+#ssize:empty{display:none}
 /* ---------- premium layer ---------- */
 :root{--sh1:0 1px 1px rgba(8,30,17,.10),0 2px 6px -1px rgba(8,30,17,.16);--sh2:0 1px 2px rgba(8,30,17,.12),0 10px 28px -10px rgba(8,30,17,.45);--ease:cubic-bezier(.2,.8,.2,1);--hair:rgba(192,138,30,.30)}
 h2,h3{font-family:Marcellus,Georgia,serif;font-weight:400;letter-spacing:.03em}
@@ -375,6 +381,7 @@ header.top,nav.tabs,.sheetwrap{backdrop-filter:none!important;-webkit-backdrop-f
         <div><label for="bchan">Channel</label><select id="bchan"></select></div>
       </div>
       <label for="bdate">Bill date</label><input id="bdate" type="date">
+      <label for="bdisc">Discount on the whole bill</label><div class="bdrow"><input id="bdisc" inputmode="decimal" placeholder="0" autocomplete="off"><button class="dtog" id="bdtog" type="button" aria-label="Switch between rupees and percent">₹</button></div>
       <div class="hr"></div>
       <div class="totals" id="btotals"></div>
       <div style="margin-top:14px" class="btns">
@@ -391,6 +398,7 @@ header.top,nav.tabs,.sheetwrap{backdrop-filter:none!important;-webkit-backdrop-f
       <div class="search"><input id="sq" type="search" placeholder="Search products…" autocomplete="off"></div>
       <div class="chips" id="schips"></div>
       <div class="chips" id="sstat"></div>
+      <div class="chips" id="ssize"></div>
       <div class="ssumrow"><div class="small mute" id="ssum"></div><button class="btn gold slim" id="labelsbtn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6v12M7 6v12M10 6v12M14 6v12M17 6v12M20 6v12"/></svg>Labels</button></div>
       <div class="list" id="plist"></div>
     </div>
@@ -534,7 +542,7 @@ let S = structuredClone(DEFAULTS);
 let products = new Map(), sales = [], purchases = [];
 let stock = new Map(), soldQty = new Map(), inQty = new Map();
 let cart = [];
-let view = 'home', stockTab = 'p', catFilter = 'All', statFilter = 'All', settingsDirty = false;
+let view = 'home', stockTab = 'p', catFilter = 'All', statFilter = 'All', sizeFilter = 'All', settingsDirty = false;
 const loaded = {settings:false, products:false, sales:false, purchases:false};
 
 /* ---------- small UI helpers ---------- */
@@ -598,9 +606,13 @@ function dbFail(e) { console.error(e); toast(e && e.code === 'quota_exceeded' ? 
 
 /* ---------- business logic ---------- */
 function catOf(name) { return S.categories.find(c => c.name === name); }
-function itemCalc(p, qty, disc) {
-  qty = Math.max(0, num(qty)); disc = Math.min(100, Math.max(0, num(disc)));
-  const price = num(p.price), gross = qty * price, discAmt = gross * disc / 100, net = gross - discAmt;
+function itemCalc(p, qty, disc, discRs) {
+  qty = Math.max(0, num(qty));
+  const price = num(p.price), gross = qty * price, byAmt = discRs != null && discRs !== '';
+  let discAmt;
+  if (byAmt) { discAmt = Math.min(gross, Math.max(0, num(discRs))); disc = gross ? r2(discAmt / gross * 100) : 0; }
+  else { disc = Math.min(100, Math.max(0, num(disc))); discAmt = gross * disc / 100; }
+  const net = gross - discAmt;
   let rate = 0;
   if (S.gstReg === 'Yes') {
     const c = catOf(p.category);
@@ -609,9 +621,17 @@ function itemCalc(p, qty, disc) {
   }
   const taxable = S.inclGst === 'Yes' ? net / (1 + rate / 100) : net;
   const gst = S.inclGst === 'Yes' ? net - taxable : net * rate / 100;
-  return {sku: p.sku, name: p.name, category: p.category || '', size: p.size || '', qty, price, disc, gross: r2(gross), discAmt: r2(discAmt), net: r2(net),
+  const out = {sku: p.sku, name: p.name, category: p.category || '', size: p.size || '', qty, price, disc, gross: r2(gross), discAmt: r2(discAmt), net: r2(net),
     rate, taxable: r2(taxable), gst: r2(gst), total: r2(taxable + gst), cost: num(p.cost)};
+  if (byAmt) out.discRs = r2(discAmt);
+  return out;
 }
+const amt0 = n => (Math.round(n) === r2(n) ? R0(n) : R2(n));
+const itemAmt = it => (it.line ? it.line.net : it.net);
+const itemLabel = it => (it.line ? it.line.label : discLabel(it));
+function billDiscOf(b) { return r2((b.items || []).reduce((a, it) => a + num(it.billShare), 0)); }
+function billSaved(b) { return r2((b.items || []).reduce((a, it) => a + num(it.discAmt), 0)); }
+function discLabel(it) { return num(it.discAmt) > 0 ? (it.discRs != null ? amt0(it.discAmt) + ' off' : it.disc + '% off') : ''; }
 function recompute() {
   soldQty = new Map(); inQty = new Map(); stock = new Map();
   for (const b of sales) for (const it of (b.items || [])) soldQty.set(it.sku, (soldQty.get(it.sku) || 0) + num(it.qty));
@@ -716,16 +736,29 @@ function addToCart(sku) {
   const ex = cart.find(c => c.sku === sku); if (ex) ex.qty++; else cart.push({sku, qty: 1, disc: 0});
   $('#pq').value = ''; renderPicker(); renderCart(); toast('Added to bill');
 }
-function cartItems() { return cart.map(c => { const p = products.get(c.sku); return p ? itemCalc(p, c.qty, c.disc) : null; }).filter(Boolean); }
+let billDisc = {mode: '₹', val: ''};
+const lineCalc = (p, c) => itemCalc(p, c.qty, c.mode === '₹' ? 0 : c.disc, c.mode === '₹' ? (c.discRs || 0) : null);
+function cartItems() {
+  const base = cart.map(c => { const p = products.get(c.sku); return p ? {p, it: lineCalc(p, c)} : null; }).filter(Boolean);
+  const sub = base.reduce((a, x) => a + x.it.net, 0);
+  let bd = billDisc.mode === '%' ? sub * Math.min(100, Math.max(0, num(billDisc.val))) / 100 : Math.min(sub, Math.max(0, num(billDisc.val)));
+  bd = r2(bd);
+  if (!bd || !sub) return base.map(x => x.it);
+  let left = bd;
+  return base.map((x, i) => {
+    const share = i === base.length - 1 ? left : r2(bd * x.it.net / sub); left = r2(left - share);
+    const it = itemCalc(x.p, x.it.qty, null, x.it.discAmt + share); it.billShare = share; it.line = {net: x.it.net, label: discLabel(x.it)}; return it;
+  });
+}
 function renderCart() {
   if (!cart.length) { $('#cart').innerHTML = '<div class="empty">Search above and tap a product to add it to the bill.</div>'; }
   else $('#cart').innerHTML = cart.map((c, i) => {
     const p = products.get(c.sku); if (!p) return '';
-    const it = itemCalc(p, c.qty, c.disc), avail = stock.get(c.sku) || 0;
+    const it = lineCalc(p, c), avail = stock.get(c.sku) || 0, rs = c.mode === '₹';
     return '<div class="cartline"><div class="top2"><div class="grow"><div class="t" style="font-weight:600">' + esc(p.name) + '</div><div class="s small mute">' + esc(p.sku) + ' · ' + esc(p.size || '') + ' · ' + R0(it.price) + ' each</div>' +
       (c.qty > avail ? '<div class="warnline">Only ' + avail + ' in stock</div>' : '') + '</div><b style="white-space:nowrap">' + R2(it.net) + '</b></div>' +
       '<div class="ctrl"><div class="qty"><button data-dec="' + i + '" aria-label="Less">−</button><input data-q="' + i + '" inputmode="numeric" value="' + c.qty + '" aria-label="Quantity"><button data-inc="' + i + '" aria-label="More">+</button></div>' +
-      '<div class="disc">Disc %<input data-d="' + i + '" inputmode="decimal" value="' + (c.disc || '') + '" placeholder="0" aria-label="Discount percent"></div><button class="x" data-rm="' + i + '" aria-label="Remove" style="margin-left:auto">×</button></div></div>';
+      '<div class="disc">Discount<input data-d="' + i + '" inputmode="decimal" value="' + ((rs ? c.discRs : c.disc) || '') + '" placeholder="0" aria-label="Discount ' + (rs ? 'in rupees' : 'percent') + '"><button class="dtog" type="button" data-dt="' + i + '" aria-label="Switch between percent and rupees">' + (rs ? '₹' : '%') + '</button></div><button class="x" data-rm="' + i + '" aria-label="Remove" style="margin-left:auto">×</button></div></div>';
   }).join('');
   renderTotals();
 }
@@ -737,7 +770,7 @@ function totalsOf(items) {
 function renderTotals() {
   const t = totalsOf(cartItems());
   $('#btotals').innerHTML = '<div><span>Items</span><span>' + t.qty + '</span></div><div><span>Amount</span><span>' + R2(t.gross) + '</span></div>' +
-    (t.disc ? '<div><span>Discount</span><span>− ' + R2(t.disc) + '</span></div>' : '') +
+    (t.disc ? '<div><span>Discount' + (num(billDisc.val) > 0 ? ' (incl. bill ' + (billDisc.mode === '%' ? num(billDisc.val) + '%' : amt0(num(billDisc.val))) + ')' : '') + '</span><span>− ' + R2(t.disc) + '</span></div>' : '') +
     (S.gstReg === 'Yes' ? '<div><span>Taxable value</span><span>' + R2(t.taxable) + '</span></div><div><span>GST' + (S.inclGst === 'Yes' ? ' (included)' : '') + '</span><span>' + R2(t.gst) + '</span></div>' : '') +
     (t.round ? '<div><span>Round off</span><span>' + R2(t.round) + '</span></div>' : '') +
     '<div class="grand"><span>Total</span><span>' + R0(t.grand) + '</span></div>';
@@ -752,20 +785,24 @@ $('#cart').addEventListener('click', e => {
   if (t.dataset.inc) { cart[+t.dataset.inc].qty++; renderCart(); }
   else if (t.dataset.dec) { const c = cart[+t.dataset.dec]; c.qty = Math.max(1, c.qty - 1); renderCart(); }
   else if (t.dataset.rm) { cart.splice(+t.dataset.rm, 1); renderCart(); }
+  else if (t.dataset.dt) { const c = cart[+t.dataset.dt]; c.mode = c.mode === '₹' ? '%' : '₹'; c.disc = 0; c.discRs = 0; renderCart(); const inp = document.querySelector('[data-d="' + t.dataset.dt + '"]'); if (inp) inp.focus(); }
 });
 $('#cart').addEventListener('change', e => {
   const t = e.target;
   if (t.dataset.q) { cart[+t.dataset.q].qty = Math.max(1, Math.round(num(t.value)) || 1); renderCart(); }
-  if (t.dataset.d) { cart[+t.dataset.d].disc = Math.min(100, Math.max(0, num(t.value))); renderCart(); }
+  if (t.dataset.d) { const c = cart[+t.dataset.d]; if (c.mode === '₹') c.discRs = Math.max(0, num(t.value)); else c.disc = Math.min(100, Math.max(0, num(t.value))); renderCart(); }
 });
-$('#bclear').onclick = async () => { if (!cart.length || await ask('Clear this bill?', 'Clear')) { cart = []; $('#bcust').value = ''; $('#bphone').value = ''; renderCart(); } };
+function resetBillDisc() { billDisc = {mode: '₹', val: ''}; $('#bdisc').value = ''; $('#bdtog').textContent = '₹'; }
+$('#bdisc').addEventListener('input', () => { billDisc.val = $('#bdisc').value; renderTotals(); });
+$('#bdtog').onclick = () => { billDisc.mode = billDisc.mode === '₹' ? '%' : '₹'; $('#bdtog').textContent = billDisc.mode; renderTotals(); $('#bdisc').focus(); };
+$('#bclear').onclick = async () => { if (!cart.length || await ask('Clear this bill?', 'Clear')) { cart = []; $('#bcust').value = ''; $('#bphone').value = ''; resetBillDisc(); renderCart(); } };
 $('#bsave').onclick = async () => {
   if (!cart.length || !needDb()) return;
   const items = cartItems(), short = cart.filter(c => c.qty > (stock.get(c.sku) || 0));
   if (short.length && !(await ask(short.length + ' item(s) have more quantity than stock shows. Save the bill anyway?', 'Save anyway'))) return;
   const t = totalsOf(items), gen = nextInvoice();
   const bill = {_op: Date.now().toString(36) + Math.random().toString(36).slice(2, 10), invoice: '', date: $('#bdate').value || todayStr(), customer: $('#bcust').value.trim(), phone: $('#bphone').value.trim(),
-    pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, createdAt: Date.now()};
+    pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, discount: r2(t.disc), taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, createdAt: Date.now()};
   $('#bsave').disabled = true;
   try {
     for (let n = 1; n < 20; n++) {
@@ -773,27 +810,31 @@ $('#bsave').onclick = async () => {
       if (!snap.exists) { bill.invoice = inv; await ref.set(bill, {ifAbsent: true}); break; }
     }
     if (!bill.invoice) throw {code: 'unavailable'};
-    cart = []; $('#bcust').value = ''; $('#bphone').value = ''; renderCart();
+    cart = []; $('#bcust').value = ''; $('#bphone').value = ''; resetBillDisc(); renderCart();
     showBill(bill); toast('Bill ' + bill.invoice + ' saved');
   } catch (e) { dbFail(e); } finally { $('#bsave').disabled = !cart.length; }
 };
 
 function billText(b) {
   const L = [S.name, (S.gstReg === 'Yes' ? 'Tax Invoice ' : 'Bill ') + b.invoice + ' · ' + nice(b.date), ''];
-  for (const it of b.items) L.push(it.name + (it.size ? ' (' + it.size + ')' : '') + ' x' + it.qty + ' = ' + R2(it.net));
+  for (const it of b.items) L.push(it.name + (it.size ? ' (' + it.size + ')' : '') + ' x' + it.qty + ' = ' + R2(itemAmt(it)) + (itemLabel(it) ? ' (' + itemLabel(it) + ')' : ''));
+  if (billDiscOf(b) > 0) L.push('Bill discount: - ' + R2(billDiscOf(b)));
+  if (billSaved(b) > 0) L.push('You saved ' + amt0(billSaved(b)));
   L.push('', 'Total: ' + R0(b.total) + ' (' + b.pay + ')'); if (S.footer) L.push(S.footer); return L.join('\n');
 }
 function showBill(b) {
   const gstOn = S.gstReg === 'Yes' || num(b.gst) > 0;
-  const rows = b.items.map((it, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(it.name) + (it.size ? ' <span style="color:#6B7266">(' + esc(it.size) + ')</span>' : '') + (it.disc ? '<br><span style="color:#6B7266">' + it.disc + '% off</span>' : '') + '</td><td class="n">' + it.qty + '</td><td class="n">' + R2(it.price) + '</td><td class="n">' + R2(it.net) + '</td></tr>').join('');
+  const rows = b.items.map((it, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(it.name) + (it.size ? ' <span style="color:#6B7266">(' + esc(it.size) + ')</span>' : '') + (itemLabel(it) ? '<br><span style="color:#6B7266">' + itemLabel(it) + '</span>' : '') + '</td><td class="n">' + it.qty + '</td><td class="n">' + R2(it.price) + '</td><td class="n">' + R2(itemAmt(it)) + '</td></tr>').join('');
   const ph = String(b.phone || '').replace(/\D/g, ''), wa = 'https://wa.me/' + (ph.length === 10 ? '91' + ph : ph) + '?text=' + encodeURIComponent(billText(b));
   openSheet('<div class="memo"><img class="mlogo" src="logo.png" alt=""><div class="shop">' + esc(S.name) + '</div><div class="addr">' + esc(S.address) + (S.phone ? ' · ' + esc(S.phone) : '') + (S.gstin ? '<br>GSTIN ' + esc(S.gstin) : '') + '</div>' +
     '<div class="ttl">' + (S.gstReg === 'Yes' ? 'TAX INVOICE' : 'BILL / CASH MEMO') + '</div>' +
     '<div style="display:flex;justify-content:space-between;gap:8px;font-size:13px"><span><b>' + esc(b.invoice) + '</b><br>' + esc(b.customer || 'Walk-in customer') + (b.phone ? '<br>' + esc(b.phone) : '') + '</span><span style="text-align:right">' + nice(b.date) + '<br>' + esc(b.pay) + '</span></div>' +
     '<table style="margin-top:8px"><tr><th>#</th><th>Item</th><th class="n">Qty</th><th class="n">Rate</th><th class="n">Amount</th></tr>' + rows +
+    (billDiscOf(b) > 0 ? '<tr class="sum"><td></td><td colspan="3">Bill discount</td><td class="n">− ' + R2(billDiscOf(b)) + '</td></tr>' : '') +
     (gstOn ? '<tr class="sum"><td></td><td colspan="3">Taxable value</td><td class="n">' + R2(b.taxable) + '</td></tr><tr><td></td><td colspan="3">CGST</td><td class="n">' + R2(b.gst / 2) + '</td></tr><tr><td></td><td colspan="3">SGST</td><td class="n">' + R2(b.gst / 2) + '</td></tr>' : '') +
     (num(b.round) ? '<tr><td></td><td colspan="3">Round off</td><td class="n">' + R2(b.round) + '</td></tr>' : '') +
-    '<tr class="sum gt"><td></td><td colspan="3">Total</td><td class="n">' + R0(b.total) + '</td></tr></table>' +
+    '<tr class="sum gt"><td></td><td colspan="3">Total</td><td class="n">' + R0(b.total) + '</td></tr>' +
+    (billSaved(b) > 0 ? '<tr><td></td><td colspan="4" style="color:#1F7A45;font-weight:600">You saved ' + amt0(billSaved(b)) + '</td></tr>' : '') + '</table>' +
     (S.footer ? '<p style="text-align:center;font-style:italic;color:#6B7266;margin:10px 0 0">' + esc(S.footer) + '</p>' : '') + '<div class="mbc"><svg id="memo-bc"></svg><span>' + esc(b.invoice) + '</span></div></div>' +
     '<div class="btns" style="margin-top:14px"><button class="btn gold" id="sharepdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>Send PDF on WhatsApp</button><button class="btn" id="dlpdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Download PDF</button></div>' +
     '<div class="btns" style="margin-top:8px"><a class="btn" href="' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp text</a><button class="btn" id="copybill">Copy text</button></div>' +
@@ -836,8 +877,13 @@ function renderProducts() {
   $('#schips').innerHTML = cats.map(c => '<button class="chip' + (c === catFilter ? ' on' : '') + '" data-cat="' + esc(c) + '">' + esc(c) + '</button>').join('');
   const nLow = [...products.values()].filter(isLowOnly).length, nOut = [...products.values()].filter(isOut).length;
   $('#sstat').innerHTML = [['All', ''], ['Low stock', nLow], ['Out of stock', nOut]].map(([c, n]) => '<button class="chip' + (c === statFilter ? ' on' : '') + '" data-stat="' + esc(c) + '">' + esc(c) + (n !== '' ? ' · ' + n : '') + '</button>').join('');
+  const inCat = [...products.values()].filter(p => catFilter === 'All' || p.category === catFilter);
+  const order = S.sizes.map(x => String(x).toUpperCase());
+  const sizes = [...new Set(inCat.map(p => String(p.size || '').trim()).filter(Boolean))].sort((a, b) => { const ia = order.indexOf(a.toUpperCase()), ib = order.indexOf(b.toUpperCase()); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || a.localeCompare(b); });
+  if (sizeFilter !== 'All' && !sizes.includes(sizeFilter)) sizeFilter = 'All';
+  $('#ssize').innerHTML = sizes.length > 1 ? ['All', ...sizes].map(z => '<button class="chip' + (z === sizeFilter ? ' on' : '') + '" data-size="' + esc(z) + '">' + (z === 'All' ? 'All sizes' : esc(z)) + '</button>').join('') : '';
   const q = $('#sq').value.trim().toLowerCase();
-  const list = [...products.values()].filter(p => (catFilter === 'All' || p.category === catFilter) &&
+  const list = [...products.values()].filter(p => (catFilter === 'All' || p.category === catFilter) && (sizeFilter === 'All' || String(p.size || '').trim() === sizeFilter) &&
     (statFilter === 'All' || (statFilter === 'Low stock' ? isLowOnly(p) : isOut(p))) &&
     (!q || (p.name + ' ' + p.sku + ' ' + (p.colour || '') + ' ' + (p.fabric || '')).toLowerCase().includes(q))).sort((a, b) => a.sku.localeCompare(b.sku));
   let pcs = 0, val = 0; for (const p of list) { const s = Math.max(0, stock.get(p.sku) || 0); pcs += s; val += s * num(p.cost); }
@@ -848,6 +894,7 @@ function renderProducts() {
 }
 $('#sq').addEventListener('input', renderProducts);
 $('#schips').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (b) { catFilter = b.dataset.cat; renderProducts(); } });
+$('#ssize').addEventListener('click', e => { const b = e.target.closest('[data-size]'); if (b) { sizeFilter = b.dataset.size; renderProducts(); } });
 $('#sstat').addEventListener('click', e => { const b = e.target.closest('[data-stat]'); if (b) { statFilter = b.dataset.stat; renderProducts(); } });
 $('#plist').addEventListener('click', e => { const b = e.target.closest('[data-edit]'); if (b) productForm(b.dataset.edit); });
 
@@ -1037,7 +1084,7 @@ $('#exportx').onclick = async () => {
       'Cost Price': num(p.cost), 'Selling Price': num(p.price), 'Opening Stock': num(p.opening), 'Stock In': inQty.get(p.sku) || 0, 'Units Sold': soldQty.get(p.sku) || 0,
       'Current Stock': stock.get(p.sku) || 0, 'Reorder Level': p.reorder === '' ? num(S.reorder) : num(p.reorder), 'Stock Value': Math.max(0, stock.get(p.sku) || 0) * num(p.cost)}));
     const sl = []; for (const b of [...sales].sort((a, b) => (a.date || '').localeCompare(b.date || ''))) for (const it of b.items || [])
-      sl.push({'Invoice No': b.invoice, Date: b.date, SKU: it.sku, Product: it.name, Category: it.category, Size: it.size, Qty: it.qty, 'Unit Price': it.price, 'Discount %': it.disc / 100,
+      sl.push({'Invoice No': b.invoice, Date: b.date, SKU: it.sku, Product: it.name, Category: it.category, Size: it.size, Qty: it.qty, 'Unit Price': it.price, 'Discount %': it.disc / 100, 'Discount Rs': num(it.discAmt),
         'Net Amount': it.net, 'GST %': it.rate / 100, 'Taxable Value': it.taxable, 'GST Amount': it.gst, 'Line Total': it.total, 'Payment Mode': b.pay, Channel: b.channel, Customer: b.customer, Phone: b.phone,
         Profit: r2(it.taxable - it.qty * it.cost)});
     const pu = [...purchases].sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(p => ({Date: p.date, 'Bill / Ref No': p.ref, Supplier: p.supplier, SKU: p.sku, Product: p.name, Qty: num(p.qty), 'Unit Cost': num(p.cost), 'Total Cost': num(p.qty) * num(p.cost), 'Payment Status': p.status, Notes: p.notes}));
@@ -1278,14 +1325,15 @@ async function billCanvas(b) {
       }
       yy += lh13;
     });
-    if (it.disc) { text(it.disc + '% off', cItem, yy + lh13 / 2, MUTE); yy += lh13; }
+    if (itemLabel(it)) { text(itemLabel(it), cItem, yy + lh13 / 2, MUTE); yy += lh13; }
     text(String(i + 1), PX + 2 * k, top + lh13 / 2, INK);
-    text(String(it.qty), cQty, top + lh13 / 2, INK, 'right'); text(R2(it.price), cRate, top + lh13 / 2, INK, 'right'); text(R2(it.net), cAmt, top + lh13 / 2, INK, 'right');
+    text(String(it.qty), cQty, top + lh13 / 2, INK, 'right'); text(R2(it.price), cRate, top + lh13 / 2, INK, 'right'); text(R2(itemAmt(it)), cAmt, top + lh13 / 2, INK, 'right');
     y = yy + rowPad;
   });
   // totals
   const gstOn = S.gstReg === 'Yes' || num(b.gst) > 0;
   const rows = [];
+  if (billDiscOf(b) > 0) rows.push(['Bill discount', '− ' + R2(billDiscOf(b))]);
   if (gstOn) rows.push(['Taxable value', R2(b.taxable)], ['CGST', R2(b.gst / 2)], ['SGST', R2(b.gst / 2)]);
   if (num(b.round)) rows.push(['Round off', R2(b.round)]);
   rows.forEach((r, n) => { if (n === 0) hline(y); font(13); text(r[0], cItem, y + rowPad + lh13 / 2, INK); text(r[1], cAmt, y + rowPad + lh13 / 2, INK, 'right'); y += lh13 + 2 * rowPad; });
@@ -1293,6 +1341,7 @@ async function billCanvas(b) {
   const lh17 = 24.65 * k; font(17, 700);
   text('Total', cItem, y + rowPad + lh17 / 2, INK); text(R0(b.total), cAmt, y + rowPad + lh17 / 2, INK, 'right');
   y += lh17 + 2 * rowPad;
+  if (billSaved(b) > 0) { font(13, 600); text('You saved ' + amt0(billSaved(b)), cItem, y + lh13 / 2, '#1F7A45'); y += lh13 + rowPad; }
   // footer note: italic, muted, centered, margin-top 10
   if (S.footer) { y += 10 * k; font(14, 400, 'Hind, sans-serif', 'italic'); wrapText(x, S.footer, W - 2 * PX).forEach(l => { text(l, W / 2, y + 10.15 * k, MUTE, 'center'); y += 20.3 * k; }); }
   // invoice barcode (also shown on screen)
@@ -1445,7 +1494,7 @@ async function makeLabelsPdf(items, layoutKey) {
 }
 function labelsForm(onlySku) {
   const q = $('#sq').value.trim().toLowerCase();
-  const list = onlySku ? [products.get(onlySku)].filter(Boolean) : [...products.values()].filter(p => (catFilter === 'All' || p.category === catFilter) &&
+  const list = onlySku ? [products.get(onlySku)].filter(Boolean) : [...products.values()].filter(p => (catFilter === 'All' || p.category === catFilter) && (sizeFilter === 'All' || String(p.size || '').trim() === sizeFilter) &&
     (!q || (p.name + ' ' + p.sku + ' ' + (p.colour || '')).toLowerCase().includes(q))).sort((a, b) => a.sku.localeCompare(b.sku));
   if (!list.length) { toast('No products to label'); return; }
   let layout = 'a4-24'; try { layout = localStorage.getItem('yaal-label-layout') || layout; } catch {}
