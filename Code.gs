@@ -32,7 +32,7 @@ function setup() {
     ['Next step', 'Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone. Copy the Web app URL into the app.'],
     ['Keep the key private', 'Anyone with the Web app URL AND this key can read and change your shop data.'],
     ['To change the key', 'Run resetKey() in Apps Script, then reconnect every phone.'],
-    ['Editing in the sheet', 'You can change the visible columns, add rows or delete rows in Products, Sales, Purchases and App Settings. Phones pick the change up within about 10 seconds. Do not edit the hidden Rev / Data columns.'],
+    ['Editing in the sheet', 'You can change the visible columns, add rows or delete rows in Products, Sales, Purchases, Expenses and App Settings. Phones pick the change up within about 10 seconds. Do not edit the hidden Rev / Data columns.'],
     ['Product photos', 'Saved privately in the Google Drive folder "YAAL Product Photos" (only you can open it in Drive; the app loads them through this script).']
   ]);
   st.getRange('A1').setFontWeight('bold').setFontSize(14);
@@ -60,6 +60,9 @@ var SHEETS = {
   purchases: {tab: 'Purchases', cols: [
     ['Date', 'date'], ['SKU', 'sku'], ['Product', 'name'], ['Qty', 'qty'], ['Unit Cost', 'cost'], ['Supplier', 'supplier'],
     ['Supplier Bill No', 'ref'], ['Payment', 'status'], ['Notes', 'notes']]},
+  expenses: {tab: 'Expenses', cols: [
+    ['Date', 'date'], ['Type', 'type'], ['Category', 'category'], ['Description', 'note'], ['Paid To', 'vendor'], ['Amount', 'amount'],
+    ['Paid By', 'paidBy'], ['Payment', 'pay'], ['Settled With', 'to'], ['Split', splitText]]},
   config: {tab: 'App Settings', cols: [['Business Name', 'name'], ['GST Registered', 'gstReg'], ['Invoice Prefix', 'prefix']]}
 };
 var TEXT_KEYS = {phone: 1, ref: 1, sku: 1, invoice: 1};
@@ -69,7 +72,7 @@ var DELETED_TAB = '_deleted';
 /* ------------------------------------------------------------------ web app */
 function doGet() { return out({ok: true, app: 'boutique-stock'}); }
 
-var SCRIPT_VERSION = 5;
+var SCRIPT_VERSION = 6;
 
 function doPost(e) {
   try { return handle(e); }
@@ -102,6 +105,12 @@ function handle(e) {
 function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 
 /* ------------------------------------------------------------------ storage */
+function splitText(d) {
+  d = d || {};
+  if (!d.split || !d.split.shares) return '';
+  return (d.split.mode === 'percent' ? '% ' : d.split.mode === 'amount' ? 'Amounts: ' : 'Equal: ') + d.split.shares.map(function (s) { return s.name + ' ' + s.amt; }).join(', ');
+}
+
 function itemsText(d) {
   d = d || {};
   return (d.items || []).map(function (i) { return i.name + (i.size ? ' (' + i.size + ')' : '') + ' x' + i.qty; }).join(', ');
@@ -311,7 +320,7 @@ function deletePhoto(req) {
 }
 
 /* ------------------------------------------------------------------ edits made directly in the sheet */
-var NUM_KEYS = {cost: 1, price: 1, opening: 1, reorder: 1, qty: 1, taxable: 1, gst: 1, total: 1};
+var NUM_KEYS = {amount: 1, cost: 1, price: 1, opening: 1, reorder: 1, qty: 1, taxable: 1, gst: 1, total: 1};
 
 // Runs by itself whenever someone types in the sheet (not when the app writes).
 function onEdit(e) {
@@ -352,7 +361,7 @@ function syncEditedRows(range) {
       try { data = raw ? JSON.parse(raw) : {}; } catch (x) { data = {}; }
       var isNew = !raw;
       if (!id) {
-        id = coll === 'purchases' ? 'sheet' + new Date().getTime().toString(36) + i : String(row[1]).trim();
+        id = (coll === 'purchases' || coll === 'expenses') ? 'sheet' + new Date().getTime().toString(36) + i : String(row[1]).trim();
         if (!id) continue;
         sh.getRange(r0 + i, 1).setValue(id);
       }
@@ -363,6 +372,7 @@ function syncEditedRows(range) {
       if (coll === 'products') { data.sku = id; if (isNew) data.createdAt = new Date().getTime(); }
       if (coll === 'sales') { data.invoice = data.invoice || id; if (!data.items) data.items = []; if (isNew) { data.createdAt = new Date().getTime(); data.fromSheet = true; } }
       if (coll === 'purchases' && isNew) data.createdAt = new Date().getTime();
+      if (coll === 'expenses') { if (!data.type) data.type = 'expense'; if (isNew) data.createdAt = new Date().getTime(); }
       rev++;
       sh.getRange(r0 + i, n - 1, 1, 2).setValues([[rev, JSON.stringify(data)]]);
     }

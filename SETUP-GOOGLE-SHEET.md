@@ -94,6 +94,15 @@ If you set up the sheet before sheet editing was supported, update the script on
 
 In the app, **Settings → Sync details** should then show *Sheet script: version 4 ✓*.
 
+## Script updated for expenses (version 6)
+
+Version 6 adds an **Expenses** tab to the sheet, for expenses, splits and settlements. Until you update, expenses stay on the phone that recorded them, and the app shows a note on the Expenses page.
+
+1. Open the sheet, then **Extensions → Apps Script**, and replace all the code with the new `Code.gs`. Click **Save**.
+2. Click **Deploy → Manage deployments**, then the pencil (Edit), set **Version** to **New version**, and click **Deploy**.
+
+The Expenses tab is created by itself the first time an expense is uploaded. You can edit its visible columns (Date, Category, Description, Amount and so on) like the other tabs. Expenses that were waiting on a phone upload by themselves once the new version is live.
+
 ## Script updated for WhatsApp bills (version 5)
 
 Version 5 lets **WhatsApp** open the customer's own chat with the bill PDF link already in the message. To get it:

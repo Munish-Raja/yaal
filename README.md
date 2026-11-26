@@ -23,6 +23,9 @@ Data is stored in **your own Google Sheet** (cloud), so every phone shares the s
   - **Barcode labels** (Stock screen) makes a PDF to print: A4 sticker sheets (24 or 40 labels) or label-printer rolls (50×25 or 38×25 mm). Each label has the shop name, product, size, colour, price and barcode.
   - **Scan** on the New bill screen uses the phone camera; every scanned item is added to the bill. USB or Bluetooth barcode scanners also work: they type into the search box and press Enter.
   - Scanning an invoice barcode (printed on every PDF bill) opens that bill.
+- **Expenses**: record every business expense with a category, who paid, payment mode and a note. Categories, people and payment modes are set in Settings → Expenses.
+- **Split expenses** (like GPay / PhonePe): split equally, by amounts or by percent between partners. The app shows who owes whom and records settlements. Settlements are not counted as expenses.
+- **Dashboard**: net profit (income − expenses) for this month, last month, 3 months, this financial year or all time, with charts for income vs expenses, daily sales, expenses by category, sales by category, payment modes, channels and partner balances.
 - **PDF bills**: send straight to the customer's WhatsApp chat as a PDF link, share the PDF file through the share menu, or download it to the phone.
 - **Bills**: bill history by month, search by customer, phone or invoice number, and monthly sales and profit totals. Deleting a bill puts its items back into stock.
 - **Home**: today's sales, this month's sales and profit, stock value, low-stock count, last 6 months, items to restock, top sellers and sales by category.
