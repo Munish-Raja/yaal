@@ -67,18 +67,26 @@ var DELETED_TAB = '_deleted';
 /* ------------------------------------------------------------------ web app */
 function doGet() { return out({ok: true, app: 'boutique-stock'}); }
 
+var SCRIPT_VERSION = 3;
+
 function doPost(e) {
+  try { return handle(e); }
+  catch (err) { return out({ok: false, error: 'server: ' + (err && err.message ? err.message : String(err))}); }
+}
+
+function handle(e) {
   var req;
   try { req = JSON.parse(e.postData.contents); } catch (x) { return out({ok: false, error: 'bad_request'}); }
   var props = PropertiesService.getScriptProperties();
   var key = props.getProperty('SHOP_KEY');
   if (!key || req.key !== key) return out({ok: false, error: 'bad_key'});
+  if (req.action === 'ping') return out({ok: true, version: SCRIPT_VERSION, rev: Number(props.getProperty('REV')) || 0});
   if (req.action === 'load') return out(load(Number(req.since) || 0));
   if (req.action === 'photo') return out(savePhoto(req));
   if (req.action === 'getPhoto') return out(getPhoto(req));
   if (req.action === 'deletePhoto') return out(deletePhoto(req));
   var lock = LockService.getScriptLock();
-  lock.waitLock(30000);
+  if (!lock.tryLock(25000)) return out({ok: false, error: 'busy'});
   try {
     if (req.action === 'batch') return out(batch(req.ops || []));
     if (req.action === 'replaceAll') return out(replaceAll(req.docs || {}));
@@ -136,12 +144,15 @@ function buildRow(coll, id, data, rev) {
   SHEETS[coll].cols.forEach(function (c) {
     row.push(typeof c[1] === 'function' ? c[1](data) : cell(c[1], data[c[1]]));
   });
-  row.push(rev, JSON.stringify(data));
+  var json = JSON.stringify(data);
+  if (json.length > 49000) throw new Error('record too large for one sheet cell (' + id + ')');
+  row.push(rev, json);
   return row;
 }
 
 function load(since) {
   var rev = Number(PropertiesService.getScriptProperties().getProperty('REV')) || 0;
+  if (since > 0 && since >= rev) return {ok: true, rev: rev, docs: {}, deleted: [], same: true};
   var docs = {}, present = {}, deleted = [];
   Object.keys(SHEETS).forEach(function (coll) {
     var sh = sheetFor(coll), vals = sh.getDataRange().getValues(), n = header(coll).length;
@@ -172,11 +183,14 @@ function batch(ops) {
     if (!cache[coll]) {
       var sh = sheetFor(coll), last = sh.getLastRow();
       var ids = last ? sh.getRange(1, 1, last, 1).getValues().map(function (r) { return String(r[0]); }) : ['ID'];
-      cache[coll] = {sh: sh, ids: ids};
+      cache[coll] = {sh: sh, ids: ids, coll: coll};
     }
     return cache[coll];
   }
   ops.forEach(function (o) {
+    try { one(o); } catch (err) { results.push({ok: false, error: 'server: ' + (err && err.message ? err.message : String(err))}); }
+  });
+  function one(o) {
     var parts = String(o.path || '').split('/');
     var coll = parts[0], id = parts[1];
     if (parts.length !== 2 || !SHEETS[coll] || !id) { results.push({ok: false, error: 'bad_path'}); return; }
@@ -184,6 +198,8 @@ function batch(ops) {
     if (o.op === 'put') {
       var data = o.data || {};
       if (o.ifAbsent && c.ids.indexOf(id) > 0) {
+        var same = data._op ? findOp(c, data._op) : '';
+        if (same) { results.push({ok: true, path: coll + '/' + same, data: data, dup: true}); return; }
         id = nextId(c.ids, id);
         if (coll === 'sales') data.invoice = id;
       }
@@ -203,9 +219,20 @@ function batch(ops) {
       deletedSheet().appendRow([coll + '/' + id, rev]);
       results.push({ok: true, path: coll + '/' + id});
     } else results.push({ok: false, error: 'bad_op'});
-  });
+  }
   props.setProperty('REV', String(rev));
   return {ok: true, rev: rev, results: results};
+}
+
+function findOp(c, op) {
+  var n = header(c.coll).length, last = c.sh.getLastRow();
+  if (last < 2) return '';
+  var vals = c.sh.getRange(2, 1, last - 1, n).getValues();
+  for (var r = 0; r < vals.length; r++) {
+    var j = String(vals[r][n - 1]);
+    if (j.indexOf(op) >= 0) { try { if (JSON.parse(j)._op === op) return String(vals[r][0]); } catch (x) {} }
+  }
+  return '';
 }
 
 function nextId(ids, id) {

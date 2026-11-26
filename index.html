@@ -196,6 +196,9 @@ main[data-dir=prev] .view.on{animation:slidePrev .36s var(--ease) both}
 @keyframes slideNext{from{opacity:0;transform:translate3d(36px,0,0)}to{opacity:1;transform:none}}
 @keyframes slidePrev{from{opacity:0;transform:translate3d(-36px,0,0)}to{opacity:1;transform:none}}
 main[data-dir] .view.on>*{animation:none}
+
+.sdgrid{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.sdgrid span{color:var(--mute)}.sdgrid b{font-weight:600;text-align:right}
 /* ---------- premium layer ---------- */
 :root{--sh1:0 1px 1px rgba(8,30,17,.10),0 2px 6px -1px rgba(8,30,17,.16);--sh2:0 1px 2px rgba(8,30,17,.12),0 10px 28px -10px rgba(8,30,17,.45);--ease:cubic-bezier(.2,.8,.2,1);--hair:rgba(192,138,30,.30)}
 h2,h3{font-family:Marcellus,Georgia,serif;font-weight:400;letter-spacing:.03em}
@@ -448,10 +451,11 @@ header.top,nav.tabs,.sheetwrap{backdrop-filter:none!important;-webkit-backdrop-f
         <div style="margin-top:12px"><button class="btn p block" id="cloudgo">Connect</button></div>
       </div>
       <div id="cloudon" style="display:none">
-        <p class="small mute" style="margin-top:0">Every change is saved on this phone first and uploaded within seconds. Without internet, billing keeps working and uploads later. Other phones get updates every 20 seconds.</p>
+        <p class="small mute" style="margin-top:0">Every change is saved on this phone first and uploaded within seconds. Without internet, billing keeps working and uploads later. Other phones get updates within about 10 seconds.</p>
         <div class="btns"><button class="btn" id="cloudsync">Sync now</button><button class="btn" id="cloudcopy">Copy staff link</button></div>
         <div class="btns" style="margin-top:8px"><a class="btn gold" id="cloudwa" href="#" target="_blank" rel="noopener">Send staff link on WhatsApp</a><button class="btn danger" id="cloudoff">Disconnect</button></div>
         <p class="small mute" style="margin-bottom:0">The staff link connects a phone to your sheet in one tap. Share it only with people you trust.</p>
+        <div class="syncdetails" id="syncdetails"></div>
       </div>
       <div class="photoline" id="photoline"></div>
     </div>
@@ -760,7 +764,7 @@ $('#bsave').onclick = async () => {
   const items = cartItems(), short = cart.filter(c => c.qty > (stock.get(c.sku) || 0));
   if (short.length && !(await ask(short.length + ' item(s) have more quantity than stock shows. Save the bill anyway?', 'Save anyway'))) return;
   const t = totalsOf(items), gen = nextInvoice();
-  const bill = {invoice: '', date: $('#bdate').value || todayStr(), customer: $('#bcust').value.trim(), phone: $('#bphone').value.trim(),
+  const bill = {_op: Date.now().toString(36) + Math.random().toString(36).slice(2, 10), invoice: '', date: $('#bdate').value || todayStr(), customer: $('#bcust').value.trim(), phone: $('#bphone').value.trim(),
     pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, createdAt: Date.now()};
   $('#bsave').disabled = true;
   try {
@@ -1557,7 +1561,7 @@ const CLOUD_LS = 'boutique-cloud';
 const Store = (() => {
   const mem = new Map(), subs = new Set(), statusSubs = new Set(); let idb = null;
   const meta = {fromCache: false, hasPendingWrites: false};
-  let outbox = [], rev = 0, cloud = null, flushing = false, pulling = false, retryT = 0;
+  let outbox = [], rev = 0, cloud = null, flushing = false, pulling = false, retryT = 0, dead = [];
   let online = null, badKey = false, lastSync = 0, lastErr = '';
   const syncable = p => !p.startsWith('local/');
   const openIdb = () => new Promise((res, rej) => { const r = indexedDB.open('boutique-stock', 2); r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('docs')) d.createObjectStore('docs'); if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv'); }; r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
@@ -1566,7 +1570,7 @@ const Store = (() => {
     try {
       idb = await openIdb();
       for (const [k, v] of await idbAll('docs')) mem.set(k, v);
-      for (const [k, v] of await idbAll('kv')) { if (k === 'outbox') outbox = v || []; if (k === 'rev') rev = v || 0; }
+      for (const [k, v] of await idbAll('kv')) { if (k === 'outbox') outbox = v || []; if (k === 'rev') rev = v || 0; if (k === 'dead') dead = v || []; }
     } catch (e) {
       idb = null; try { const o = JSON.parse(localStorage.getItem('boutique-docs') || '{}'); for (const k in o) mem.set(k, o[k]); } catch {}
     }
@@ -1610,39 +1614,48 @@ const Store = (() => {
     add: async d => { const r = docRef(c + '/' + newId()); await r.set(d); return r; },
     onSnapshot: next => { const f = () => { const docs = [...mem.keys()].filter(k => k.startsWith(c + '/') && k.indexOf('/', c.length + 1) < 0).sort().map(snap); next({docs, size: docs.length, empty: !docs.length, metadata: meta}); }; subs.add(f); f(); return () => subs.delete(f); }});
 
-  async function call(req, cfg = cloud) {
-    const r = await fetch(cfg.url, {method: 'POST', body: JSON.stringify(Object.assign({key: cfg.key}, req)), redirect: 'follow'});
+  async function call(req, cfg = cloud, ms = 30000) {
+    const ac = 'AbortController' in window ? new AbortController() : null, t = ac && setTimeout(() => ac.abort(), ms);
+    let r;
+    try { r = await fetch(cfg.url, {method: 'POST', body: JSON.stringify(Object.assign({key: cfg.key}, req)), redirect: 'follow', signal: ac && ac.signal}); }
+    catch (e) { throw Object.assign(new Error(e && e.name === 'AbortError' ? 'timeout' : 'network'), {net: true, timeout: e && e.name === 'AbortError'}); }
+    finally { if (t) clearTimeout(t); }
     if (!r.ok) throw Object.assign(new Error('http ' + r.status), {net: true});
-    let j; try { j = await r.json(); } catch { throw Object.assign(new Error('not_json'), {server: 'not_json'}); }
+    const txt = await r.text();
+    let j; try { j = JSON.parse(txt); } catch { throw Object.assign(new Error('not_json'), {server: /accounts\.google|ServiceLogin|signin/i.test(txt) ? 'needs_anyone_access' : 'not_json'}); }
     if (!j.ok) throw Object.assign(new Error(j.error || 'error'), {server: j.error || 'error'});
     return j;
   }
+  let fails = 0;
+  const ERR_TEXT = {needs_anyone_access: 'The sheet asks for a Google sign-in. In Apps Script, set the web app access to "Anyone" and deploy a new version.', not_json: 'The sheet sent an unexpected answer. Check the web app URL ends with /exec.', busy: 'The sheet is busy with another phone - retrying.'};
   function noteErr(e) {
+    fails++;
     if (e && e.server === 'bad_key') { badKey = true; lastErr = 'Shop key is wrong'; }
-    else if (e && e.server) { lastErr = 'Cloud error: ' + e.server; online = true; }
-    else { online = false; lastErr = 'No internet'; }
-    clearTimeout(retryT); if (!badKey) retryT = setTimeout(sync, 15000);
+    else if (e && e.server) { lastErr = ERR_TEXT[e.server] || ('Cloud error: ' + e.server); online = true; }
+    else { online = false; lastErr = e && e.timeout ? 'The sheet took too long to answer - retrying' : 'No internet'; }
+    clearTimeout(retryT); if (!badKey) retryT = setTimeout(sync, Math.min(60000, 5000 * fails));
   }
+  const okNow = () => { fails = 0; online = true; lastErr = ''; lastSync = Date.now(); };
   let flushT = 0;
-  function flushSoon() { clearTimeout(flushT); flushT = setTimeout(flush, 300); }
+  function flushSoon() { clearTimeout(flushT); flushT = setTimeout(sync, 300); }
   async function flush() {
     if (flushing || !cloud || badKey || !outbox.length) return;
     flushing = true; status();
     try {
       while (outbox.length) {
-        const batch = outbox.slice(0, 25);
+        const batch = outbox.slice(0, 20);
         const res = await call({action: 'batch', ops: batch.map(o => ({op: o.op, path: o.path, data: o.data, ifAbsent: o.ifAbsent}))});
         const ops = [];
         res.results.forEach((x, i) => {
           const o = batch[i];
           if (x && x.ok && x.path && x.path !== o.path && o.op === 'put') {
             mem.delete(o.path); mem.set(x.path, x.data); ops.push([o.path, undefined], [x.path, x.data]);
-            renamed.push([o.path, x.path]);
-          }
+            if (!x.dup) renamed.push([o.path, x.path]);
+          } else if (!x || !x.ok) dead.push({path: o.path, op: o.op, data: o.data, error: (x && x.error) || 'refused', at: Date.now()});
         });
         if (ops.length) { await persist(ops); notify(); }
-        outbox.splice(0, batch.length); await kv('outbox', outbox);
-        online = true; lastErr = ''; lastSync = Date.now(); status();
+        outbox.splice(0, batch.length); await kv('outbox', outbox); await kv('dead', dead);
+        okNow(); status();
       }
     } catch (e) { noteErr(e); }
     finally { flushing = false; status(); }
@@ -1657,11 +1670,25 @@ const Store = (() => {
       for (const p of res.deleted || []) { if (pending.has(p) || !mem.has(p)) continue; mem.delete(p); ops.push([p, undefined]); }
       if (ops.length) { await persist(ops); notify(); }
       rev = res.rev; await kv('rev', rev);
-      online = true; lastErr = ''; lastSync = Date.now();
+      okNow();
     } catch (e) { noteErr(e); }
     finally { pulling = false; status(); }
   }
-  async function sync() { await flush(); await pull(); }
+  let syncing = null;
+  function sync() { return syncing ||= (async () => { try { await flush(); await pull(); } finally { syncing = null; } })(); }
+  async function fullResync() {
+    if (!cloud) return;
+    await flush();
+    const res = await call({action: 'load', since: 0}, cloud, 60000);
+    const pending = new Set(outbox.map(o => o.path)), keep = {};
+    for (const k of pending) if (mem.has(k)) keep[k] = mem.get(k);
+    await replaceLocal(Object.assign({}, res.docs, keep));
+    rev = res.rev; await kv('rev', rev); okNow(); status();
+    return Object.keys(res.docs).length;
+  }
+  async function retryDead() { if (!dead.length) return; outbox.push(...dead.map(d => ({op: d.op, path: d.path, data: d.data, ifAbsent: false}))); dead = []; await kv('dead', dead); await kv('outbox', outbox); status(); return sync(); }
+  async function dropDead() { dead = []; await kv('dead', dead); status(); }
+  async function ping() { try { return await call({action: 'ping'}, cloud, 20000); } catch (e) { return {error: e.server || e.message}; } }
 
   const syncDocs = () => Object.fromEntries([...mem].filter(([k]) => syncable(k)));
   async function replaceLocal(docs) {
@@ -1696,8 +1723,8 @@ const Store = (() => {
   }
   const renamed = [];
   return {init, doc: docRef, collection: coll, all: () => Object.fromEntries(mem), replaceAll, size: () => mem.size, cloudCall: req => call(req),
-    sync, probe, finishConnect, disconnect, renamed, onStatus: f => statusSubs.add(f),
-    info: () => ({cloud, pending: outbox.length, flushing, online, badKey, lastSync, lastErr})};
+    sync, probe, finishConnect, disconnect, renamed, onStatus: f => statusSubs.add(f), fullResync, retryDead, dropDead, ping,
+    info: () => ({cloud, pending: outbox.length, flushing, online, badKey, lastSync, lastErr, rev, dead: dead.slice()})};
 })();
 const localDownloads = {save: async ({filename, data}) => {
   const blob = data instanceof Blob ? data : new Blob([data]);
@@ -1726,6 +1753,31 @@ $('#restorefile').onchange = async e => {
     await db.replaceAll(o.docs); settingsDirty = false; toast('Backup restored');
   } catch (err) { console.error(err); toast(err && (err.net || err.server) ? 'Restored on phone, but the cloud could not be updated. Check internet.' : 'Could not read that backup file.'); }
 };
+
+
+/* ---------- sync details panel ---------- */
+let serverInfo = null;
+async function checkServer() { if (!db.info().cloud) return; serverInfo = await db.ping(); renderSyncDetails(); }
+function renderSyncDetails() {
+  const el = $('#syncdetails'); if (!el) return;
+  const i = db.info(); if (!i.cloud) { el.innerHTML = ''; return; }
+  const when = i.lastSync ? new Date(i.lastSync).toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : 'not yet';
+  let ver = 'checking…';
+  if (serverInfo) ver = serverInfo.error ? (serverInfo.error === 'bad_action' ? 'older version - please update Code.gs' : 'not reachable (' + esc(serverInfo.error) + ')') : 'version ' + esc(serverInfo.version) + (serverInfo.version < 3 ? ' - please update Code.gs' : ' ✓');
+  const rows = [['Last synced', esc(when)], ['Changes waiting on this phone', String(i.pending)], ['Sheet script', ver]];
+  if (i.lastErr) rows.push(['Last problem', esc(i.lastErr)]);
+  let html = '<h3 style="margin-top:16px">Sync details</h3><div class="sdgrid">' + rows.map(([a, b]) => '<span>' + a + '</span><b>' + b + '</b>').join('') + '</div>';
+  if (i.dead.length) html += '<div class="photoline bad" style="margin-top:10px"><b>' + i.dead.length + ' change(s) were refused by the sheet:</b><ul style="margin:6px 0 8px;padding-left:18px">' + i.dead.slice(0, 5).map(d => '<li>' + esc(d.path.replace('/', ': ')) + ' - ' + esc(d.error) + '</li>').join('') + '</ul><div class="btns"><button class="btn slim" id="deadretry">Try again</button><button class="btn slim danger" id="deaddrop">Discard</button></div></div>';
+  html += '<div class="btns" style="margin-top:10px"><button class="btn slim" id="fullsync">Reload everything from the sheet</button></div>';
+  el.innerHTML = html;
+  const fs = $('#fullsync'); if (fs) fs.onclick = async () => {
+    if (!(await ask('Reload all products, bills and stock entries from the Google Sheet? Changes still waiting on this phone are kept and uploaded.', 'Reload'))) return;
+    toast('Reloading from the sheet…');
+    try { const n = await db.fullResync(); toast('Reloaded ' + n + ' records from the sheet'); } catch (e) { toast('Could not reach the sheet: ' + (e.server || e.message)); }
+  };
+  const dr = $('#deadretry'); if (dr) dr.onclick = async () => { await db.retryDead(); toast('Trying again…'); };
+  const dd = $('#deaddrop'); if (dd) dd.onclick = async () => { if (await ask('Discard the changes the sheet refused? They stay on this phone only.', 'Discard', true)) await db.dropDead(); };
+}
 
 /* ---------- cloud settings card ---------- */
 function joinLink() { const c = db.info().cloud; return c ? location.origin + location.pathname + '#connect=' + encodeURIComponent(btoa(JSON.stringify({u: c.url, k: c.key}))) : ''; }
@@ -1774,6 +1826,7 @@ async function connectFlow(url, key, auto) {
     await db.finishConnect(mode);
     toast(mode === 'upload' ? 'Connected. This phone\'s data was copied to your Google Sheet.' : 'Connected to your Google Sheet.');
     setTimeout(syncPhotos, 500);
+    checkServer();
     renderCloud();
   } catch (e) {
     console.error(e);
@@ -1806,10 +1859,10 @@ renderAll();
   db.collection('sales').onSnapshot(s => { sales = s.docs.map(d => Object.assign({id: d.id}, d.data())); later(); });
   db.collection('purchases').onSnapshot(s => { purchases = s.docs.map(d => Object.assign({id: d.id}, d.data())); later(); });
   db.doc('local/meta').onSnapshot(s => { const d = s.data() || {}; $('#lastbackup').textContent = d.lastBackup ? 'Last backup: ' + nice(d.lastBackup) : 'No backup made yet.'; });
-  db.onStatus(renderCloud); renderCloud(); renderPhotoStatus();
+  db.onStatus(renderCloud); db.onStatus(renderSyncDetails); renderCloud(); renderPhotoStatus(); checkServer();
   if (join) { go('more'); await connectFlow(join.url, join.key, true); }
   db.sync();
-  setInterval(() => { if (document.visibilityState === 'visible') db.sync().then(syncPhotos); }, 20000);
+  setInterval(() => { if (document.visibilityState === 'visible') db.sync().then(syncPhotos); }, 10000);
   setTimeout(syncPhotos, 4000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') db.sync(); });
   addEventListener('online', () => db.sync().then(syncPhotos));
