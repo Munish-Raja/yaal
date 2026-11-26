@@ -94,6 +94,17 @@ If you set up the sheet before sheet editing was supported, update the script on
 
 In the app, **Settings → Sync details** should then show *Sheet script: version 4 ✓*.
 
+## Script updated for logins (version 7)
+
+Version 7 adds a **Users** tab (your team's accounts) and a **Created By** column to Sales, Purchases and Expenses. Existing tabs are rearranged by themselves the first time the new script runs; no data is lost.
+
+1. Open the sheet, then **Extensions → Apps Script**, and replace all the code with the new `Code.gs`. Click **Save**.
+2. Click **Deploy → Manage deployments**, then the pencil (Edit), set **Version** to **New version**, and click **Deploy**.
+
+Do this **before** creating accounts on other phones. Until then, accounts you create stay on the phone that made them.
+
+Passwords are never stored in readable form. The hidden Data column only holds a scrambled check value. Anyone who has the web app URL and shop key can still read the sheet, so keep those private. The login protects the app on each phone; the sheet itself is protected by your Google account.
+
 ## Script updated for expenses (version 6)
 
 Version 6 adds an **Expenses** tab to the sheet, for expenses, splits and settlements. Until you update, expenses stay on the phone that recorded them, and the app shows a note on the Expenses page.

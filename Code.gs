@@ -32,7 +32,7 @@ function setup() {
     ['Next step', 'Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone. Copy the Web app URL into the app.'],
     ['Keep the key private', 'Anyone with the Web app URL AND this key can read and change your shop data.'],
     ['To change the key', 'Run resetKey() in Apps Script, then reconnect every phone.'],
-    ['Editing in the sheet', 'You can change the visible columns, add rows or delete rows in Products, Sales, Purchases, Expenses and App Settings. Phones pick the change up within about 10 seconds. Do not edit the hidden Rev / Data columns.'],
+    ['Editing in the sheet', 'You can change the visible columns, add rows or delete rows in Products, Sales, Purchases, Expenses, Users and App Settings. Passwords are never shown in the sheet (only a scrambled check value inside the hidden Data column). Phones pick the change up within about 10 seconds. Do not edit the hidden Rev / Data columns.'],
     ['Product photos', 'Saved privately in the Google Drive folder "YAAL Product Photos" (only you can open it in Drive; the app loads them through this script).']
   ]);
   st.getRange('A1').setFontWeight('bold').setFontSize(14);
@@ -56,23 +56,26 @@ var SHEETS = {
     ['Size', 'size'], ['Cost Price', 'cost'], ['Selling Price', 'price'], ['Opening Stock', 'opening'], ['Reorder Level', 'reorder']]},
   sales: {tab: 'Sales', cols: [
     ['Invoice', 'invoice'], ['Date', 'date'], ['Customer', 'customer'], ['Phone', 'phone'], ['Payment', 'pay'], ['Channel', 'channel'],
-    ['Pieces', 'qty'], ['Taxable Value', 'taxable'], ['GST', 'gst'], ['Bill Total', 'total'], ['Items', itemsText]]},
+    ['Pieces', 'qty'], ['Taxable Value', 'taxable'], ['GST', 'gst'], ['Bill Total', 'total'], ['Items', itemsText], ['Created By', 'createdByName']]},
   purchases: {tab: 'Purchases', cols: [
     ['Date', 'date'], ['SKU', 'sku'], ['Product', 'name'], ['Qty', 'qty'], ['Unit Cost', 'cost'], ['Supplier', 'supplier'],
-    ['Supplier Bill No', 'ref'], ['Payment', 'status'], ['Notes', 'notes']]},
+    ['Supplier Bill No', 'ref'], ['Payment', 'status'], ['Notes', 'notes'], ['Created By', 'createdByName']]},
   expenses: {tab: 'Expenses', cols: [
     ['Date', 'date'], ['Type', 'type'], ['Category', 'category'], ['Description', 'note'], ['Paid To', 'vendor'], ['Amount', 'amount'],
-    ['Paid By', 'paidBy'], ['Payment', 'pay'], ['Settled With', 'to'], ['Split', splitText]]},
+    ['Paid By', 'paidByName'], ['Payment', 'pay'], ['Settled With', 'toName'], ['Split', splitText], ['Created By', 'createdByName']]},
+  users: {tab: 'Users', cols: [
+    ['Username', 'username'], ['Full Name', 'name'], ['Role', 'role'], ['Active', 'active'], ['Phone', 'phone'], ['Email', 'email'],
+    ['Designation', 'designation'], ['Date of Joining', 'joined'], ['Address', 'address'], ['Emergency Contact', 'emergency']]},
   config: {tab: 'App Settings', cols: [['Business Name', 'name'], ['GST Registered', 'gstReg'], ['Invoice Prefix', 'prefix']]}
 };
-var TEXT_KEYS = {phone: 1, ref: 1, sku: 1, invoice: 1};
+var TEXT_KEYS = {phone: 1, ref: 1, sku: 1, invoice: 1, emergency: 1, username: 1};
 var DELETED_TAB = '_deleted';
 
 
 /* ------------------------------------------------------------------ web app */
 function doGet() { return out({ok: true, app: 'boutique-stock'}); }
 
-var SCRIPT_VERSION = 6;
+var SCRIPT_VERSION = 7;
 
 function doPost(e) {
   try { return handle(e); }
@@ -108,7 +111,7 @@ function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setM
 function splitText(d) {
   d = d || {};
   if (!d.split || !d.split.shares) return '';
-  return (d.split.mode === 'percent' ? '% ' : d.split.mode === 'amount' ? 'Amounts: ' : 'Equal: ') + d.split.shares.map(function (s) { return s.name + ' ' + s.amt; }).join(', ');
+  return (d.split.mode === 'percent' ? '% ' : d.split.mode === 'amount' ? 'Amounts: ' : 'Equal: ') + d.split.shares.map(function (s) { return (s.label || s.name) + ' ' + s.amt; }).join(', ');
 }
 
 function itemsText(d) {
@@ -129,8 +132,34 @@ function sheetFor(coll) {
     sh.getRange(1, 1, 1, h.length).setValues([h]).setFontWeight('bold').setBackground('#0B3D22').setFontColor('#FFFFFF');
     sh.setFrozenRows(1);
     sh.hideColumns(h.length - 1, 2);
-  }
+    PropertiesService.getScriptProperties().setProperty('LAYOUT_' + coll, h.join('|'));
+  } else ensureLayout(coll, sh);
   return sh;
+}
+
+// When a new version adds columns, rebuild that tab from each row's hidden Data column so nothing shifts.
+function ensureLayout(coll, sh) {
+  var props = PropertiesService.getScriptProperties(), h = header(coll), want = h.join('|');
+  if (props.getProperty('LAYOUT_' + coll) === want) return;
+  var lastCol = sh.getLastColumn(), last = sh.getLastRow();
+  var cur = lastCol ? sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String) : [];
+  if (cur.join('|') !== want) {
+    var di = cur.indexOf('Data (do not edit)'), ri = cur.indexOf('Rev');
+    if (di < 0 || ri < 0) { props.setProperty('LAYOUT_' + coll, want); return; }   // not a tab this script made; leave it alone
+    var rows = last > 1 ? sh.getRange(2, 1, last - 1, lastCol).getValues() : [], out = [];
+    rows.forEach(function (r) {
+      var id = String(r[0]); if (!id) return;
+      var d; try { d = JSON.parse(r[di]); } catch (x) { return; }
+      out.push(buildRow(coll, id, d, Number(r[ri]) || 0));
+    });
+    sh.showColumns(1, Math.max(lastCol, 1));
+    sh.clear();
+    sh.getRange(1, 1, 1, h.length).setValues([h]).setFontWeight('bold').setBackground('#0B3D22').setFontColor('#FFFFFF');
+    if (out.length) sh.getRange(2, 1, out.length, h.length).setValues(out);
+    sh.setFrozenRows(1);
+    sh.hideColumns(h.length - 1, 2);
+  }
+  props.setProperty('LAYOUT_' + coll, want);
 }
 
 function deletedSheet() {
@@ -372,6 +401,7 @@ function syncEditedRows(range) {
       if (coll === 'products') { data.sku = id; if (isNew) data.createdAt = new Date().getTime(); }
       if (coll === 'sales') { data.invoice = data.invoice || id; if (!data.items) data.items = []; if (isNew) { data.createdAt = new Date().getTime(); data.fromSheet = true; } }
       if (coll === 'purchases' && isNew) data.createdAt = new Date().getTime();
+      if (coll === 'users') { data.username = String(data.username || id).toLowerCase(); if (!data.role) data.role = 'staff'; if (!data.active) data.active = 'Yes'; if (isNew) data.createdAt = new Date().getTime(); }
       if (coll === 'expenses') { if (!data.type) data.type = 'expense'; if (isNew) data.createdAt = new Date().getTime(); }
       rev++;
       sh.getRange(r0 + i, n - 1, 1, 2).setValues([[rev, JSON.stringify(data)]]);

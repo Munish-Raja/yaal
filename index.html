@@ -481,13 +481,56 @@ textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:1px
 .erow{cursor:pointer}
 .editnote{display:flex;align-items:center;gap:8px;margin-top:12px;padding:8px 12px;border-radius:12px;background:var(--goldsoft);color:#7A5C14;font-size:13px;font-weight:600}
 .editnote .icon{width:16px;height:16px}
+/* ---------- login + profiles ---------- */
+.lock{position:fixed;inset:0;z-index:50;display:none;overflow:auto;background:radial-gradient(120% 80% at 50% 0%,#1B6A3E 0%,#0F4A2A 55%,#0A3820 100%);padding:max(24px,env(safe-area-inset-top)) 18px 24px}
+.lock.on{display:block}
+.lock::before{content:"";position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cpath d='M20 150c30-60 70-90 140-110-40 30-70 70-90 120-10-10-30-14-50-10z' fill='%23C08A1E' fill-opacity='.07'/%3E%3C/svg%3E");pointer-events:none}
+.lockbox{position:relative;max-width:400px;margin:4vh auto 0;background:var(--card);border-radius:24px;padding:22px 20px 20px;box-shadow:0 0 0 1px rgba(192,138,30,.45),0 30px 60px -20px rgba(0,0,0,.6);animation:rise .45s var(--ease) both;border-top:3px solid var(--gold)}
+.lockbox h2{color:var(--maroon);margin:10px 0 4px;text-align:center}
+.locklogo{display:block;width:76px;height:76px;border-radius:50%;margin:0 auto;box-shadow:0 0 0 3px var(--gold),0 8px 18px -6px rgba(90,60,10,.5);background:#FBF3DC}
+.lockbrand{text-align:center;font-family:Marcellus,Georgia,serif;color:var(--maroon);font-size:18px;margin-top:8px;letter-spacing:.03em}
+.lockmute{color:var(--mute);text-align:center}
+.lockmsg{text-align:center;color:var(--ink);font-weight:600}
+.lockerr{background:var(--badsoft);color:var(--bad);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;text-align:center}
+.lockspin{width:34px;height:34px;margin:22px auto 6px;border-radius:50%;border:3px solid rgba(192,138,30,.25);border-top-color:var(--gold);animation:spin .8s linear infinite}
+.lockav{display:flex;justify-content:center;margin-top:6px}
+.lockswitch{display:block;margin:14px auto 0;font-size:14px}
+.lockjoin{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+.lockjoin summary{cursor:pointer;font-weight:600;color:var(--maroon2);font-size:14px}
+.btn.bio{gap:10px}.btn.bio .icon{width:22px;height:22px}
+.pwrow{display:flex;gap:6px}.pwrow input{flex:1;min-width:0}
+.pweye{flex:none;border:1px solid var(--line);background:#FFFBF1;border-radius:12px;padding:0 12px;font:inherit;font-size:13px;font-weight:600;color:var(--maroon2);cursor:pointer}
+body.locked{overflow:hidden}
+body.locked .fab,body.locked nav.tabs{visibility:hidden}
+.av.xl{width:72px;height:72px;font-size:26px;box-shadow:0 0 0 3px var(--gold),0 6px 16px -6px rgba(0,0,0,.5)}
+.mebtn{border:0;background:none;padding:0;cursor:pointer;flex:none;border-radius:50%}
+.mebtn .av{width:34px;height:34px;box-shadow:0 0 0 2px var(--gold),0 3px 8px -2px rgba(0,0,0,.4)}
+.profhd{display:flex;align-items:center;gap:14px;margin-top:4px}
+.profhd h2{margin:0}
+.profstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 6px}
+.profstats div{background:#FFFBF1;border:1px solid var(--line);border-radius:14px;padding:8px;text-align:center}
+.profstats b{display:block;font-size:16px;color:var(--maroon);font-variant-numeric:tabular-nums}
+.profstats span{font-size:11.5px;color:var(--mute)}
+.kvlist{margin-top:6px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:14px}
+.kv span{color:var(--mute)}.kv b{text-align:right;font-weight:600;overflow-wrap:anywhere}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line)}
+.setrow small{display:block;font-size:12px;font-weight:400}
+.setrow .switch{flex:none}
+.mecard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:var(--ink);cursor:pointer;padding:12px 14px;margin-bottom:6px}
+.mecard .av{width:44px;height:44px;font-size:16px}
+body.staff .adminonly{display:none!important}
+.staffonly{display:none}
+body.staff .staffonly{display:block}
+#teamlist{margin-bottom:12px}
 </style>
 </head>
-<body>
+<body class="locked">
 <div class="bgfill" aria-hidden="true"></div>
 <header class="top">
   <img class="logo" src="logo.png" alt=""><div class="brandbox"><div class="brand" id="brand">YAAL</div><div class="tag" id="tagline">Rooted in Tradition. Styled for Today.</div></div>
   <div class="sync" id="sync">Opening…</div>
+  <button class="mebtn" id="mebtn" type="button" aria-label="My profile" hidden></button>
 </header>
 
 <main>
@@ -591,8 +634,13 @@ textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:1px
 
   <!-- MORE -->
   <section class="view" id="v-more">
-    <h2>Shop settings</h2>
-    <div class="card">
+    <button class="card mecard" id="mecard" type="button"></button>
+    <div class="card staffonly small">You are logged in as <b>staff</b>. Shop settings and users are managed by the owner.</div>
+    <div class="adminonly"><h2>Team</h2>
+    <div class="card"><p class="small mute" style="margin-top:0">Everyone who uses the app logs in with their own username and password. Bills, stock entries and expenses record who created them.</p>
+      <div class="list" id="teamlist"></div><button class="btn gold block" id="adduser">+ Add user</button></div></div>
+    <h2 class="adminonly">Shop settings</h2>
+    <div class="card adminonly">
       <label for="st-name">Business name</label><input id="st-name">
       <label for="st-addr">Address</label><input id="st-addr">
       <div class="grid2">
@@ -621,9 +669,9 @@ textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:1px
       <label for="st-chans">Sales channels</label><input id="st-chans">
       <h3>Expenses</h3>
       <label for="st-ecats">Expense categories (comma separated)</label><textarea id="st-ecats" rows="3"></textarea>
-      <label for="st-members">People who share costs (for splitting)</label><input id="st-members" placeholder="e.g. Me, Priya, Ravi">
+      <label for="st-members">Other people who share costs (no app login)</label><input id="st-members" placeholder="e.g. Ravi (partner)">
       <label for="st-epays">Expense payment modes</label><input id="st-epays">
-      <p class="small mute">"Paid by" on an expense lists these people plus "Business account". Only expenses paid by a person can be split.</p>
+      <p class="small mute">Everyone in Team is listed automatically, with you shown as "Me". Add names here only for people who share costs but don't use the app. Only expenses paid by a person can be split.</p>
       <div style="margin-top:16px"><button class="btn p block" id="savesettings">Save settings</button></div>
     </div>
     <h3>Cloud storage (Google Sheet)</h3>
@@ -638,7 +686,7 @@ textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:1px
       <div id="cloudon" style="display:none">
         <p class="small mute" style="margin-top:0">Every change is saved on this phone first and uploaded within seconds. Without internet, billing keeps working and uploads later. Other phones get updates within about 10 seconds.</p>
         <div class="btns"><button class="btn" id="cloudsync">Sync now</button><button class="btn" id="cloudcopy">Copy staff link</button></div>
-        <div class="btns" style="margin-top:8px"><a class="btn gold" id="cloudwa" href="#" target="_blank" rel="noopener">Send staff link on WhatsApp</a><button class="btn danger" id="cloudoff">Disconnect</button></div>
+        <div class="btns" style="margin-top:8px"><a class="btn gold" id="cloudwa" href="#" target="_blank" rel="noopener">Send staff link on WhatsApp</a><button class="btn danger adminonly" id="cloudoff">Disconnect</button></div>
         <p class="small mute" style="margin-bottom:0">The staff link connects a phone to your sheet in one tap. Share it only with people you trust.</p>
         <div class="syncdetails" id="syncdetails"></div>
       </div>
@@ -653,7 +701,7 @@ textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:1px
     <h3>Backup</h3>
     <div class="card">
       <p class="small mute" style="margin-top:0">A backup file holds everything. Handy before big changes, or if you are not using the Google Sheet. Restoring replaces all current data.</p>
-      <div class="btns"><button class="btn gold" id="backupx">Make backup</button><button class="btn" id="restorex">Restore backup</button></div>
+      <div class="btns"><button class="btn gold" id="backupx">Make backup</button><button class="btn adminonly" id="restorex">Restore backup</button></div>
       <input type="file" id="restorefile" accept=".json,application/json" hidden>
       <p class="small mute" id="lastbackup" style="margin-bottom:0"></p>
     </div>
@@ -662,8 +710,8 @@ textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:1px
       <p style="margin-top:0"><b>Android:</b> open the app link in Chrome and tap <b>Install app</b> (or ⋮ → <b>Add to Home screen</b>). It opens from its own icon and works without internet. No sign-in needed.</p>
       <p style="margin-bottom:0">With the Google Sheet connected, every phone shares the same data. Without it, each phone keeps its own.</p>
     </div>
-    <h3>Sample data</h3>
-    <div class="card">
+    <h3 class="adminonly">Sample data</h3>
+    <div class="card adminonly">
       <p class="small mute" style="margin-top:0">The app started with a few sample products and bills so you can try it. Remove them before you begin real billing.</p>
       <button class="btn danger block" id="clearsample">Remove sample data</button>
     </div>
@@ -681,6 +729,7 @@ textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:1px
   <button data-v="more"><span class="ico"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-2.7 1.1V21a2 2 0 11-4 0v-.1a1.6 1.6 0 00-2.7-1.1l-.1.1a2 2 0 11-2.8-2.8l.1-.1A1.6 1.6 0 003 15.3H3a2 2 0 110-4h.1a1.6 1.6 0 001.1-2.7l-.1-.1a2 2 0 112.8-2.8l.1.1A1.6 1.6 0 009 4.6V4.5a2 2 0 114 0v.1a1.6 1.6 0 002.7 1.1l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 001.1 2.7h.1a2 2 0 110 4h-.1a1.6 1.6 0 00-1.2.8z"/></svg></span>Settings</button>
 </nav>
 
+<div class="lock on" id="lock" role="dialog" aria-modal="true" aria-label="Log in"><div class="lockbox" id="lockbox"><img class="locklogo" src="logo.png" alt=""><div class="lockspin" aria-hidden="true"></div></div></div>
 <div class="sheetwrap" id="sheetwrap"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -714,7 +763,7 @@ const DEFAULTS = {
   pays: ['Cash','UPI','Card','Bank Transfer','Credit (Pay Later)'],
   chans: ['Shop / Walk-in','WhatsApp','Instagram','Website','Exhibition','Marketplace'],
   expCats: ['Stock / Lot purchase','Rent','Salary / Wages','Tailoring / Stitching','Packaging','Courier / Shipping','Marketing / Ads','Fuel','Food','Travel','Electricity','Phone & Internet','Exhibition / Stall','Bank / UPI charges','Repairs','Misc'],
-  members: ['Me', 'Partner'],
+  members: [],
   expPays: ['Cash','UPI','Card','Bank Transfer']
 };
 
@@ -842,7 +891,7 @@ function makeSku(category) {
 }
 
 /* ---------- render: header + home ---------- */
-function renderAll() { recompute(); $('#brand').textContent = S.name || 'YAAL'; renderHome(); renderBillPickers(); renderCart(); renderProducts(); renderPurchases(); renderSales(); renderExpenses(); if (!settingsDirty) fillSettings(); setFab(); }
+function renderAll() { recompute(); $('#brand').textContent = S.name || 'YAAL'; renderHome(); renderBillPickers(); renderCart(); renderProducts(); renderPurchases(); renderSales(); renderExpenses(); renderTeam(); renderMeCard(); if (!settingsDirty) fillSettings(); setFab(); }
 
 let heroShown = null, heroRaf = 0;
 function countUp(el, to) {
@@ -975,7 +1024,7 @@ $('#bsave').onclick = async () => {
   if (editing) {
     const bill = Object.assign({}, editing, {date: $('#bdate').value || editing.date || todayStr(), customer: $('#bcust').value.trim(), phone: $('#bphone').value.trim(),
       pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, discount: r2(t.disc), taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, editedAt: Date.now()});
-    const id = bill.id || safeId(bill.invoice); delete bill.id; delete bill.pdfLink; delete bill._op;   // the old PDF link shows the old bill
+    const id = bill.id || safeId(bill.invoice); delete bill.id; delete bill.pdfLink; delete bill._op; stamp(bill, editing);   // the old PDF link shows the old bill
     $('#bsave').disabled = true;
     try { await db.doc('sales/' + id).set(bill); editing = null; setEditUI(); clearBillForm(); showBill(Object.assign({id}, bill)); toast('Bill ' + bill.invoice + ' updated'); }
     catch (e) { dbFail(e); } finally { $('#bsave').disabled = !cart.length; }
@@ -983,6 +1032,7 @@ $('#bsave').onclick = async () => {
   }
   const bill = {_op: Date.now().toString(36) + Math.random().toString(36).slice(2, 10), invoice: '', date: $('#bdate').value || todayStr(), customer: $('#bcust').value.trim(), phone: $('#bphone').value.trim(),
     pay: $('#bpay').value, channel: $('#bchan').value, items, qty: t.qty, discount: r2(t.disc), taxable: r2(t.taxable), gst: r2(t.gst), total: t.grand, round: t.round, createdAt: Date.now()};
+  stamp(bill, null);
   $('#bsave').disabled = true;
   try {
     for (let n = 1; n < 20; n++) {
@@ -1020,7 +1070,7 @@ function showBill(b) {
     '<div class="waphone" id="waphone" hidden><label for="waph">Customer WhatsApp number</label><div class="bdrow"><input id="waph" inputmode="tel" placeholder="10-digit mobile number" autocomplete="off"><button class="btn gold" id="waphgo" type="button">Send</button></div></div>' +
     '<p class="small mute" id="wanote" style="margin:6px 2px 0"></p>' +
     '<div class="btns" style="margin-top:8px"><button class="btn" id="sharepdf"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>Share PDF…</button><button class="btn" id="copybill">Copy text</button></div>' +
-    '<div class="btns" style="margin-top:8px"><button class="btn" id="editbill"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>Edit bill</button><button class="btn danger" id="delbill">Delete bill</button></div>' +
+    '<div class="btns" style="margin-top:8px"><button class="btn" id="editbill"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>Edit bill</button><button class="btn danger adminonly" id="delbill">Delete bill</button></div>' +
     '<button class="btn p block" id="closebill" style="margin-top:8px">Done</button>' + (b.editedAt ? '<p class="small mute" style="text-align:center;margin:8px 0 0">Edited ' + new Date(b.editedAt).toLocaleString('en-IN', {dateStyle: 'medium', timeStyle: 'short'}) + '</p>' : ''));
   getJsBarcode().then(J => { const el = $('#memo-bc'); if (el) J(el, b.invoice, {format: 'CODE128', height: 34, width: 1.4, displayValue: false, margin: 0, background: 'transparent', lineColor: '#1C2A20'}); }).catch(() => {});
   const canvasP = billCanvas(b);
@@ -1093,6 +1143,7 @@ function showBill(b) {
   $('#editbill').onclick = () => { const cur = sales.find(x => x.invoice === b.invoice) || b; startEdit(cur); };
   $('#copybill').onclick = async () => { try { await navigator.clipboard.writeText(billText(b)); toast('Copied'); } catch { toast('Copy not allowed here'); } };
   $('#delbill').onclick = async () => {
+    if (!isAdmin()) { toast('Only the owner can delete bills'); return; }
     if (!needDb()) return;
     if (await ask('Delete bill ' + b.invoice + '? Its items go back into stock.', 'Delete', true)) {
       try { await db.doc('sales/' + safeId(b.invoice)).delete(); if (editing && editing.invoice === b.invoice) { editing = null; clearBillForm(); setEditUI(); } toast('Bill deleted'); } catch (e) { dbFail(e); }
@@ -1196,6 +1247,7 @@ function productForm(sku) {
       reorder: $('#f-re').value === '' ? '' : Math.round(num($('#f-re').value)), createdAt: p && p.createdAt || Date.now()};
     if (p && p.sample) doc.sample = true;
     doc.photo = p && p.photo || '';
+    stamp(doc, p);
     $('#f-save').disabled = true;
     try {
       if (newPhoto) { const key = 'local:' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); await PhotoDB.put(key, newPhoto); phMem.set(key, newPhoto); if (doc.photo) trashCloudPhoto(doc.photo); doc.photo = key; }
@@ -1242,6 +1294,7 @@ function purchaseForm(sku, id) {
     const doc = {sku: p.sku, name: p.name, qty: q, cost: num($('#u-cost').value), date: $('#u-date').value || todayStr(), status: $('#u-st').value,
       supplier: $('#u-sup').value.trim(), ref: $('#u-ref').value.trim(), notes: $('#u-note').value.trim(), createdAt: ex ? ex.createdAt : Date.now()};
     if (ex && ex.sample) doc.sample = true;
+    stamp(doc, ex);
     $('#u-save').disabled = true;
     try { if (ex) await db.doc('purchases/' + ex.id).set(doc); else await db.collection('purchases').add(doc); closeSheet(); toast('Stock updated: +' + q + ' ' + p.name); }
     catch (e) { dbFail(e); $('#u-save').disabled = false; }
@@ -1259,7 +1312,7 @@ function renderSales() {
   let last = '', html = '';
   for (const b of list) {
     if (b.date !== last) { html += '<div class="row" style="background:var(--bg);cursor:default;padding:6px 14px"><b class="small">' + nice(b.date) + '</b></div>'; last = b.date; }
-    html += '<div class="row erow" role="button" tabindex="0" data-bill="' + esc(b.id) + '"><div class="grow"><div class="t">' + esc(b.customer || 'Walk-in customer') + '</div><div class="s">' + esc(b.invoice) + ' · ' + num(b.qty) + ' pcs · ' + esc(b.pay || '') + (b.editedAt ? ' · edited' : '') + '</div></div><div class="r"><b>' + R0(num(b.total)) + '</b></div><span class="racts"><button type="button" class="ract" data-bedit="' + esc(b.id) + '" aria-label="Edit bill ' + esc(b.invoice) + '"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button></span></div>';
+    html += '<div class="row erow" role="button" tabindex="0" data-bill="' + esc(b.id) + '"><div class="grow"><div class="t">' + esc(b.customer || 'Walk-in customer') + '</div><div class="s">' + esc(b.invoice) + ' · ' + num(b.qty) + ' pcs · ' + esc(b.pay || '') + (b.createdByName ? ' · ' + esc(byLine(b)) : '') + (b.editedAt ? ' · edited' : '') + '</div></div><div class="r"><b>' + R0(num(b.total)) + '</b></div><span class="racts"><button type="button" class="ract" data-bedit="' + esc(b.id) + '" aria-label="Edit bill ' + esc(b.invoice) + '"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button></span></div>';
   }
   $('#slist').innerHTML = html || '<div class="empty">No bills for this month.</div>';
 }
@@ -1295,6 +1348,7 @@ $('#addcat').onclick = () => { catDraft.push({name: '', code: '', rule: 'Slab'})
 const splitList = s => s.split(',').map(x => x.trim()).filter(Boolean);
 $('#savesettings').onclick = async () => {
   if (!needDb()) return;
+  if (!isAdmin()) { toast('Only the owner can change shop settings'); return; }
   const n = {name: $('#st-name').value.trim() || 'YAAL Clothing Brand', address: $('#st-addr').value.trim(), phone: $('#st-phone').value.trim(), gstin: $('#st-gstin').value.trim().toUpperCase(),
     prefix: $('#st-prefix').value.trim(), footer: $('#st-footer').value.trim(), reorder: Math.round(num($('#st-reorder').value)),
     gstReg: $('#st-reg').value, inclGst: $('#st-incl').value, threshold: num($('#st-thr').value), low: num($('#st-low').value), high: num($('#st-high').value), flat: num($('#st-flat').value),
@@ -1321,13 +1375,13 @@ $('#exportx').onclick = async () => {
     const sl = []; for (const b of [...sales].sort((a, b) => (a.date || '').localeCompare(b.date || ''))) for (const it of b.items || [])
       sl.push({'Invoice No': b.invoice, Date: b.date, SKU: it.sku, Product: it.name, Category: it.category, Size: it.size, Qty: it.qty, 'Unit Price': it.price, 'Discount %': it.disc / 100, 'Discount Rs': num(it.discAmt),
         'Net Amount': it.net, 'GST %': it.rate / 100, 'Taxable Value': it.taxable, 'GST Amount': it.gst, 'Line Total': it.total, 'Payment Mode': b.pay, Channel: b.channel, Customer: b.customer, Phone: b.phone,
-        Profit: r2(it.taxable - it.qty * it.cost)});
-    const pu = [...purchases].sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(p => ({Date: p.date, 'Bill / Ref No': p.ref, Supplier: p.supplier, SKU: p.sku, Product: p.name, Qty: num(p.qty), 'Unit Cost': num(p.cost), 'Total Cost': num(p.qty) * num(p.cost), 'Payment Status': p.status, Notes: p.notes}));
+        Profit: r2(it.taxable - it.qty * it.cost), 'Created By': b.createdByName || ''});
+    const pu = [...purchases].sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(p => ({Date: p.date, 'Bill / Ref No': p.ref, Supplier: p.supplier, SKU: p.sku, Product: p.name, Qty: num(p.qty), 'Unit Cost': num(p.cost), 'Total Cost': num(p.qty) * num(p.cost), 'Payment Status': p.status, Notes: p.notes, 'Created By': p.createdByName || ''}));
     X.utils.book_append_sheet(wb, X.utils.json_to_sheet(inv.length ? inv : [{SKU: ''}]), 'Inventory');
     X.utils.book_append_sheet(wb, X.utils.json_to_sheet(sl.length ? sl : [{'Invoice No': ''}]), 'Sales');
     X.utils.book_append_sheet(wb, X.utils.json_to_sheet(pu.length ? pu : [{Date: ''}]), 'Purchases');
-    const ex = [...expenses].sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(e => ({Date: e.date, Type: e.type === 'settle' ? 'Settlement' : 'Expense', Category: e.category, Description: e.note, 'Paid To': e.type === 'settle' ? e.to : e.vendor,
-      Amount: num(e.amount), 'Paid By': e.paidBy, 'Payment Mode': e.pay, Split: e.split && e.split.shares ? e.split.shares.map(x => x.name + ' ' + x.amt).join(', ') : ''}));
+    const ex = [...expenses].sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(e => ({Date: e.date, Type: e.type === 'settle' ? 'Settlement' : 'Expense', Category: e.category, Description: e.note, 'Paid To': e.type === 'settle' ? (e.toName || fullName(e.to)) : e.vendor,
+      Amount: num(e.amount), 'Paid By': e.paidByName || fullName(e.paidBy), 'Payment Mode': e.pay, Split: e.split && e.split.shares ? e.split.shares.map(x => (x.label || fullName(x.name)) + ' ' + x.amt).join(', ') : '', 'Created By': e.createdByName || ''}));
     X.utils.book_append_sheet(wb, X.utils.json_to_sheet(ex.length ? ex : [{Date: ''}]), 'Expenses');
     const r = perRange('fy'), mrows = [];
     for (let d = new Date(+r.from.slice(0, 4), 3, 1); ymd(d) <= r.to && ymd(d) <= todayStr(); d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
@@ -1775,8 +1829,8 @@ const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.get
 const signR0 = n => (n < 0 ? '−' : '') + R0(Math.abs(n));
 const initials = s => String(s || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
 const PERSON_C = ['#1F7A45', '#8A4F9E', '#2F7FC1', '#B2472F', '#1E9A8E', '#D29A22', '#D9718F', '#7E8A2A'];
-const personColor = name => { const i = (S.members || []).indexOf(name); return i >= 0 ? PERSON_C[i % PERSON_C.length] : '#76705F'; };
-const avatar = (name, cls = '') => '<span class="av ' + cls + '" style="background:' + personColor(name) + '" aria-hidden="true">' + esc(initials(name)) + '</span>';
+const personColor = k => { let h = 0; for (const ch of String(k || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return PERSON_C[h % PERSON_C.length]; };
+const avatar = (k, cls = '') => '<span class="av ' + cls + '" style="background:' + personColor(k) + '" aria-hidden="true">' + esc(initials(fullName(k))) + '</span>';
 
 /* stable colour per expense category: the 7 biggest of all time get a hue, the rest fold into Other */
 function expColorMap() {
@@ -1925,7 +1979,7 @@ function hbars(el, rows, emptyMsg) {
 
 /* balances between people */
 function splitBalances() {
-  const net = new Map(); (S.members || []).forEach(m => net.set(m, 0));
+  const net = new Map(); peopleList().forEach(m => net.set(m, 0));
   const add = (n, v) => { if (!n || n === BIZ) return; net.set(n, r2((net.get(n) || 0) + v)); };
   for (const e of expenses) {
     if (e.type === 'settle') { add(e.paidBy, num(e.amount)); add(e.to, -num(e.amount)); continue; }
@@ -2007,7 +2061,7 @@ function renderHome() {
 
   const {net, moves} = splitBalances(), people = [...net.entries()].filter(([, v]) => Math.abs(v) > 0.009);
   $('#balmini').shtml = !people.length ? '<div class="balok">✓ Everyone is settled up</div><div class="small mute">Split shared costs from the Expenses tab.</div>'
-    : moves.slice(0, 3).map(m => '<div class="mv">' + avatar(m.from) + '<span class="grow"><b>' + esc(m.from) + '</b> pays <b>' + esc(m.to) + '</b></span><b class="amt">' + R0(m.amt) + '</b></div>').join('') + '<div class="small mute">Tap to settle up</div>';
+    : moves.slice(0, 3).map(m => '<div class="mv">' + avatar(m.from) + '<span class="grow"><b>' + esc(pn(m.from)) + '</b> ' + (m.from === myKey() ? 'pay' : 'pays') + ' <b>' + esc(pn(m.to)) + '</b></span><b class="amt">' + R0(m.amt) + '</b></div>').join('') + '<div class="small mute">Tap to settle up</div>';
 
   const top = [...agg.values()].sort((a, b) => b.amt - a.amt).slice(0, 5);
   $('#toplist').shtml = top.length ? top.map((a, i) => '<div class="row"><b style="width:22px;color:var(--gold)">' + (i + 1) + '</b><div class="grow"><div class="t">' + esc(a.name) + '</div><div class="s">' + esc(a.size) + ' · ' + a.qty + ' sold</div></div><div class="r"><b>' + R0(a.amt) + '</b></div></div>').join('')
@@ -2042,7 +2096,7 @@ function renderExpenses() {
   const cats = [...new Set(month.map(e => e.category || 'Misc'))].sort();
   if (expCat !== 'All' && !cats.includes(expCat)) expCat = 'All';
   $('#echips').shtml = cats.length > 1 ? ['All', ...cats].map(c => '<button class="chip' + (c === expCat ? ' on' : '') + '" data-ec="' + esc(c) + '">' + esc(c) + '</button>').join('') : '';
-  const list = month.filter(e => (expCat === 'All' || (e.category || 'Misc') === expCat) && (!q || [e.note, e.vendor, e.category, e.paidBy, e.pay].join(' ').toLowerCase().includes(q)))
+  const list = month.filter(e => (expCat === 'All' || (e.category || 'Misc') === expCat) && (!q || [e.note, e.vendor, e.category, fullName(e.paidBy), e.pay, e.createdByName].join(' ').toLowerCase().includes(q)))
     .sort((a, b) => (b.date || '').localeCompare(a.date || '') || num(b.createdAt) - num(a.createdAt));
   const tot = month.reduce((a, e) => a + num(e.amount), 0);
   let prevTot = null;
@@ -2064,26 +2118,27 @@ function renderExpenses() {
 }
 function expRow(e, em) {
   const c = em.get(e.category) || OTHER_C, sp = e.split && e.split.shares ? e.split.shares.length : 0;
-  return '<div class="row erow" role="button" tabindex="0" data-exp="' + esc(e.id) + '"><span class="eic" style="background:' + c + '">' + esc(initials(e.category)) + '</span><div class="grow"><div class="t">' + esc(e.note || e.category || 'Expense') + '</div><div class="s">' + esc([e.note ? e.category : '', e.vendor, e.paidBy ? 'paid by ' + e.paidBy : '', e.pay].filter(Boolean).join(' · ')) + '</div>' +
+  return '<div class="row erow" role="button" tabindex="0" data-exp="' + esc(e.id) + '"><span class="eic" style="background:' + c + '">' + esc(initials(e.category)) + '</span><div class="grow"><div class="t">' + esc(e.note || e.category || 'Expense') + '</div><div class="s">' + esc([e.note ? e.category : '', e.vendor, e.paidBy ? 'paid by ' + pn(e.paidBy) : '', e.pay, byLine(e)].filter(Boolean).join(' · ')) + '</div>' +
     (sp ? '<span class="badge b-split">Split ' + sp + ' way' + (sp === 1 ? '' : 's') + '</span>' : '') + '</div><div class="r"><b>' + R0(num(e.amount)) + '</b></div>' + rowActs(e.id) + '</div>';
 }
 const rowActs = id => '<span class="racts"><button type="button" class="ract" data-eedit="' + esc(id) + '" aria-label="Edit"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button><button type="button" class="ract del" data-edel="' + esc(id) + '" aria-label="Delete"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></span>';
 async function deleteExpense(x) {
-  const what = x.type === 'settle' ? 'the settlement ' + x.paidBy + ' → ' + x.to + ' (' + R0(num(x.amount)) + ')' : (x.note || x.category || 'this expense') + ' (' + R0(num(x.amount)) + ')' + (x.split && x.split.shares ? '. Its split will be removed from everyone\'s balance' : '');
+  if (!canChange(x)) { toast('Only ' + (x.createdByName || 'the person who added it') + ' or the owner can delete this'); return; }
+  const what = x.type === 'settle' ? 'the settlement ' + pn(x.paidBy) + ' → ' + pn(x.to) + ' (' + R0(num(x.amount)) + ')' : (x.note || x.category || 'this expense') + ' (' + R0(num(x.amount)) + ')' + (x.split && x.split.shares ? '. Its split will be removed from everyone\'s balance' : '');
   if (!(await ask('Delete ' + what + '?', 'Delete', true))) return;
   try { await db.doc('expenses/' + x.id).delete(); toast(x.type === 'settle' ? 'Settlement deleted' : 'Expense deleted'); } catch (er) { dbFail(er); }
 }
 function renderSplit() {
-  const {net, moves} = splitBalances(), mem = S.members || [];
-  $('#balcard').shtml = mem.length < 2 ? '<p class="small mute" style="margin:0">Add the people who share costs in <b>Settings → Expenses</b> (for example: Me, Priya, Ravi). Then split an expense and the app keeps track of who owes whom.</p><button class="btn" id="gosettings" style="margin-top:10px">Open settings</button>'
-    : '<div class="balgrid">' + [...net.entries()].map(([n, v]) => '<div class="bal">' + avatar(n, 'lg') + '<b>' + esc(n) + '</b>' + (v > 0.009 ? '<span class="gets">gets back ' + R0(v) + '</span>' : v < -0.009 ? '<span class="owes">owes ' + R0(-v) + '</span>' : '<span class="even">settled</span>') + '</div>').join('') + '</div>';
+  const {net, moves} = splitBalances(), mem = peopleList();
+  $('#balcard').shtml = mem.length < 2 ? '<p class="small mute" style="margin:0">Splitting needs at least two people. Add your partners and staff as users in <b>Settings → Team</b>, or add people without a login in <b>Settings → Expenses</b>. Then split an expense and the app keeps track of who owes whom.</p><button class="btn" id="gosettings" style="margin-top:10px">Open settings</button>'
+    : '<div class="balgrid">' + [...net.entries()].map(([n, v]) => '<div class="bal">' + avatar(n, 'lg') + '<b>' + esc(pn(n)) + '</b>' + (v > 0.009 ? '<span class="gets">gets back ' + R0(v) + '</span>' : v < -0.009 ? '<span class="owes">owes ' + R0(-v) + '</span>' : '<span class="even">settled</span>') + '</div>').join('') + '</div>';
   const gs = $('#gosettings'); if (gs) gs.onclick = () => { go('more'); setTimeout(() => $('#st-members').scrollIntoView({block: 'center'}), 350); };
-  $('#settlelist').shtml = moves.length ? moves.map((m, i) => '<div class="row">' + avatar(m.from) + '<div class="grow"><div class="t">' + esc(m.from) + ' → ' + esc(m.to) + '</div><div class="s">' + esc(m.from) + ' pays ' + esc(m.to) + '</div></div><b class="amt">' + R0(m.amt) + '</b><button class="btn slim gold" data-settle="' + i + '">Settle</button></div>').join('')
+  $('#settlelist').shtml = moves.length ? moves.map((m, i) => '<div class="row">' + avatar(m.from) + '<div class="grow"><div class="t">' + esc(pn(m.from)) + ' → ' + esc(pn(m.to)) + '</div><div class="s">' + esc(pn(m.from)) + (m.from === myKey() ? ' pay ' : ' pays ') + esc(pn(m.to)) + '</div></div><b class="amt">' + R0(m.amt) + '</b><button class="btn slim gold" data-settle="' + i + '">Settle</button></div>').join('')
     : '<div class="empty">✓ All settled up</div>';
   $('#settlelist').onclick = e => { const b = e.target.closest('[data-settle]'); if (b) settleForm(null, moves[+b.dataset.settle]); };
   const em = expColorMap(), hist = expenses.filter(e => e.type === 'settle' || (e.split && e.split.shares)).sort((a, b) => (b.date || '').localeCompare(a.date || '') || num(b.createdAt) - num(a.createdAt)).slice(0, 60);
   $('#splitlist').shtml = hist.length ? hist.map(e => e.type === 'settle'
-    ? '<div class="row erow" role="button" tabindex="0" data-exp="' + esc(e.id) + '"><span class="eic" style="background:#1F7A45">✓</span><div class="grow"><div class="t">' + esc(e.paidBy) + ' paid ' + esc(e.to) + '</div><div class="s">' + nice(e.date) + ' · settlement' + (e.pay ? ' · ' + esc(e.pay) : '') + '</div></div><div class="r"><b>' + R0(num(e.amount)) + '</b></div>' + rowActs(e.id) + '</div>'
+    ? '<div class="row erow" role="button" tabindex="0" data-exp="' + esc(e.id) + '"><span class="eic" style="background:#1F7A45">✓</span><div class="grow"><div class="t">' + esc(pn(e.paidBy)) + ' paid ' + esc(pn(e.to)) + '</div><div class="s">' + nice(e.date) + ' · settlement' + (e.pay ? ' · ' + esc(e.pay) : '') + (byLine(e) ? ' · ' + esc(byLine(e)) : '') + '</div></div><div class="r"><b>' + R0(num(e.amount)) + '</b></div>' + rowActs(e.id) + '</div>'
     : expRow(e, em).replace('<div class="s">', '<div class="s">' + nice(e.date) + ' · ')).join('') : '<div class="empty">No split expenses yet.</div>';
 }
 $('#emonth').addEventListener('change', renderExpenses);
@@ -2103,11 +2158,11 @@ $('#eg-s').onclick = () => { expTab = 's'; $('#eg-s').classList.add('on'); $('#e
 const LS_PAYER = 'yaal-last-payer';
 function expenseForm(e, opt = {}) {
   if (!needDb()) return;
-  const mem = S.members || [], cats = (S.expCats && S.expCats.length ? S.expCats : DEFAULTS.expCats).slice();
+  if (e && !canChange(e)) { toast('Only ' + (e.createdByName || 'the person who added it') + ' or the owner can change this'); return; }
+  const mem = peopleList(), cats = (S.expCats && S.expCats.length ? S.expCats : DEFAULTS.expCats).slice();
   if (e && e.category && !cats.includes(e.category)) cats.push(e.category);
   const payers = [...mem, BIZ]; if (e && e.paidBy && !payers.includes(e.paidBy)) payers.unshift(e.paidBy);
-  let lastPayer = ''; try { lastPayer = localStorage.getItem(LS_PAYER) || ''; } catch {}
-  const payer = e ? e.paidBy : (payers.includes(lastPayer) ? lastPayer : payers[0]);
+  const payer = e ? e.paidBy : (myKey() || payers[0]);
   const pays = S.expPays && S.expPays.length ? S.expPays : DEFAULTS.expPays;
   let cat = e ? e.category : '';
   const sp = {on: !!(e && e.split) || !!opt.split, mode: (e && e.split && e.split.mode) || 'equal', people: []};
@@ -2120,7 +2175,7 @@ function expenseForm(e, opt = {}) {
     '<label for="x-note">What was it for?</label><input id="x-note" placeholder="e.g. Petrol for stock pickup" value="' + esc(e ? e.note : '') + '" autocomplete="off">' +
     '<div class="grid2"><div><label for="x-date">Date</label><input id="x-date" type="date" value="' + esc(e ? e.date : todayStr()) + '"></div>' +
     '<div><label for="x-vendor">Paid to (shop / person)</label><input id="x-vendor" value="' + esc(e ? e.vendor : '') + '" autocomplete="off"></div>' +
-    '<div><label for="x-payer">Paid by</label><select id="x-payer">' + opts(payers, payer) + '</select></div>' +
+    '<div><label for="x-payer">Paid by</label><select id="x-payer">' + payers.map(k => '<option value="' + esc(k) + '"' + (k === payer ? ' selected' : '') + '>' + esc(k === BIZ ? BIZ : k === myKey() ? 'Me (' + fullName(k) + ')' : pn(k)) + '</option>').join('') + '</select></div>' +
     '<div><label for="x-pay">Payment mode</label><select id="x-pay">' + opts(pays, e ? e.pay : pays[0]) + '</select></div></div>' +
     '<div class="splitbox"><label class="switch"><input type="checkbox" id="x-split"' + (sp.on ? ' checked' : '') + '><span class="sw" aria-hidden="true"></span><span><b>Split this expense</b><small class="mute">Share the cost between people, like a split in GPay</small></span></label>' +
     '<div id="x-splitbody"' + (sp.on ? '' : ' hidden') + '></div></div>' +
@@ -2138,11 +2193,11 @@ function expenseForm(e, opt = {}) {
   const leftover = () => { const sh = shares(); return sp.mode === 'percent' ? r2(100 - sh.reduce((a, s) => a + s.pct, 0)) : r2(amt() - sh.reduce((a, s) => a + s.amt, 0)); };
   const drawSplit = () => {
     const body = $('#x-splitbody');
-    if (sp.people.length < 2) { body.innerHTML = '<p class="small mute">Add the people who share costs in <b>Settings → Expenses</b> first (for example: Me, Priya, Ravi).</p>'; return; }
+    if (sp.people.length < 2) { body.innerHTML = '<p class="small mute">Splitting needs at least two people. Add users in <b>Settings → Team</b>, or people without a login in <b>Settings → Expenses</b>.</p>'; return; }
     const sh = new Map(shares().map(s => [s.name, s]));
     body.innerHTML = '<div class="seg light" id="x-mode">' + [['equal', 'Equally'], ['amount', '₹ Amounts'], ['percent', '% Percent']].map(([m, l]) => '<button type="button" data-m="' + m + '"' + (sp.mode === m ? ' class="on"' : '') + '>' + l + '</button>').join('') + '</div>' +
-      '<div class="people">' + sp.people.map((p, i) => '<div class="prow' + (p.on ? ' on' : '') + '"><button type="button" class="pchk" data-pi="' + i + '" aria-pressed="' + p.on + '" aria-label="Include ' + esc(p.name) + '">' + avatar(p.name) + '<i class="tick">✓</i></button><div class="grow"><b>' + esc(p.name) + '</b><small class="mute" data-ps="' + i + '">' + (p.on ? 'share ' + R2(sh.get(p.name) ? sh.get(p.name).amt : 0) : 'not included') + '</small></div>' +
-        (sp.mode === 'equal' ? '<span class="eqv" data-pe="' + i + '">' + (p.on ? R2(sh.get(p.name).amt) : '–') + '</span>' : '<div class="pin"><input data-pv="' + i + '" inputmode="decimal" placeholder="0" value="' + esc(p.on ? p.val : '') + '"' + (p.on ? '' : ' disabled') + ' aria-label="' + esc(p.name) + (sp.mode === 'percent' ? ' percent' : ' amount') + '"><span>' + (sp.mode === 'percent' ? '%' : '₹') + '</span></div>') + '</div>').join('') + '</div>' +
+      '<div class="people">' + sp.people.map((p, i) => '<div class="prow' + (p.on ? ' on' : '') + '"><button type="button" class="pchk" data-pi="' + i + '" aria-pressed="' + p.on + '" aria-label="Include ' + esc(pn(p.name)) + '">' + avatar(p.name) + '<i class="tick">✓</i></button><div class="grow"><b>' + esc(pn(p.name)) + '</b><small class="mute" data-ps="' + i + '">' + (p.on ? 'share ' + R2(sh.get(p.name) ? sh.get(p.name).amt : 0) : 'not included') + '</small></div>' +
+        (sp.mode === 'equal' ? '<span class="eqv" data-pe="' + i + '">' + (p.on ? R2(sh.get(p.name).amt) : '–') + '</span>' : '<div class="pin"><input data-pv="' + i + '" inputmode="decimal" placeholder="0" value="' + esc(p.on ? p.val : '') + '"' + (p.on ? '' : ' disabled') + ' aria-label="' + esc(pn(p.name)) + (sp.mode === 'percent' ? ' percent' : ' amount') + '"><span>' + (sp.mode === 'percent' ? '%' : '₹') + '</span></div>') + '</div>').join('') + '</div>' +
       '<div class="leftover" id="x-left"></div>';
     updateLeft();
   };
@@ -2179,11 +2234,11 @@ function expenseForm(e, opt = {}) {
       const sh = shares();
       if (!sh.length) { toast('Pick at least one person to split with'); return; }
       if (sp.mode !== 'equal' && Math.abs(leftover()) >= 0.01) { toast(sp.mode === 'percent' ? 'Percentages must add up to 100%' : 'Shares must add up to ' + R2(A)); return; }
-      split = {mode: sp.mode, shares: sh};
+      split = {mode: sp.mode, shares: sh.map(x => Object.assign(x, {label: fullName(x.name)}))};
     }
     const doc = {type: 'expense', date: $('#x-date').value || todayStr(), category: cat, amount: A, note: $('#x-note').value.trim(), vendor: $('#x-vendor').value.trim(),
-      paidBy, pay: $('#x-pay').value, split, createdAt: e ? num(e.createdAt) || Date.now() : Date.now(), updatedAt: Date.now()};
-    try { localStorage.setItem(LS_PAYER, paidBy); } catch {}
+      paidBy, paidByName: paidBy === BIZ ? BIZ : fullName(paidBy), pay: $('#x-pay').value, split, createdAt: e ? num(e.createdAt) || Date.now() : Date.now(), updatedAt: Date.now()};
+    stamp(doc, e);
     $('#x-save').disabled = true;
     try { if (e) await db.doc('expenses/' + e.id).set(doc); else await db.collection('expenses').add(doc); closeSheet(); toast((e ? 'Expense updated' : 'Expense saved') + (split ? ', split ' + split.shares.length + ' ways' : '')); }
     catch (er) { dbFail(er); $('#x-save').disabled = false; }
@@ -2192,8 +2247,9 @@ function expenseForm(e, opt = {}) {
 
 function settleForm(e, mv) {
   if (!needDb()) return;
-  const mem = S.members || [], from = e ? e.paidBy : mv.from, to = e ? e.to : mv.to, pays = S.expPays && S.expPays.length ? S.expPays : DEFAULTS.expPays;
-  openSheet('<h2>' + (e ? 'Settlement' : 'Settle up') + '</h2><div class="settlehd">' + avatar(from, 'lg') + '<span class="arrow">→</span>' + avatar(to, 'lg') + '</div><p style="text-align:center;margin:6px 0 0"><b>' + esc(from) + '</b> pays <b>' + esc(to) + '</b></p>' +
+  if (e && !canChange(e)) { toast('Only ' + (e.createdByName || 'the person who added it') + ' or the owner can change this'); return; }
+  const from = e ? e.paidBy : mv.from, to = e ? e.to : mv.to, pays = S.expPays && S.expPays.length ? S.expPays : DEFAULTS.expPays;
+  openSheet('<h2>' + (e ? 'Settlement' : 'Settle up') + '</h2><div class="settlehd">' + avatar(from, 'lg') + '<span class="arrow">→</span>' + avatar(to, 'lg') + '</div><p style="text-align:center;margin:6px 0 0"><b>' + esc(pn(from)) + '</b> ' + (from === myKey() ? 'pay' : 'pays') + ' <b>' + esc(pn(to)) + '</b></p>' +
     '<div class="amtbox"><span>₹</span><input id="s-amt" inputmode="decimal" value="' + esc(e ? e.amount : mv.amt) + '" aria-label="Amount"></div>' +
     '<div class="grid2"><div><label for="s-date">Date</label><input id="s-date" type="date" value="' + esc(e ? e.date : todayStr()) + '"></div><div><label for="s-pay">Paid using</label><select id="s-pay">' + opts(pays, e ? e.pay : 'UPI') + '</select></div></div>' +
     '<label for="s-note">Note</label><input id="s-note" value="' + esc(e ? e.note : '') + '" autocomplete="off">' +
@@ -2203,11 +2259,299 @@ function settleForm(e, mv) {
   const d = $('#s-del'); if (d) d.onclick = () => deleteExpense(e);
   $('#s-save').onclick = async () => {
     const A = r2(num($('#s-amt').value)); if (!(A > 0)) { toast('Enter the amount'); return; }
-    const doc = {type: 'settle', category: 'Settlement', date: $('#s-date').value || todayStr(), amount: A, paidBy: from, to, pay: $('#s-pay').value, note: $('#s-note').value.trim(), createdAt: e ? num(e.createdAt) || Date.now() : Date.now(), updatedAt: Date.now()};
-    try { if (e) await db.doc('expenses/' + e.id).set(doc); else await db.collection('expenses').add(doc); closeSheet(); toast(from + ' paid ' + to + ' ' + R0(A)); } catch (er) { dbFail(er); }
+    const doc = {type: 'settle', category: 'Settlement', date: $('#s-date').value || todayStr(), amount: A, paidBy: from, paidByName: fullName(from), to, toName: fullName(to), pay: $('#s-pay').value, note: $('#s-note').value.trim(), createdAt: e ? num(e.createdAt) || Date.now() : Date.now(), updatedAt: Date.now()};
+    stamp(doc, e);
+    try { if (e) await db.doc('expenses/' + e.id).set(doc); else await db.collection('expenses').add(doc); closeSheet(); toast(pn(from) + ' paid ' + pn(to) + ' ' + R0(A)); } catch (er) { dbFail(er); }
   };
 }
 
+
+/* ---------- users, login, fingerprint & profiles ---------- */
+let users = new Map(), me = null, usersSeen = false, lockMode = 'boot', hiddenAt = 0, badTries = 0, waitUntil = 0;
+const LS_SESSION = 'yaal-session', LS_BIO = 'yaal-bio', LS_LOCK = 'yaal-lock', LS_BIOASK = 'yaal-bio-asked';
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
+const lsSet = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const isActive = u => !!u && !/^(no|false|0|off)$/i.test(String(u.active == null ? 'Yes' : u.active));
+const isAdmin = () => !!me && me.role === 'admin';
+const myKey = () => (me ? me.username : '');
+const fullName = k => { const u = users.get(k); return u ? (u.name || u.username) : String(k || ''); };
+const pn = k => (me && k === me.username ? 'Me' : fullName(k));
+const byLine = x => (x && x.createdByName ? 'by ' + (me && x.createdBy === me.username ? 'you' : x.createdByName) : '');
+const canChange = x => !x || !me || isAdmin() || !x.createdBy || x.createdBy === me.username;
+const ROLE = {admin: 'Owner / Admin', staff: 'Staff'};
+function stamp(doc, old) {
+  const who = myKey(), nm = me ? (me.name || me.username) : '';
+  if (old && old.createdBy) { doc.createdBy = old.createdBy; doc.createdByName = old.createdByName || ''; }
+  else if (!old) { doc.createdBy = who; doc.createdByName = nm; }
+  if (old) { doc.editedBy = who; doc.editedByName = nm; doc.editedAt = Date.now(); }
+  return doc;
+}
+/* everyone who can share a cost: me first, then the other active users, then people without a login */
+function peopleList() {
+  const act = [...users.values()].filter(isActive).sort((a, b) => (a.name || a.username).localeCompare(b.name || b.username)).map(u => u.username);
+  const list = me ? [me.username, ...act.filter(k => k !== me.username)] : act;
+  const taken = new Set(list.map(k => fullName(k).toLowerCase()).concat(list));
+  for (const n of S.members || []) { const t = String(n).trim(); if (t && t.toLowerCase() !== 'me' && !taken.has(t.toLowerCase()) && !taken.has(t)) { list.push(t); taken.add(t.toLowerCase()); } }
+  return list;
+}
+
+/* passwords: PBKDF2-SHA256 with a random salt; only the check value is stored */
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function hashPw(pw, salt, iter = 150000) {
+  salt = salt || b64(crypto.getRandomValues(new Uint8Array(16)));
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({name: 'PBKDF2', hash: 'SHA-256', salt: unb64(salt), iterations: iter}, key, 256);
+  return {salt, iter, hash: b64(bits)};
+}
+async function checkPw(u, pw) { if (!u || !u.pw || !u.pw.hash) return false; const h = await hashPw(pw, u.pw.salt, u.pw.iter); return h.hash === u.pw.hash; }
+const cleanUser = v => String(v || '').trim().toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9._-]/g, '');
+
+/* fingerprint / face unlock (WebAuthn, kept on this phone) */
+async function bioAvailable() { try { return !!(window.PublicKeyCredential && window.isSecureContext && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch { return false; } }
+const bioFor = k => lsGet(LS_BIO, {})[k] || '';
+const lockOn = k => { const l = lsGet(LS_LOCK, {}); return k in l ? !!l[k] : !!bioFor(k); };
+function setLock(k, on) { const l = lsGet(LS_LOCK, {}); l[k] = !!on; lsSet(LS_LOCK, l); }
+async function bioEnroll(u) {
+  const cred = await navigator.credentials.create({publicKey: {
+    challenge: crypto.getRandomValues(new Uint8Array(32)), rp: {name: (S.name || 'YAAL') + ' app'},
+    user: {id: new TextEncoder().encode((u.username + '@' + location.host).slice(0, 60)), name: u.username, displayName: u.name || u.username},
+    pubKeyCredParams: [{type: 'public-key', alg: -7}, {type: 'public-key', alg: -257}],
+    authenticatorSelection: {authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged'}, timeout: 60000, attestation: 'none'}});
+  const m = lsGet(LS_BIO, {}); m[u.username] = b64(cred.rawId); lsSet(LS_BIO, m); setLock(u.username, true);
+}
+async function bioVerify(k) {
+  const id = bioFor(k); if (!id) return false;
+  const a = await navigator.credentials.get({publicKey: {challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials: [{type: 'public-key', id: unb64(id), transports: ['internal']}], userVerification: 'required', timeout: 60000}});
+  return !!(a && (new Uint8Array(a.response.authenticatorData)[32] & 0x04));   // "user verified" flag
+}
+function bioRemove(k) { const m = lsGet(LS_BIO, {}); delete m[k]; lsSet(LS_BIO, m); setLock(k, false); }
+
+/* ---------- lock screen ---------- */
+const lockEl = () => $('#lock');
+function showLock(mode, opt = {}) {
+  lockMode = mode; const box = $('#lockbox'); lockEl().classList.add('on'); document.body.classList.add('locked');
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  const logo = '<img class="locklogo" src="logo.png" alt=""><div class="lockbrand">' + esc(S.name || 'YAAL Clothing Brand') + '</div>';
+  if (mode === 'wait') {
+    box.innerHTML = logo + '<div class="lockspin" aria-hidden="true"></div><p class="lockmsg">Getting your team\'s accounts from the Google Sheet…</p><p class="small lockmute">' + (navigator.onLine ? 'This takes a few seconds the first time.' : 'You are offline. Connect to the internet to log in on this phone for the first time.') + '</p>';
+    return;
+  }
+  if (mode === 'setup') {
+    box.innerHTML = logo + '<h2>Create the owner account</h2><p class="small lockmute">You\'ll log in with this, add your staff, and see who created each bill and expense.</p>' +
+      '<label for="lk-name">Your full name</label><input id="lk-name" autocomplete="name">' +
+      '<label for="lk-user">Username</label><input id="lk-user" autocomplete="username" autocapitalize="none" placeholder="e.g. priya">' +
+      '<label for="lk-pw">Password (at least 6 characters)</label><div class="pwrow"><input id="lk-pw" type="password" autocomplete="new-password"><button type="button" class="pweye" data-eye="lk-pw" aria-label="Show password">Show</button></div>' +
+      '<label for="lk-pw2">Type the password again</label><input id="lk-pw2" type="password" autocomplete="new-password">' +
+      '<button class="btn p block" id="lk-go" style="margin-top:16px">Create account</button>' +
+      '<details class="lockjoin"><summary>Already using the app on another phone?</summary><p class="small">Open the <b>staff link</b> from that phone (Settings → Cloud → Copy staff link), or paste your Google Sheet details here. Your team\'s accounts then load from the sheet.</p>' +
+      '<label for="lk-url">Web app URL</label><input id="lk-url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec"><label for="lk-key">Shop key</label><input id="lk-key" autocomplete="off"><button class="btn block" id="lk-connect" style="margin-top:10px">Connect</button></details>';
+    $('#lk-go').onclick = createOwner;
+    $('#lk-connect').onclick = () => connectFlow($('#lk-url').value, $('#lk-key').value, true);
+    return;
+  }
+  if (mode === 'unlock') {
+    const u = users.get(opt.user);
+    box.innerHTML = '<div class="lockav">' + avatar(u.username, 'xl') + '</div><h2>Welcome back, ' + esc((u.name || u.username).split(' ')[0]) + '</h2><p class="small lockmute">Unlock to continue</p>' +
+      '<button class="btn gold block bio" id="lk-bio"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 11v3M8.5 8.5a5 5 0 017 0M6 6a8.5 8.5 0 0112 0M9 13c0 3 .8 5 2 7M15 12c0 3.5-.5 6-2 8M5 10.5c0 4 1 7 3 9.5M19 11c0 2-.3 4-1 6"/></svg>Unlock with fingerprint</button>' +
+      '<button class="btn block" id="lk-usepw" style="margin-top:10px">Use password instead</button><button class="linkbtn lockswitch" id="lk-switch">Not ' + esc((u.name || u.username).split(' ')[0]) + '? Switch user</button>';
+    const tryBio = async () => { try { if (await bioVerify(u.username)) enter(u, 'bio'); else toast('Fingerprint not confirmed'); } catch (e) { if (e && e.name !== 'NotAllowedError') console.warn(e); toast('Fingerprint cancelled - try again or use your password'); } };
+    $('#lk-bio').onclick = tryBio;
+    $('#lk-usepw').onclick = () => showLock('login', {user: u.username});
+    $('#lk-switch').onclick = () => { lsSet(LS_SESSION, null); showLock('login'); };
+    if (opt.auto) setTimeout(tryBio, 350);
+    return;
+  }
+  // login
+  const last = opt.user || (lsGet(LS_SESSION, null) || {}).u || '';
+  box.innerHTML = logo + '<h2>Log in</h2>' + (opt.msg ? '<p class="lockerr">' + esc(opt.msg) + '</p>' : '') +
+    '<label for="lk-user">Username</label><input id="lk-user" autocomplete="username" autocapitalize="none" value="' + esc(last) + '">' +
+    '<label for="lk-pw">Password</label><div class="pwrow"><input id="lk-pw" type="password" autocomplete="current-password" enterkeyhint="go"><button type="button" class="pweye" data-eye="lk-pw" aria-label="Show password">Show</button></div>' +
+    '<button class="btn p block" id="lk-go" style="margin-top:16px">Log in</button>' +
+    '<button class="btn gold block bio" id="lk-bio" style="margin-top:10px" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 11v3M8.5 8.5a5 5 0 017 0M6 6a8.5 8.5 0 0112 0M9 13c0 3 .8 5 2 7M15 12c0 3.5-.5 6-2 8M5 10.5c0 4 1 7 3 9.5M19 11c0 2-.3 4-1 6"/></svg><span></span></button>' +
+    '<p class="small lockmute" style="margin-top:14px">Forgot your password? Ask the owner to reset it in Settings → Team.</p>';
+  const syncBio = () => { const k = cleanUser($('#lk-user').value), u = users.get(k), b = $('#lk-bio'); b.hidden = !(u && isActive(u) && bioFor(k)); if (!b.hidden) b.querySelector('span').textContent = 'Log in as ' + (u.name || k).split(' ')[0] + ' with fingerprint'; };
+  $('#lk-user').addEventListener('input', syncBio); syncBio();
+  $('#lk-bio').onclick = async () => { const k = cleanUser($('#lk-user').value), u = users.get(k); try { if (await bioVerify(k)) enter(u, 'bio'); } catch { toast('Fingerprint cancelled'); } };
+  $('#lk-go').onclick = doLogin;
+  $('#lk-pw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  setTimeout(() => (last ? $('#lk-pw') : $('#lk-user')).focus(), 200);
+}
+$('#lock').addEventListener('click', e => { const b = e.target.closest('[data-eye]'); if (!b) return; const i = $('#' + b.dataset.eye); i.type = i.type === 'password' ? 'text' : 'password'; b.textContent = i.type === 'password' ? 'Show' : 'Hide'; });
+
+async function doLogin() {
+  if (Date.now() < waitUntil) { toast('Too many tries - wait ' + Math.ceil((waitUntil - Date.now()) / 1000) + ' seconds'); return; }
+  const k = cleanUser($('#lk-user').value), pw = $('#lk-pw').value, u = users.get(k);
+  if (!k || !pw) { toast('Enter your username and password'); return; }
+  $('#lk-go').disabled = true;
+  try {
+    if (!u || !(await checkPw(u, pw))) { badTries++; if (badTries >= 5) { waitUntil = Date.now() + 30000; badTries = 0; } toast(u && !u.pw ? 'No password set yet - ask the owner to set one' : 'Wrong username or password'); $('#lk-pw').value = ''; return; }
+    if (!isActive(u)) { toast('This account is turned off. Ask the owner.'); return; }
+    badTries = 0; enter(u, 'pw');
+  } finally { const g = $('#lk-go'); if (g) g.disabled = false; }
+}
+async function createOwner() {
+  const name = $('#lk-name').value.trim(), k = cleanUser($('#lk-user').value), pw = $('#lk-pw').value;
+  if (!name) { toast('Enter your name'); return; }
+  if (k.length < 3) { toast('Username needs at least 3 letters or numbers'); return; }
+  if (pw.length < 6) { toast('Password needs at least 6 characters'); return; }
+  if (pw !== $('#lk-pw2').value) { toast('The two passwords are different'); return; }
+  if (users.size) { toast('Accounts already exist - log in instead'); showLock('login'); return; }
+  $('#lk-go').disabled = true;
+  const doc = {username: k, name, role: 'admin', active: 'Yes', designation: 'Owner', joined: todayStr(), pw: await hashPw(pw), createdAt: Date.now(), createdBy: k, createdByName: name};
+  try {
+    await db.doc('users/' + k).set(doc); users.set(k, doc);
+    for (const e of expenses) {          // expenses made before logins existed used "Me" for the owner
+      const fix = x => (x === 'Me' ? k : x), sh = e.split && e.split.shares;
+      if (e.paidBy !== 'Me' && e.to !== 'Me' && !(sh && sh.some(x => x.name === 'Me'))) continue;
+      const d = Object.assign({}, e); delete d.id; d.paidBy = fix(d.paidBy); if (d.to) d.to = fix(d.to);
+      if (sh) d.split = Object.assign({}, d.split, {shares: sh.map(x => Object.assign({}, x, {name: fix(x.name), label: x.name === 'Me' ? name : x.label}))});
+      d.paidByName = d.paidBy === BIZ ? BIZ : (d.paidBy === k ? name : d.paidByName || d.paidBy);
+      await db.doc('expenses/' + e.id).set(d);
+    }
+    enter(doc, 'pw'); toast('Welcome, ' + name.split(' ')[0] + '! Add your staff in Settings → Team.'); }
+  catch (e) { dbFail(e); $('#lk-go').disabled = false; }
+}
+async function enter(u, how) {
+  me = u; lsSet(LS_SESSION, {u: u.username, t: Date.now()}); badTries = 0;
+  lockEl().classList.remove('on'); document.body.classList.remove('locked'); lockMode = 'open';
+  applyRole(); renderAll(); renderMe();
+  if (how === 'pw' && !bioFor(u.username) && !lsGet(LS_BIOASK, {})[u.username] && await bioAvailable()) setTimeout(() => offerBio(u), 600);
+}
+function offerBio(u) {
+  const asked = lsGet(LS_BIOASK, {}); asked[u.username] = 1; lsSet(LS_BIOASK, asked);
+  openSheet('<div class="lockav" style="margin-top:4px">' + avatar(u.username, 'xl') + '</div><h2 style="text-align:center">Use fingerprint to log in?</h2><p class="small mute" style="text-align:center">Next time, open the app with your fingerprint (or face) on this phone instead of typing your password. You can change this in your profile.</p>' +
+    '<div class="btns"><button class="btn" id="bio-no">Not now</button><button class="btn p" id="bio-yes">Turn on</button></div>');
+  $('#bio-no').onclick = closeSheet;
+  $('#bio-yes').onclick = async () => { try { await bioEnroll(u); closeSheet(); toast('Fingerprint login is on for this phone'); } catch (e) { toast('Fingerprint was not set up'); } };
+}
+function logout(msg) {
+  me = null; lsSet(LS_SESSION, null); closeSheet(); applyRole(); renderMe();
+  showLock('login', {msg});
+}
+function lockNow() { if (!me) return; const k = me.username; me = null; applyRole(); showLock(bioFor(k) ? 'unlock' : 'login', {user: k, auto: true}); }
+function applyRole() { document.body.classList.toggle('staff', !!me && !isAdmin()); document.body.classList.toggle('admin', isAdmin()); }
+const canMakeOwner = () => !db.info().cloud || !!db.info().lastSync;
+/* decides what the lock screen shows; runs whenever users or sync status change */
+function decideLock() {
+  if (!db) return;
+  if (me) {
+    const u = users.get(me.username);
+    if (usersSeen && users.size && (!u || !isActive(u))) { logout(u ? 'Your account was turned off. Ask the owner.' : 'Your account was removed.'); return; }
+    if (u && u !== me) { me = u; applyRole(); renderMe(); }
+    return;
+  }
+  if (!users.size) { const want = canMakeOwner() ? 'setup' : 'wait'; if (lockMode !== want) showLock(want); return; }
+  if (lockMode === 'login' || lockMode === 'unlock') return;
+  const sess = lsGet(LS_SESSION, null), u = sess && users.get(sess.u);
+  if (u && isActive(u)) { if (lockOn(u.username) && bioFor(u.username)) showLock('unlock', {user: u.username, auto: true}); else if (lockOn(u.username)) showLock('login', {user: u.username}); else enter(u, 'session'); }
+  else showLock('login');
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') hiddenAt = Date.now();
+  else if (me && hiddenAt && Date.now() - hiddenAt > 5 * 60000 && lockOn(me.username)) lockNow();
+});
+
+/* ---------- header avatar + profile ---------- */
+function renderMe() {
+  const b = $('#mebtn'); if (!b) return;
+  b.hidden = !me; if (!me) return;
+  b.innerHTML = avatar(me.username); b.setAttribute('aria-label', 'My profile: ' + (me.name || me.username));
+}
+$('#mebtn').onclick = () => { if (me) showProfile(me.username); };
+const PROFILE_FIELDS = [['phone', 'Phone', 'tel'], ['email', 'Email', 'email'], ['designation', 'Designation', 'text'], ['joined', 'Date of joining', 'date'], ['dob', 'Date of birth', 'date'],
+  ['address', 'Address', 'text'], ['emergency', 'Emergency contact', 'text'], ['idproof', 'ID proof (type & number)', 'text'], ['bank', 'Bank / UPI for salary', 'text'], ['notes', 'Notes', 'text']];
+async function showProfile(k) {
+  const u = users.get(k); if (!u) return;
+  const self = me && k === me.username, admin = isAdmin();
+  const bills = sales.filter(b => b.createdBy === k), exps = expenses.filter(e => e.createdBy === k && isExp(e));
+  const rows = PROFILE_FIELDS.filter(([f]) => u[f]).map(([f, l, t]) => '<div class="kv"><span>' + l + '</span><b>' + esc(t === 'date' ? nice(u[f]) : u[f]) + '</b></div>').join('');
+  const canBio = self && await bioAvailable();
+  openSheet('<div class="profhd">' + avatar(k, 'xl') + '<div><h2>' + esc(u.name || k) + '</h2><div class="small mute">@' + esc(k) + ' · ' + esc(ROLE[u.role] || u.role) + (u.designation ? ' · ' + esc(u.designation) : '') + '</div>' + (isActive(u) ? '' : '<span class="badge b-bad">Turned off</span>') + '</div></div>' +
+    '<div class="profstats"><div><b>' + bills.length + '</b><span>bills created</span></div><div><b>' + R0(bills.reduce((a, b) => a + num(b.total), 0)) + '</b><span>billed</span></div><div><b>' + exps.length + '</b><span>expenses added</span></div></div>' +
+    '<div class="kvlist">' + (rows || '<p class="small mute" style="margin:6px 0">No details added yet.</p>') + '</div>' +
+    (self || admin ? '<div class="btns" style="margin-top:12px"><button class="btn" id="pf-edit">Edit profile</button><button class="btn" id="pf-pw">' + (self ? 'Change password' : 'Reset password') + '</button></div>' : '') +
+    (self ? '<div class="setrow"><div><b>Fingerprint login</b><small class="mute">' + (canBio ? 'On this phone only' : 'Not available on this phone or browser') + '</small></div><label class="switch"><input type="checkbox" id="pf-bio"' + (bioFor(k) ? ' checked' : '') + (canBio ? '' : ' disabled') + '><span class="sw"></span></label></div>' +
+      '<div class="setrow"><div><b>Lock when reopened</b><small class="mute">Ask for fingerprint or password after the app has been closed for 5 minutes</small></div><label class="switch"><input type="checkbox" id="pf-lock"' + (lockOn(k) ? ' checked' : '') + '><span class="sw"></span></label></div>' : '') +
+    (admin && !self ? '<div class="btns" style="margin-top:12px"><button class="btn ' + (isActive(u) ? 'danger' : 'p') + '" id="pf-active">' + (isActive(u) ? 'Turn off account' : 'Turn account back on') + '</button></div>' : '') +
+    (self ? '<div class="btns" style="margin-top:14px">' + (lockOn(k) ? '<button class="btn" id="pf-lockn">Lock now</button>' : '') + '<button class="btn danger" id="pf-out">Log out</button></div>' : ''));
+  const ed = $('#pf-edit'); if (ed) ed.onclick = () => userForm(u);
+  const pw = $('#pf-pw'); if (pw) pw.onclick = () => passwordForm(u, self);
+  const bi = $('#pf-bio'); if (bi) bi.onchange = async () => { if (bi.checked) { try { await bioEnroll(u); toast('Fingerprint login is on for this phone'); } catch { bi.checked = false; toast('Fingerprint was not set up'); } } else { bioRemove(k); toast('Fingerprint login turned off on this phone'); } showProfile(k); };
+  const lk = $('#pf-lock'); if (lk) lk.onchange = () => { setLock(k, lk.checked); toast(lk.checked ? 'The app will ask to unlock when reopened' : 'The app stays logged in on this phone'); showProfile(k); };
+  const ln = $('#pf-lockn'); if (ln) ln.onclick = () => { closeSheet(); lockNow(); };
+  const out = $('#pf-out'); if (out) out.onclick = async () => { if (await ask('Log out of the app on this phone?', 'Log out')) logout(); };
+  const ac = $('#pf-active'); if (ac) ac.onclick = async () => {
+    const on = !isActive(u);
+    if (!on && !(await ask('Turn off ' + (u.name || k) + '\'s account? They will be logged out and cannot log in until you turn it back on. Their bills and expenses stay.', 'Turn off', true))) return;
+    const d = Object.assign({}, u, {active: on ? 'Yes' : 'No'}); stamp(d, u);
+    try { await db.doc('users/' + k).set(d); toast(on ? 'Account turned on' : 'Account turned off'); showProfile(k); } catch (e) { dbFail(e); }
+  };
+}
+function userForm(u) {
+  const isNew = !u, self = u && me && u.username === me.username, admin = isAdmin();
+  if (!admin && !self) return;
+  const admins = [...users.values()].filter(x => x.role === 'admin' && isActive(x)).length;
+  openSheet('<h2>' + (isNew ? 'Add a user' : 'Edit profile') + '</h2>' +
+    '<label for="uf-name">Full name</label><input id="uf-name" value="' + esc(u ? u.name : '') + '" autocomplete="off">' +
+    (isNew ? '<label for="uf-user">Username (for logging in)</label><input id="uf-user" autocapitalize="none" autocomplete="off" placeholder="e.g. meena">' : '<label>Username</label><input value="' + esc(u.username) + '" disabled>') +
+    (admin ? '<div class="grid2"><div><label for="uf-role">Role</label><select id="uf-role"' + (self && admins <= 1 ? ' disabled' : '') + '><option value="staff"' + (u && u.role === 'admin' ? '' : ' selected') + '>Staff</option><option value="admin"' + (u && u.role === 'admin' ? ' selected' : '') + '>Owner / Admin</option></select></div><div></div></div>' : '') +
+    (isNew ? '<label for="uf-pw">Password (at least 6 characters)</label><div class="pwrow"><input id="uf-pw" type="text" autocomplete="off"><button type="button" class="pweye" id="uf-gen">Make one</button></div><p class="small mute" style="margin:4px 0 0">Share it with them privately. They can change it from their profile.</p>' : '') +
+    '<h3>Employee details</h3><div class="grid2">' + PROFILE_FIELDS.map(([f, l, t]) => '<div' + (['address', 'notes', 'idproof', 'bank', 'emergency'].includes(f) ? ' style="grid-column:1/-1"' : '') + '><label for="uf-' + f + '">' + l + '</label><input id="uf-' + f + '" type="' + t + '" value="' + esc(u ? u[f] || '' : (f === 'joined' ? todayStr() : '')) + '" autocomplete="off"></div>').join('') + '</div>' +
+    '<p class="small mute">Staff can make bills, add stock and expenses, and edit what they created. Only an Owner / Admin can change shop settings, manage users and delete bills.</p>' +
+    '<div class="btns"><button class="btn" id="uf-cancel">Cancel</button><button class="btn p" id="uf-save">' + (isNew ? 'Add user' : 'Save') + '</button></div>');
+  $('#uf-cancel').onclick = () => (isNew ? closeSheet() : showProfile(u.username));
+  const gen = $('#uf-gen'); if (gen) gen.onclick = () => { const w = ['silk', 'saree', 'cotton', 'lotus', 'mango', 'peacock', 'jasmine', 'indigo']; $('#uf-pw').value = w[Math.floor(Math.random() * w.length)] + (1000 + Math.floor(Math.random() * 9000)); };
+  $('#uf-save').onclick = async () => {
+    const name = $('#uf-name').value.trim(); if (!name) { toast('Enter the full name'); return; }
+    const k = isNew ? cleanUser($('#uf-user').value) : u.username;
+    if (isNew) {
+      if (k.length < 3) { toast('Username needs at least 3 letters or numbers'); return; }
+      if (users.has(k)) { toast('The username ' + k + ' is taken'); return; }
+      if ($('#uf-pw').value.length < 6) { toast('Password needs at least 6 characters'); return; }
+    }
+    const d = Object.assign({}, u || {username: k, active: 'Yes', createdAt: Date.now()}, {name});
+    if (admin && $('#uf-role') && !$('#uf-role').disabled) d.role = $('#uf-role').value; else if (isNew) d.role = 'staff';
+    for (const [f] of PROFILE_FIELDS) d[f] = $('#uf-' + f).value.trim();
+    if (isNew) d.pw = await hashPw($('#uf-pw').value);
+    stamp(d, u);
+    $('#uf-save').disabled = true;
+    try { await db.doc('users/' + k).set(d); users.set(k, d); if (self) { me = d; renderMe(); } toast(isNew ? name + ' can now log in as ' + k : 'Profile saved'); if (isNew) closeSheet(); else showProfile(k); renderTeam(); }
+    catch (e) { dbFail(e); $('#uf-save').disabled = false; }
+  };
+}
+function passwordForm(u, self) {
+  openSheet('<h2>' + (self ? 'Change password' : 'Reset password for ' + esc((u.name || u.username).split(' ')[0])) + '</h2>' +
+    (self && u.pw ? '<label for="pw-cur">Current password</label><input id="pw-cur" type="password" autocomplete="current-password">' : '') +
+    '<label for="pw-new">New password (at least 6 characters)</label><div class="pwrow"><input id="pw-new" type="password" autocomplete="new-password"><button type="button" class="pweye" data-peye="pw-new">Show</button></div>' +
+    '<label for="pw-new2">Type it again</label><input id="pw-new2" type="password" autocomplete="new-password">' +
+    '<div class="btns" style="margin-top:14px"><button class="btn" id="pw-cancel">Cancel</button><button class="btn p" id="pw-save">Save password</button></div>');
+  $('#sheet').querySelector('[data-peye]').onclick = ev => { const i = $('#pw-new'); i.type = i.type === 'password' ? 'text' : 'password'; ev.target.textContent = i.type === 'password' ? 'Show' : 'Hide'; };
+  $('#pw-cancel').onclick = () => showProfile(u.username);
+  $('#pw-save').onclick = async () => {
+    const n = $('#pw-new').value;
+    if (self && u.pw && !(await checkPw(u, $('#pw-cur').value))) { toast('Current password is wrong'); return; }
+    if (n.length < 6) { toast('Password needs at least 6 characters'); return; }
+    if (n !== $('#pw-new2').value) { toast('The two passwords are different'); return; }
+    const d = Object.assign({}, u, {pw: await hashPw(n)}); stamp(d, u);
+    try { await db.doc('users/' + u.username).set(d); toast(self ? 'Password changed' : 'Password reset. Share the new one privately.'); showProfile(u.username); } catch (e) { dbFail(e); }
+  };
+}
+/* Settings → Team */
+function renderTeam() {
+  const el = $('#teamlist'); if (!el) return;
+  const old = db && db.info().cloud && serverInfo && (serverInfo.error === 'bad_action' || num(serverInfo.version) < 7);
+  let w = $('#teamwarn'); if (!w) { w = document.createElement('p'); w.id = 'teamwarn'; w.className = 'lockerr'; el.before(w); }
+  w.hidden = !old; w.textContent = 'Update the Google Sheet script to version 7 so other phones get these accounts: paste the new Code.gs, Save, then Deploy → Manage deployments → Edit → New version.';
+  const list = [...users.values()].sort((a, b) => (b.role === 'admin') - (a.role === 'admin') || (a.name || a.username).localeCompare(b.name || b.username));
+  el.shtml = list.map(u => '<button class="row" data-user="' + esc(u.username) + '">' + avatar(u.username) + '<div class="grow"><div class="t">' + esc(u.name || u.username) + (me && u.username === me.username ? ' <span class="small mute">(you)</span>' : '') + '</div><div class="s">@' + esc(u.username) + (u.designation ? ' · ' + esc(u.designation) : '') + (u.phone ? ' · ' + esc(u.phone) : '') + '</div></div>' +
+    (isActive(u) ? '<span class="badge ' + (u.role === 'admin' ? 'b-warn' : 'b-ok') + '">' + (u.role === 'admin' ? 'Admin' : 'Staff') + '</span>' : '<span class="badge b-bad">Off</span>') + '</button>').join('') || '<div class="empty">No users yet.</div>';
+}
+$('#teamlist').addEventListener('click', e => { const b = e.target.closest('[data-user]'); if (b) showProfile(b.dataset.user); });
+$('#adduser').onclick = () => userForm(null);
+
+function renderMeCard() { const c = $('#mecard'); if (!c) return; c.hidden = !me; if (!me) return; c.shtml = avatar(me.username) + '<div class="grow"><div class="t" style="font-weight:700">' + esc(me.name || me.username) + '</div><div class="s small mute">@' + esc(me.username) + ' · ' + esc(ROLE[me.role] || me.role) + ' · My profile</div></div><span aria-hidden="true" style="color:var(--gold);font-size:20px">›</span>'; }
+$('#mecard').onclick = () => { if (me) showProfile(me.username); };
 
 /* ---------- navigation ---------- */
 function setFab() {
@@ -2504,14 +2848,15 @@ $('#restorefile').onchange = async e => {
 let serverInfo = null;
 async function checkServer() {
   if (!db.info().cloud) return; serverInfo = await db.ping(); renderSyncDetails(); if (typeof renderExpenses === 'function') renderExpenses();
-  if (serverInfo && serverInfo.version >= 6 && db.info().dead.some(d => /^expenses\//.test(d.path))) db.retryDead();   // expenses saved before the script update
+  if (serverInfo && serverInfo.version >= 7 && db.info().dead.some(d => /^(expenses|users)\//.test(d.path))) db.retryDead();   // saved before the script update
+  if (typeof renderTeam === 'function') renderTeam();
 }
 function renderSyncDetails() {
   const el = $('#syncdetails'); if (!el) return;
   const i = db.info(); if (!i.cloud) { el.innerHTML = ''; return; }
   const when = i.lastSync ? new Date(i.lastSync).toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : 'not yet';
   let ver = 'checking…';
-  if (serverInfo) ver = serverInfo.error ? (serverInfo.error === 'bad_action' ? 'older version - please update Code.gs' : 'not reachable (' + esc(serverInfo.error) + ')') : 'version ' + esc(serverInfo.version) + (serverInfo.version < 6 ? ' - please update Code.gs' : ' ✓');
+  if (serverInfo) ver = serverInfo.error ? (serverInfo.error === 'bad_action' ? 'older version - please update Code.gs' : 'not reachable (' + esc(serverInfo.error) + ')') : 'version ' + esc(serverInfo.version) + (serverInfo.version < 7 ? ' - please update Code.gs' : ' ✓');
   const rows = [['Last synced', esc(when)], ['Changes waiting on this phone', String(i.pending)], ['Sheet script', ver]];
   if (i.lastErr) rows.push(['Last problem', esc(i.lastErr)]);
   let html = '<h3 style="margin-top:16px">Sync details</h3><div class="sdgrid">' + rows.map(([a, b]) => '<span>' + a + '</span><b>' + b + '</b>').join('') + '</div>';
@@ -2607,6 +2952,8 @@ renderAll();
   db.collection('sales').onSnapshot(s => { sales = s.docs.map(d => Object.assign({id: d.id}, d.data())); later(); });
   db.collection('purchases').onSnapshot(s => { purchases = s.docs.map(d => Object.assign({id: d.id}, d.data())); later(); });
   db.collection('expenses').onSnapshot(s => { expenses = s.docs.map(d => Object.assign({id: d.id}, d.data())); later(); });
+  db.collection('users').onSnapshot(s => { users = new Map(s.docs.map(d => { const x = d.data(); const k = String(x.username || d.id).toLowerCase(); return [k, Object.assign({}, x, {username: k})]; })); usersSeen = true; decideLock(); later(); });
+  db.onStatus(decideLock);
   db.doc('local/meta').onSnapshot(s => { const d = s.data() || {}; $('#lastbackup').textContent = d.lastBackup ? 'Last backup: ' + nice(d.lastBackup) : 'No backup made yet.'; });
   db.onStatus(renderCloud); db.onStatus(renderSyncDetails); renderCloud(); renderPhotoStatus(); checkServer();
   if (join) { go('more'); await connectFlow(join.url, join.key, true); }
