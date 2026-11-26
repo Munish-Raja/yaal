@@ -1665,6 +1665,11 @@ const Store = (() => {
     pulling = true;
     try {
       const res = await call({action: 'load', since: rev});
+      if (res.full) {
+        const keep = {}; for (const o of outbox) if (mem.has(o.path)) keep[o.path] = mem.get(o.path);
+        await replaceLocal(Object.assign({}, res.docs, keep));
+        rev = res.rev; await kv('rev', rev); okNow(); return;
+      }
       const pending = new Set(outbox.map(o => o.path)), ops = [];
       for (const [p, v] of Object.entries(res.docs)) { if (pending.has(p)) continue; mem.set(p, v); ops.push([p, v]); }
       for (const p of res.deleted || []) { if (pending.has(p) || !mem.has(p)) continue; mem.delete(p); ops.push([p, undefined]); }
@@ -1763,7 +1768,7 @@ function renderSyncDetails() {
   const i = db.info(); if (!i.cloud) { el.innerHTML = ''; return; }
   const when = i.lastSync ? new Date(i.lastSync).toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : 'not yet';
   let ver = 'checking…';
-  if (serverInfo) ver = serverInfo.error ? (serverInfo.error === 'bad_action' ? 'older version - please update Code.gs' : 'not reachable (' + esc(serverInfo.error) + ')') : 'version ' + esc(serverInfo.version) + (serverInfo.version < 3 ? ' - please update Code.gs' : ' ✓');
+  if (serverInfo) ver = serverInfo.error ? (serverInfo.error === 'bad_action' ? 'older version - please update Code.gs' : 'not reachable (' + esc(serverInfo.error) + ')') : 'version ' + esc(serverInfo.version) + (serverInfo.version < 4 ? ' - please update Code.gs' : ' ✓');
   const rows = [['Last synced', esc(when)], ['Changes waiting on this phone', String(i.pending)], ['Sheet script', ver]];
   if (i.lastErr) rows.push(['Last problem', esc(i.lastErr)]);
   let html = '<h3 style="margin-top:16px">Sync details</h3><div class="sdgrid">' + rows.map(([a, b]) => '<span>' + a + '</span><b>' + b + '</b>').join('') + '</div>';

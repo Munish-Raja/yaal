@@ -25,19 +25,21 @@ function setup() {
   }
   var st = ss.getSheetByName('Setup') || ss.insertSheet('Setup', 0);
   st.clear();
-  st.getRange(1, 1, 7, 2).setValues([
+  st.getRange(1, 1, 8, 2).setValues([
     ['Boutique Stock & Billing - cloud storage', ''],
     ['Shop key (paste into the app)', key],
     ['', ''],
     ['Next step', 'Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone. Copy the Web app URL into the app.'],
     ['Keep the key private', 'Anyone with the Web app URL AND this key can read and change your shop data.'],
     ['To change the key', 'Run resetKey() in Apps Script, then reconnect every phone.'],
+    ['Editing in the sheet', 'You can change the visible columns, add rows or delete rows in Products, Sales, Purchases and App Settings. Phones pick the change up within about 10 seconds. Do not edit the hidden Rev / Data columns.'],
     ['Product photos', 'Saved privately in the Google Drive folder "YAAL Product Photos" (only you can open it in Drive; the app loads them through this script).']
   ]);
   st.getRange('A1').setFontWeight('bold').setFontSize(14);
   st.getRange('A2:B2').setFontWeight('bold').setBackground('#FFF1D1');
   st.setColumnWidth(1, 240); st.setColumnWidth(2, 520);
   photoFolder(); // asks for Google Drive permission (product photos are saved there)
+  installChangeTrigger(); // lets the app notice rows you delete in the sheet
   var s1 = ss.getSheetByName('Sheet1');
   if (s1 && s1.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(s1);
   Logger.log('Shop key: ' + key);
@@ -67,7 +69,7 @@ var DELETED_TAB = '_deleted';
 /* ------------------------------------------------------------------ web app */
 function doGet() { return out({ok: true, app: 'boutique-stock'}); }
 
-var SCRIPT_VERSION = 3;
+var SCRIPT_VERSION = 4;
 
 function doPost(e) {
   try { return handle(e); }
@@ -153,6 +155,8 @@ function buildRow(coll, id, data, rev) {
 function load(since) {
   var rev = Number(PropertiesService.getScriptProperties().getProperty('REV')) || 0;
   if (since > 0 && since >= rev) return {ok: true, rev: rev, docs: {}, deleted: [], same: true};
+  var fullRev = Number(PropertiesService.getScriptProperties().getProperty('FULLREV')) || 0, full = false;
+  if (since > 0 && fullRev > since) { since = 0; full = true; }
   var docs = {}, present = {}, deleted = [];
   Object.keys(SHEETS).forEach(function (coll) {
     var sh = sheetFor(coll), vals = sh.getDataRange().getValues(), n = header(coll).length;
@@ -172,7 +176,7 @@ function load(since) {
       if (Number(dv[i][1]) > since && !present[p]) deleted.push(p);
     }
   }
-  return {ok: true, rev: rev, docs: docs, deleted: deleted};
+  return {ok: true, rev: rev, docs: docs, deleted: deleted, full: full};
 }
 
 function batch(ops) {
@@ -303,4 +307,86 @@ function getPhoto(req) {
 function deletePhoto(req) {
   try { DriveApp.getFileById(String(req.id || '')).setTrashed(true); } catch (e) {}
   return {ok: true};
+}
+
+/* ------------------------------------------------------------------ edits made directly in the sheet */
+var NUM_KEYS = {cost: 1, price: 1, opening: 1, reorder: 1, qty: 1, taxable: 1, gst: 1, total: 1};
+
+// Runs by itself whenever someone types in the sheet (not when the app writes).
+function onEdit(e) {
+  try { if (e && e.range) syncEditedRows(e.range); } catch (err) { console.error(err); }
+}
+
+function collForSheet(name) {
+  var found = null;
+  Object.keys(SHEETS).forEach(function (k) { if (SHEETS[k].tab === name) found = k; });
+  return found;
+}
+
+function fromCell(key, v, tz, old) {
+  if (Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v.getTime())) return Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+  if (NUM_KEYS[key]) {
+    if (v === '' || v === null || v === undefined) return key === 'reorder' ? '' : 0;
+    var x = Number(String(v).replace(/[^0-9.\-]/g, ''));
+    return isNaN(x) ? (old || 0) : x;
+  }
+  return v === null || v === undefined ? '' : String(v).trim();
+}
+
+function syncEditedRows(range) {
+  var sh = range.getSheet(), coll = collForSheet(sh.getName());
+  if (!coll) return;
+  var n = header(coll).length, r0 = Math.max(2, range.getRow()), r1 = range.getLastRow();
+  if (r1 < 2 || range.getColumn() > n - 2) return; // header row, or only the hidden Rev/Data columns
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return;
+  try {
+    var props = PropertiesService.getScriptProperties(), rev = Number(props.getProperty('REV')) || 0;
+    var tz = SpreadsheetApp.getActive().getSpreadsheetTimeZone();
+    var vals = sh.getRange(r0, 1, r1 - r0 + 1, n).getValues();
+    for (var i = 0; i < vals.length; i++) {
+      var row = vals[i], id = String(row[0]).trim(), raw = String(row[n - 1] || ''), data = {};
+      var blank = row.slice(1, n - 2).every(function (v) { return v === '' || v === null; });
+      if (blank) continue;
+      try { data = raw ? JSON.parse(raw) : {}; } catch (x) { data = {}; }
+      var isNew = !raw;
+      if (!id) {
+        id = coll === 'purchases' ? 'sheet' + new Date().getTime().toString(36) + i : String(row[1]).trim();
+        if (!id) continue;
+        sh.getRange(r0 + i, 1).setValue(id);
+      }
+      SHEETS[coll].cols.forEach(function (c, j) {
+        if (typeof c[1] !== 'string') return;
+        data[c[1]] = fromCell(c[1], row[j + 1], tz, data[c[1]]);
+      });
+      if (coll === 'products') { data.sku = id; if (isNew) data.createdAt = new Date().getTime(); }
+      if (coll === 'sales') { data.invoice = data.invoice || id; if (!data.items) data.items = []; if (isNew) { data.createdAt = new Date().getTime(); data.fromSheet = true; } }
+      if (coll === 'purchases' && isNew) data.createdAt = new Date().getTime();
+      rev++;
+      sh.getRange(r0 + i, n - 1, 1, 2).setValues([[rev, JSON.stringify(data)]]);
+    }
+    props.setProperty('REV', String(rev));
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// Row deletions are not "edits", so a change trigger tells the phones to reload everything once.
+function installChangeTrigger() {
+  var ss = SpreadsheetApp.getActive();
+  var has = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'onSheetChange'; });
+  if (!has) ScriptApp.newTrigger('onSheetChange').forSpreadsheet(ss).onChange().create();
+}
+
+function onSheetChange(e) {
+  if (!e || (e.changeType !== 'REMOVE_ROW' && e.changeType !== 'REMOVE_GRID')) return;
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return;
+  try {
+    var props = PropertiesService.getScriptProperties(), rev = (Number(props.getProperty('REV')) || 0) + 1;
+    props.setProperty('REV', String(rev));
+    props.setProperty('FULLREV', String(rev));
+  } finally {
+    lock.releaseLock();
+  }
 }

@@ -73,13 +73,26 @@ Until you do this, photos stay on the phone they were taken on, and upload autom
 ## Using the sheet
 
 - Each tab has readable columns that you can filter, sort, print or download (**File → Download → Microsoft Excel**).
-- The hidden columns **Rev** and **Data (do not edit)** are what the app reads. **Make changes in the app, not by typing in the sheet.** Edits typed into the sheet are not picked up by the app.
+- **You can edit the sheet directly.** Change any visible cell (a customer name, a price, a date, a bill total), type a new row, or delete a row. The phones pick it up within about 10 seconds.
+  - To add a product in the sheet, fill a new row in **Products** with at least the **SKU** and **Product Name**.
+  - To add a stock entry, fill a new row in **Purchases**. The ID is created for you.
+  - Bills typed into **Sales** show in the app with their total, but have no item lines, so they don't change stock. For a sale that should reduce stock, make the bill in the app.
+  - Changing **Pieces** or **Bill Total** of an existing bill changes the bill's totals only. The items inside the bill (and so the stock) stay as they were. To fix the items, delete the bill and make it again in the app.
+- Don't type in the hidden **Rev** and **Data (do not edit)** columns. The script keeps them up to date for you.
 - Don't rename the tabs or delete the hidden `_deleted` tab.
 
 ## Changing the key (if a phone is lost or someone leaves)
 
 1. In Apps Script, run **`resetKey`**. The Setup tab shows the new key.
 2. On each phone you still use: go to **Settings → Disconnect**, then connect again with the new key (or send a fresh staff link).
+
+## Script updated for sheet editing (version 4)
+
+If you set up the sheet before sheet editing was supported, update the script once:
+1. Paste the new `Code.gs`, click **Save**, choose **`setup`** and click **Run**. Allow the new permission; it lets the script notice deleted rows.
+2. Go to **Deploy → Manage deployments → ✏️ Edit**, set **Version** to **New version**, and click **Deploy**.
+
+In the app, **Settings → Sync details** should then show *Sheet script: version 4 ✓*.
 
 ## Updating the script later
 
